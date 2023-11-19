@@ -57,7 +57,7 @@ int main(int, char **) {
 
     testComposed.setZ(33);
     testComposed.setW(1.62);
-    /* testComposed.setT(Test(3, 3)); */
+    testComposed.setT(Test(3, 3));
 
     // thanks to the references, the elements are changed
     std::cout << testComposed.toString() << std::endl;
