@@ -33,7 +33,7 @@ This means that if you give `this->x`, the constructed string will contain
 ```cpp
 class Test : public Stringifiable {
   public:
-    Test(int _x = 0, int _y = 0) : x(_x), y(_y), constructStringifier(x, y) {}
+    Test(int _x = 0, int _y = 0) : constructStringifier(x, y), x(_x), y(_y) {}
     Test(const Test& other): Test(other.x, other.y) {}
     ~Test() = default;
 
