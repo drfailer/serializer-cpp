@@ -11,16 +11,6 @@
 /*                                   macros                                   */
 /******************************************************************************/
 
-#define genStringifier(...) Stringifier<__VA_ARGS__> strf_;
-#define constructStringifier(...) strf_(__VA_ARGS__, #__VA_ARGS__)
-#define genToString()                                                          \
-    std::string toString() { return strf_.toString(); }
-
-// combination of genStringifier & genToString
-#define stringifier(...)                                                       \
-    private: Stringifier<__VA_ARGS__> strf_;                                   \
-    public: std::string toString() { return strf_.toString(); }
-
 // TODO: the toString function should be const => modify the Stringifiable and
 // the Stringifier functions.
 
@@ -31,7 +21,7 @@
 /* stringifier ****************************************************************/
 template <typename... Types>
 class Stringifier {
-  public:
+public:
     /* constructor & destructor ***********************************************/
     Stringifier(Types &...args, std::string idsStr) : ptrs(args...) {
         if (ids.size() == 0) { // security for copy constructors
@@ -58,7 +48,7 @@ class Stringifier {
         return oss.str();
     }
 
-  private:
+private:
     std::tuple<Types &...> ptrs;
     std::vector<std::string> ids;
     std::ostringstream oss;
