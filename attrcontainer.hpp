@@ -1,6 +1,5 @@
 #ifndef ATTRCONTAINER_HPP
 #define ATTRCONTAINER_HPP
-#include <iostream>
 #include <sstream>
 #include <stack>
 #include <string>
@@ -12,7 +11,7 @@
 
 namespace func {
 
-template<typename T, decltype(std::declval<T>().delserialize())* = nullptr>
+template<typename T, decltype(std::declval<std::remove_reference_t<T>>().delserialize())* = nullptr>
 std::remove_reference_t<T> deserialize(std::string str) {
     std::remove_reference_t<T> t;
     t.delserialize(str);

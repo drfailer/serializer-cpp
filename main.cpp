@@ -91,7 +91,27 @@ int main(int, char **) {
     // thanks to the references, the elements are changed
     std::cout << testComposed.serialize() << std::endl;
 
-    testContainer();
+    Test testCopy(0, 0);
+    TestComposed testComposedCopy(testCopy, 0, 0);
+
+    std::cout << "before deserialization:" << std::endl;
+    std::cout << "testCopy: " << std::endl;
+    std::cout << testCopy.serialize() << std::endl;
+
+    std::cout << "testComposedCopy: " << std::endl;
+    std::cout << testComposedCopy.serialize() << std::endl;
+
+    testCopy.deserialize(test.serialize());
+    /* testComposedCopy.deserialize(testComposed.serialize()); */
+
+    std::cout << "after deserialization:" << std::endl;
+    std::cout << "testCopy: " << std::endl;
+    std::cout << testCopy.serialize() << std::endl;
+
+    std::cout << "testComposedCopy: " << std::endl;
+    std::cout << testComposedCopy.serialize() << std::endl;
+
+    /* testContainer(); */
 
     return 0;
 }

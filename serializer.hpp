@@ -23,6 +23,11 @@ public:
         return oss.str();
     }
 
+    /* deserialize  ***********************************************************/
+    void deserialize(const std::string& str) {
+        container.deserialize(str);
+    }
+
 private:
     AttrContainer<Types...> container;
 };

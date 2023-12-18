@@ -17,8 +17,8 @@ public:
         return strf.serialize();
     }
 
-    std::string deserialize() {
-        return strf.deserialize();
+    void deserialize(const std::string& str) {
+        strf.deserialize(str);
     }
 
     Serializable(Types& ...vars, std::string varsStr): strf(vars..., varsStr) { }
