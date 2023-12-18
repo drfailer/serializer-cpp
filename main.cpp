@@ -1,14 +1,14 @@
 #include <iostream>
-#include "stringifiable.hpp"
+#include "serializable.hpp"
 
 /******************************************************************************/
 /*                                test classes                                */
 /******************************************************************************/
 
 /* Basic test class for the stringifier ***************************************/
-class Test : public Stringifiable<int, int> {
+class Test : public Serializable<int, int> {
 public:
-    Test(int _x = 0, int _y = 0) : stringifiable(x, y), x(_x), y(_y) { }
+    Test(int _x = 0, int _y = 0) : serializable(x, y), x(_x), y(_y) { }
     Test(const Test& other): Test(other.x, other.y) { }
     ~Test() = default;
 
@@ -24,10 +24,10 @@ private:
 };
 
 /* Test class that contains a stringifiable subclass **************************/
-class TestComposed : public Stringifiable<Test, int, double> {
+class TestComposed : public Serializable<Test, int, double> {
 public:
     TestComposed(const Test& _t = Test(0, 0), int _z = 0, double _w = 0):
-        stringifiable(t, z, w), t(_t), z(_z), w(_w) { }
+        serializable(t, z, w), t(_t), z(_z), w(_w) { }
     ~TestComposed() = default;
 
     /* accessors **************************************************************/
@@ -45,6 +45,35 @@ private :
 /*                                    main                                    */
 /******************************************************************************/
 
+void testContainer() {
+    // create a simple container
+    int x = 1;
+    AttrContainer<int> c = { .name = "x", .reference = x };
+    std::string serializedC = c.serialize();
+    std::cout << serializedC << std::endl;
+
+    // multple values container
+    x = 3;
+    int y = 2;
+    AttrContainer<int, int> c2 = { .name = "x", .reference = x, .next = { .name = "y", .reference = y } };
+
+    std::string serializedC2 = c2.serialize();
+    std::cout << serializedC2 << std::endl;
+
+    // deserialize works
+    int cx = 0;
+    AttrContainer<int> deserializedC = { .name = "x", .reference = cx };
+    deserializedC.deserialize(serializedC);
+    std::cout << "cx: " << cx << std::endl;
+
+    cx = 0;
+    int cy = 0;
+    AttrContainer<int, int> deserializedC2 = { .name = "x", .reference = cx, .next = { .name = "y", .reference = cy } };
+    deserializedC2.deserialize(serializedC2);
+    std::cout << "cx: " << cx << std::endl;
+    std::cout << "cy: " << cy << std::endl;
+}
+
 int main(int, char **) {
     Test test(1, 2);
     TestComposed testComposed(test, 1, 3.14);
@@ -61,5 +90,8 @@ int main(int, char **) {
 
     // thanks to the references, the elements are changed
     std::cout << testComposed.toString() << std::endl;
+
+    testContainer();
+
     return 0;
 }
