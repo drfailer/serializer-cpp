@@ -1,5 +1,6 @@
 #ifndef ATTRCONTAINER_HPP
 #define ATTRCONTAINER_HPP
+#include <iostream>
 #include <sstream>
 #include <stack>
 #include <string>
@@ -62,6 +63,14 @@ inline std::size_t findValueEnd(std::string str, std::size_t valueStart) {
     return idx;
 }
 
+inline std::size_t nextId(const std::string& str) {
+    std::size_t idx = str.find(",") + 1;
+    while (idx < str.size() && str[idx] == ' ') {
+        idx++;
+    }
+    return idx;
+}
+
 /******************************************************************************/
 /*                            attribute container                             */
 /******************************************************************************/
@@ -71,8 +80,8 @@ struct AttrContainer;
 
 template<typename H, typename ...Types>
 struct AttrContainer<H, Types...> {
-    std::string name;
     H& reference;
+    std::string name;
     AttrContainer<Types...> next;
 
     std::string serialize() const {
@@ -89,12 +98,18 @@ struct AttrContainer<H, Types...> {
         reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd));
         next.deserialize(str);
     }
+
+    AttrContainer(H& head, Types&... types, const std::string& idsStr):
+        reference(head),
+        name(idsStr.substr(0, idsStr.find(","))),
+        next(types..., idsStr.substr(nextId(idsStr)))
+    { }
 };
 
 template<typename H>
 struct AttrContainer<H> {
-    std::string name;
     H& reference;
+    std::string name;
 
     std::string serialize() const {
         std::ostringstream oss;
@@ -108,6 +123,9 @@ struct AttrContainer<H> {
         std::size_t idxEnd = findValueEnd(str, idxValue);
         reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd));
     }
+
+    AttrContainer(H& head, const std::string& idsStr):
+        reference(head), name(idsStr) { }
 };
 
 template<>
