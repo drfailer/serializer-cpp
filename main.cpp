@@ -48,27 +48,27 @@ private :
 void testContainer() {
     // create a simple container
     int x = 1;
-    AttrContainer<int> c = { .name = "x", .reference = x };
+    AttrContainer<int> c(x, "x");
     std::string serializedC = c.serialize();
     std::cout << serializedC << std::endl;
 
     // multple values container
     x = 3;
     int y = 2;
-    AttrContainer<int, int> c2 = { .name = "x", .reference = x, .next = { .name = "y", .reference = y } };
+    AttrContainer<int, int> c2(x, y, "x, y");
 
     std::string serializedC2 = c2.serialize();
     std::cout << serializedC2 << std::endl;
 
     // deserialize works
     int cx = 0;
-    AttrContainer<int> deserializedC = { .name = "x", .reference = cx };
+    AttrContainer<int> deserializedC(cx, "x");
     deserializedC.deserialize(serializedC);
     std::cout << "cx: " << cx << std::endl;
 
     cx = 0;
     int cy = 0;
-    AttrContainer<int, int> deserializedC2 = { .name = "x", .reference = cx, .next = { .name = "y", .reference = cy } };
+    AttrContainer<int, int> deserializedC2(cx, cy, "x, y");
     deserializedC2.deserialize(serializedC2);
     std::cout << "cx: " << cx << std::endl;
     std::cout << "cy: " << cy << std::endl;
@@ -79,17 +79,17 @@ int main(int, char **) {
     TestComposed testComposed(test, 1, 3.14);
 
     // the basic test works fine
-    std::cout << test.toString() << std::endl;
+    std::cout << test.serialize() << std::endl;
 
     // the stringifiable inner class is well printed
-    std::cout << testComposed.toString() << std::endl;
+    std::cout << testComposed.serialize() << std::endl;
 
     testComposed.setZ(33);
     testComposed.setW(1.62);
     testComposed.setT(Test(3, 3));
 
     // thanks to the references, the elements are changed
-    std::cout << testComposed.toString() << std::endl;
+    std::cout << testComposed.serialize() << std::endl;
 
     testContainer();
 
