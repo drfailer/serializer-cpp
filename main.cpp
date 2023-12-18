@@ -45,35 +45,6 @@ private :
 /*                                    main                                    */
 /******************************************************************************/
 
-void testContainer() {
-    // create a simple container
-    int x = 1;
-    AttrContainer<int> c(x, "x");
-    std::string serializedC = c.serialize();
-    std::cout << serializedC << std::endl;
-
-    // multple values container
-    x = 3;
-    int y = 2;
-    AttrContainer<int, int> c2(x, y, "x, y");
-
-    std::string serializedC2 = c2.serialize();
-    std::cout << serializedC2 << std::endl;
-
-    // deserialize works
-    int cx = 0;
-    AttrContainer<int> deserializedC(cx, "x");
-    deserializedC.deserialize(serializedC);
-    std::cout << "cx: " << cx << std::endl;
-
-    cx = 0;
-    int cy = 0;
-    AttrContainer<int, int> deserializedC2(cx, cy, "x, y");
-    deserializedC2.deserialize(serializedC2);
-    std::cout << "cx: " << cx << std::endl;
-    std::cout << "cy: " << cy << std::endl;
-}
-
 int main(int, char **) {
     Test test(1, 2);
     TestComposed testComposed(test, 1, 3.14);
@@ -91,9 +62,11 @@ int main(int, char **) {
     // thanks to the references, the elements are changed
     std::cout << testComposed.serialize() << std::endl;
 
+    // testing the deserialization using other objects
     Test testCopy(0, 0);
     TestComposed testComposedCopy(testCopy, 0, 0);
 
+    // first display, we should have the default values
     std::cout << "before deserialization:" << std::endl;
     std::cout << "testCopy: " << std::endl;
     std::cout << testCopy.serialize() << std::endl;
@@ -104,14 +77,13 @@ int main(int, char **) {
     testCopy.deserialize(test.serialize());
     testComposedCopy.deserialize(testComposed.serialize());
 
+    // second display, the attributes in new objects have the same values as the others
     std::cout << "after deserialization:" << std::endl;
     std::cout << "testCopy: " << std::endl;
     std::cout << testCopy.serialize() << std::endl;
 
     std::cout << "testComposedCopy: " << std::endl;
     std::cout << testComposedCopy.serialize() << std::endl;
-
-    /* testContainer(); */
 
     return 0;
 }

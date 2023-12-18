@@ -9,6 +9,8 @@
 /*                    serialize and deserialize functions                     */
 /******************************************************************************/
 
+/* This functions are used to switch between string and values. */
+
 namespace func {
 
 template<typename T, decltype(std::declval<T>().deserialize(""))* = nullptr>
@@ -43,7 +45,7 @@ std::string serialize(T& elt) {
 /*                              helper functions                              */
 /******************************************************************************/
 
-inline std::size_t findValueEnd(std::string str, std::size_t valueStart) {
+inline std::size_t findEndValueIndex(std::string str, std::size_t valueStart) {
     std::size_t idx = valueStart;
     std::stack<char> pairs;
 
@@ -74,15 +76,24 @@ inline std::size_t nextId(const std::string& str) {
 /*                            attribute container                             */
 /******************************************************************************/
 
+/*
+ * Data structure that acts like a map with multiple types. It is used to store
+ * the identifiers and the references on the attributes of the serialized class.
+ */
 template<typename ...Types>
-struct AttrContainer;
+struct AttrContainer { };
 
+/*
+ * Specialisation for handeling more than one type.
+ */
 template<typename H, typename ...Types>
 struct AttrContainer<H, Types...> {
+    /* attributes *************************************************************/
     H& reference;
     std::string name;
     AttrContainer<Types...> next;
 
+    /* serialize **************************************************************/
     std::string serialize() const {
         std::ostringstream oss;
         oss << name << ": " << func::serialize(reference);
@@ -90,14 +101,16 @@ struct AttrContainer<H, Types...> {
         return oss.str();
     }
 
+    /* deserialize ************************************************************/
     void deserialize(const std::string& str) {
         std::size_t idxName = str.find(name);
         std::size_t idxValue = idxName + name.size() + 2;
-        std::size_t idxEnd = findValueEnd(str, idxValue);
+        std::size_t idxEnd = findEndValueIndex(str, idxValue);
         reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd));
         next.deserialize(str);
     }
 
+    /* constructor ************************************************************/
     AttrContainer(H& head, Types&... types, const std::string& idsStr):
         reference(head),
         name(idsStr.substr(0, idsStr.find(","))),
@@ -105,38 +118,34 @@ struct AttrContainer<H, Types...> {
     { }
 };
 
+/*
+ * Specialisation with one type. This specialisation doesn't have the next
+ * attribute.
+ */
 template<typename H>
 struct AttrContainer<H> {
+    /* attributes *************************************************************/
     H& reference;
     std::string name;
 
+    /* serialize **************************************************************/
     std::string serialize() const {
         std::ostringstream oss;
         oss << name << ": " << func::serialize(reference);
         return oss.str();
     }
 
+    /* deserialize ************************************************************/
     void deserialize(const std::string& str) {
         std::size_t idxName = str.find(name);
         std::size_t idxValue = idxName + name.size() + 2;
-        std::size_t idxEnd = findValueEnd(str, idxValue);
+        std::size_t idxEnd = findEndValueIndex(str, idxValue);
         reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd));
     }
 
+    /* constructor ************************************************************/
     AttrContainer(H& head, const std::string& idsStr):
         reference(head), name(idsStr) { }
-};
-
-template<>
-struct AttrContainer<> {};
-
-/******************************************************************************/
-/*                                 functions                                  */
-/******************************************************************************/
-
-template<const char* chars>
-struct getAttr {
-
 };
 
 #endif

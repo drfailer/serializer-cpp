@@ -13,20 +13,28 @@
 template<typename ...Types>
 class Serializable {
 public:
+    /* constructor & destructor ***********************************************/
+    Serializable(Types& ...vars, std::string varsStr):
+        serializer(vars..., varsStr) { }
+    virtual ~Serializable() { }
+
+    /* serialize **************************************************************/
     std::string serialize() const {
-        return strf.serialize();
+        return serializer.serialize();
     }
 
+    /* deserialize  ***********************************************************/
     void deserialize(const std::string& str) {
-        strf.deserialize(str);
+        serializer.deserialize(str);
     }
-
-    Serializable(Types& ...vars, std::string varsStr): strf(vars..., varsStr) { }
-    virtual ~Serializable() {}
 
 private:
-Serializer<Types...> strf;
+    Serializer<Types...> serializer;
 };
+
+/******************************************************************************/
+/*                                 functions                                  */
+/******************************************************************************/
 
 template<typename ...Types>
 inline std::ostream& operator<<(std::ostream& os, const Serializable<Types...>& s) {
