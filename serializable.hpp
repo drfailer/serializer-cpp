@@ -13,9 +13,14 @@
 template<typename ...Types>
 class Serializable {
 public:
-    std::string toString() const {
-        return strf.toString();
+    std::string serialize() const {
+        return strf.serialize();
     }
+
+    std::string deserialize() {
+        return strf.deserialize();
+    }
+
     Serializable(Types& ...vars, std::string varsStr): strf(vars..., varsStr) { }
     virtual ~Serializable() {}
 
@@ -25,7 +30,7 @@ Serializer<Types...> strf;
 
 template<typename ...Types>
 inline std::ostream& operator<<(std::ostream& os, const Serializable<Types...>& s) {
-    os << s.toString();
+    os << s.serialize();
     return os;
 }
 
