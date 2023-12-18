@@ -11,10 +11,10 @@
 
 namespace func {
 
-template<typename T, decltype(std::declval<std::remove_reference_t<T>>().delserialize())* = nullptr>
+template<typename T, decltype(std::declval<T>().deserialize(""))* = nullptr>
 std::remove_reference_t<T> deserialize(std::string str) {
     std::remove_reference_t<T> t;
-    t.delserialize(str);
+    t.deserialize(str);
     return t;
 }
 

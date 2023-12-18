@@ -102,7 +102,7 @@ int main(int, char **) {
     std::cout << testComposedCopy.serialize() << std::endl;
 
     testCopy.deserialize(test.serialize());
-    /* testComposedCopy.deserialize(testComposed.serialize()); */
+    testComposedCopy.deserialize(testComposed.serialize());
 
     std::cout << "after deserialization:" << std::endl;
     std::cout << "testCopy: " << std::endl;
