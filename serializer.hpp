@@ -4,8 +4,7 @@
 #include <tuple>
 #include <vector>
 #include <sstream>
-
-#include <iostream>
+#include "attrcontainer.hpp"
 
 /******************************************************************************/
 /*                                stringifier                                 */
@@ -13,10 +12,10 @@
 
 /* stringifier ****************************************************************/
 template <typename... Types>
-class Stringifier {
+class Serializer {
 public:
     /* constructor & destructor ***********************************************/
-    Stringifier(Types &...args, std::string idsStr) : ptrs(args...) {
+    Serializer(Types &...args, std::string idsStr) : ptrs(args...) {
         if (ids.size() == 0) { // security for copy constructors
             // parse ids
             size_t start = 0;
@@ -30,7 +29,7 @@ public:
             }
         }
     }
-    ~Stringifier() = default;
+    ~Serializer() = default;
 
     /* toString ***************************************************************/
     std::string toString() const {
