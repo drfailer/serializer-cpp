@@ -24,10 +24,13 @@ private:
 };
 
 /* Test class that contains a stringifiable subclass **************************/
-class TestComposed : public Serializable<Test, int, double> {
+class TestComposed : public Serializable<Test, int, double, std::string, int*, double*> {
 public:
-    TestComposed(const Test& _t = Test(0, 0), int _z = 0, double _w = 0):
-        serializable(t, z, w), t(_t), z(_z), w(_w) { }
+    TestComposed(const Test& _t = Test(0, 0), int _z = 0, double _w = 0, const std::string& _str = ""):
+        serializable(t, z, w, str, simple_nullptr, simple_ptr), t(_t), z(_z), w(_w), str(_str) {
+            /* simple_ptr = new double; */
+            /* *simple_ptr = 1.9; */
+        }
     ~TestComposed() = default;
 
     /* accessors **************************************************************/
@@ -39,6 +42,9 @@ private :
     Test t;
     int z;
     double w;
+    std::string str;
+    int *simple_nullptr = nullptr;
+    double *simple_ptr = nullptr;
 };
 
 /******************************************************************************/
@@ -47,7 +53,7 @@ private :
 
 int main(int, char **) {
     Test test(1, 2);
-    TestComposed testComposed(test, 1, 3.14);
+    TestComposed testComposed(test, 1, 3.14, "hello world");
 
     // the basic test works fine
     std::cout << test.serialize() << std::endl;
@@ -57,7 +63,7 @@ int main(int, char **) {
 
     testComposed.setZ(33);
     testComposed.setW(1.62);
-    testComposed.setT(Test(3, 3));
+    testComposed.setT(Test(38, 427));
 
     // thanks to the references, the elements are changed
     std::cout << testComposed.serialize() << std::endl;
@@ -68,22 +74,16 @@ int main(int, char **) {
 
     // first display, we should have the default values
     std::cout << "before deserialization:" << std::endl;
-    std::cout << "testCopy: " << std::endl;
-    std::cout << testCopy.serialize() << std::endl;
-
-    std::cout << "testComposedCopy: " << std::endl;
-    std::cout << testComposedCopy.serialize() << std::endl;
+    std::cout << "testCopy: " << testCopy.serialize() << std::endl;
+    std::cout << "testComposedCopy: " << testComposedCopy.serialize() << std::endl;
 
     testCopy.deserialize(test.serialize());
     testComposedCopy.deserialize(testComposed.serialize());
 
     // second display, the attributes in new objects have the same values as the others
     std::cout << "after deserialization:" << std::endl;
-    std::cout << "testCopy: " << std::endl;
-    std::cout << testCopy.serialize() << std::endl;
-
-    std::cout << "testComposedCopy: " << std::endl;
-    std::cout << testComposedCopy.serialize() << std::endl;
+    std::cout << "testCopy: " << testCopy.serialize() << std::endl;
+    std::cout << "testComposedCopy: " << testComposedCopy.serialize() << std::endl;
 
     return 0;
 }

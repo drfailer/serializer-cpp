@@ -1,9 +1,11 @@
 #ifndef ATTRCONTAINER_HPP
 #define ATTRCONTAINER_HPP
+#include <algorithm>
 #include <sstream>
 #include <stack>
 #include <string>
 #include <type_traits>
+#include <iostream>
 
 /******************************************************************************/
 /*                    serialize and deserialize functions                     */
@@ -13,19 +15,45 @@
 
 namespace func {
 
+/* deserialize ****************************************************************/
+
 template<typename T, decltype(std::declval<T>().deserialize(""))* = nullptr>
-std::remove_reference_t<T> deserialize(std::string str) {
+std::remove_reference_t<T> deserialize(const std::string& str) {
     std::remove_reference_t<T> t;
     t.deserialize(str);
     return t;
 }
 
 template<typename T, std::enable_if_t<std::is_fundamental_v<std::remove_reference_t<T>>>* = nullptr>
-std::remove_reference_t<T> deserialize(std::string str) {
+std::remove_reference_t<T> deserialize(const std::string& str) {
     std::remove_reference_t<T> t;
     std::istringstream(str) >> t;
     return t;
 }
+
+template<typename T, std::enable_if_t<std::is_same_v<std::remove_reference_t<T>, std::string>>* = nullptr>
+std::string deserialize(const std::string& str) {
+    std::string t = str.substr(1, str.size() - 2);
+    return t;
+}
+
+template<typename T, std::enable_if_t<std::is_pointer_v<std::remove_reference_t<T>>>* = nullptr>
+std::remove_reference_t<T> deserialize(const std::string& str) {
+    if (str == "nullptr") {
+        return nullptr;
+    }
+    using Type = typename std::remove_pointer_t<std::remove_reference_t<T>>;
+    Type *t = new Type();
+
+    if constexpr(std::is_fundamental_v<Type>) {
+        t = deserialize<std::remove_pointer_t<T>>(str);
+    } else {
+        t->deserialize(str);
+    }
+    return t;
+}
+
+/* serialize ******************************************************************/
 
 template<typename T, decltype(std::declval<T>().serialize())* = nullptr>
 std::string serialize(T& elt) {
@@ -36,6 +64,21 @@ template<typename T, std::enable_if_t<std::is_fundamental_v<T>>* = nullptr>
 std::string serialize(T& elt) {
     std::ostringstream oss;
     oss << elt;
+    return oss.str();
+}
+
+template<typename T, std::enable_if_t<std::is_pointer_v<T>>* = nullptr>
+std::string serialize(T elt) {
+    if (elt != nullptr) {
+        return serialize<std::remove_pointer_t<T>>(*elt);
+    } else {
+        return "nullptr";
+    }
+}
+
+inline std::string serialize(std::string& elt) {
+    std::ostringstream oss;
+    oss << "\"" << elt << "\"";
     return oss.str();
 }
 
@@ -50,12 +93,18 @@ inline std::size_t findEndValueIndex(std::string str, std::size_t valueStart) {
     std::stack<char> pairs;
 
     while (idx < str.size()) {
-        if (idx == ' ' && pairs.empty()) {
+        if ((str[idx] == ',' || str[idx] == ' ') && pairs.empty()) {
             return idx;
         } else if (str[idx] == '{') {
             pairs.push('}');
         } else if (str[idx] == '[') {
             pairs.push(']');
+        } else if (str[idx] == '"') {
+            if (!pairs.empty() && pairs.top() == '"') {
+                pairs.pop();
+            } else {
+                pairs.push('"');
+            }
         } else if (!pairs.empty() && str[idx] == pairs.top()) {
             pairs.pop();
         }
@@ -65,11 +114,7 @@ inline std::size_t findEndValueIndex(std::string str, std::size_t valueStart) {
 }
 
 inline std::size_t nextId(const std::string& str) {
-    std::size_t idx = str.find(",") + 1;
-    while (idx < str.size() && str[idx] == ' ') {
-        idx++;
-    }
-    return idx;
+    return str.find(",") + 2; // ..., id
 }
 
 /******************************************************************************/
@@ -106,7 +151,8 @@ struct AttrContainer<H, Types...> {
         std::size_t idxName = str.find(name);
         std::size_t idxValue = idxName + name.size() + 2;
         std::size_t idxEnd = findEndValueIndex(str, idxValue);
-        reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd));
+        std::cout << "value: " << str.substr(idxValue, idxEnd - idxValue) << std::endl;
+        reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd - idxValue));
         next.deserialize(str);
     }
 
@@ -140,7 +186,8 @@ struct AttrContainer<H> {
         std::size_t idxName = str.find(name);
         std::size_t idxValue = idxName + name.size() + 2;
         std::size_t idxEnd = findEndValueIndex(str, idxValue);
-        reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd));
+        std::cout << "value: " << str.substr(idxValue, idxEnd - idxValue) << std::endl;
+        reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd - idxValue));
     }
 
     /* constructor ************************************************************/
