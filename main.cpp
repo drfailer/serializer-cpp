@@ -24,19 +24,25 @@ private:
 };
 
 /* Test class that contains a stringifiable subclass **************************/
-class TestComposed : public Serializable<Test, int, double, std::string, int*, double*> {
+class TestComposed : public Serializable<Test, int, double, std::string, int*, double*, Test*> {
 public:
     TestComposed(const Test& _t = Test(0, 0), int _z = 0, double _w = 0, const std::string& _str = ""):
-        serializable(t, z, w, str, simple_nullptr, simple_ptr), t(_t), z(_z), w(_w), str(_str) {
-            /* simple_ptr = new double; */
-            /* *simple_ptr = 1.9; */
-        }
-    ~TestComposed() = default;
+        serializable(t, z, w, str, simple_nullptr, simple_ptr, test_ptr),
+        t(_t), z(_z), w(_w), str(_str) {
+        simple_ptr = new double;
+        *simple_ptr = 1.9;
+    }
+    ~TestComposed() {
+        delete simple_ptr;
+        delete test_ptr;
+    }
 
     /* accessors **************************************************************/
     void setZ(int newZ) { z = newZ; }
     void setW(double newW) { w = newW; }
     void setT(const Test& newT) { t = newT; }
+    void setSimple_ptr(double val) { *simple_ptr = val; }
+    void setTest_ptr(Test* test) { test_ptr = test; }
 
 private :
     Test t;
@@ -45,6 +51,7 @@ private :
     std::string str;
     int *simple_nullptr = nullptr;
     double *simple_ptr = nullptr;
+    Test *test_ptr = nullptr;
 };
 
 /******************************************************************************/
@@ -64,6 +71,8 @@ int main(int, char **) {
     testComposed.setZ(33);
     testComposed.setW(1.62);
     testComposed.setT(Test(38, 427));
+    testComposed.setSimple_ptr(9.5);
+    testComposed.setTest_ptr(new Test(3, 8));
 
     // thanks to the references, the elements are changed
     std::cout << testComposed.serialize() << std::endl;

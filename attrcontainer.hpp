@@ -46,7 +46,7 @@ std::remove_reference_t<T> deserialize(const std::string& str) {
     Type *t = new Type();
 
     if constexpr(std::is_fundamental_v<Type>) {
-        t = deserialize<std::remove_pointer_t<T>>(str);
+        *t = deserialize<Type>(str);
     } else {
         t->deserialize(str);
     }
@@ -151,8 +151,15 @@ struct AttrContainer<H, Types...> {
         std::size_t idxName = str.find(name);
         std::size_t idxValue = idxName + name.size() + 2;
         std::size_t idxEnd = findEndValueIndex(str, idxValue);
-        std::cout << "value: " << str.substr(idxValue, idxEnd - idxValue) << std::endl;
-        reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd - idxValue));
+
+        if constexpr(std::is_pointer_v<H>) {
+            if (reference != nullptr) {
+                delete reference;
+            }
+            reference = func::deserialize<H&>(str.substr(idxValue, idxEnd - idxValue));
+        } else {
+            reference = func::deserialize<H&>(str.substr(idxValue, idxEnd - idxValue));
+        }
         next.deserialize(str);
     }
 
@@ -186,7 +193,16 @@ struct AttrContainer<H> {
         std::size_t idxName = str.find(name);
         std::size_t idxValue = idxName + name.size() + 2;
         std::size_t idxEnd = findEndValueIndex(str, idxValue);
-        std::cout << "value: " << str.substr(idxValue, idxEnd - idxValue) << std::endl;
+
+        if constexpr(std::is_pointer_v<H>) {
+            if (reference != nullptr) {
+                delete reference;
+            }
+            reference = func::deserialize<H&>(str.substr(idxValue, idxEnd - idxValue));
+        } else {
+            reference = func::deserialize<H&>(str.substr(idxValue, idxEnd - idxValue));
+        }
+
         reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd - idxValue));
     }
 
