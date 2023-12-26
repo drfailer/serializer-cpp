@@ -8,6 +8,53 @@
 #include <iostream>
 
 /******************************************************************************/
+/*                              helper functions                              */
+/******************************************************************************/
+
+inline std::size_t findEndValueIndex(std::string str, std::size_t valueStart) {
+    std::size_t idx = valueStart;
+    std::stack<char> pairs;
+
+    while (idx < str.size()) {
+        if ((str[idx] == ',' || str[idx] == ' ') && pairs.empty()) {
+            return idx;
+        } else if (str[idx] == '{') {
+            pairs.push('}');
+        } else if (str[idx] == '[') {
+            pairs.push(']');
+        } else if (str[idx] == '"') {
+            if (!pairs.empty() && pairs.top() == '"') {
+                pairs.pop();
+            } else {
+                pairs.push('"');
+            }
+        } else if (!pairs.empty() && str[idx] == pairs.top()) {
+            pairs.pop();
+        }
+        idx++;
+    }
+    return idx;
+}
+
+inline std::size_t nextId(const std::string& str) {
+    return str.find(",") + 2; // ..., id
+}
+
+// sorted container
+template<template<typename> class Container, typename T,
+    decltype(std::declval<Container<T>>().insert(T()))* = nullptr>
+void insert(Container<T>& container, T element) {
+    container.insert(element);
+}
+
+// sequence container
+template<template<typename> class Container, typename T,
+    decltype(std::declval<Container<T>>().push_back(T()))* = nullptr>
+void insert(Container<T>& container, T element) {
+    container.push_back(element);
+}
+
+/******************************************************************************/
 /*                    serialize and deserialize functions                     */
 /******************************************************************************/
 
@@ -50,14 +97,25 @@ std::remove_reference_t<T> deserialize(const std::string& str) {
 template<typename T>
 using base_t = typename std::remove_const_t<std::remove_reference_t<T>>;
 
+template<typename T>
+using iter_value_t = typename base_t<T>::iterator::value_type;
+
 template< typename T, typename base_t<T>::iterator* = nullptr,
     std::enable_if_t<!std::is_same_v<base_t<T>, std::string>>* = nullptr,
-    std::enable_if_t<!std::is_pointer_v<typename base_t<T>::iterator::value_type>
-                || std::is_fundamental_v<std::remove_pointer_t<typename base_t<T>::iterator::value_type>>>* = nullptr
+    std::enable_if_t<!std::is_pointer_v<iter_value_t<T>>
+                || std::is_fundamental_v<std::remove_pointer_t<iter_value_t<T>>>>* = nullptr
     >
 base_t<T> deserialize(const std::string& str) {
     base_t<T> result;
-    std::cout << "-----------------------------------------> value for iterable: " << str << std::endl;
+    std::size_t valueStart = 2;
+    std::size_t valueEnd;
+
+    while (valueStart < str.size()) {
+        valueEnd = findEndValueIndex(str, valueStart);
+        insert(result, deserialize<iter_value_t<T>>(str.substr(valueStart, valueEnd - valueStart)));
+        valueStart = valueEnd + 2; // value1, value2
+    }
+
     return result;
 }
 
@@ -98,12 +156,15 @@ template<
     >
 std::string serialize(const Container<T>& elts) {
     std::ostringstream oss;
+    auto it = elts.begin();
 
-    oss << "[ ";
-    for (auto elt : elts) {
-        oss << serialize(elt) << ", ";
+    if (it != elts.end()) {
+        oss << "[ ";
+        for (; it != elts.end() - 1; it++) {
+            oss << serialize(*it) << ", ";
+        }
+        oss << serialize(*it) << " ]";
     }
-    oss << "]";
     return oss.str();
 }
 
@@ -114,39 +175,6 @@ inline std::string serialize(std::string& elt) {
 }
 
 } // end namespace func
-
-/******************************************************************************/
-/*                              helper functions                              */
-/******************************************************************************/
-
-inline std::size_t findEndValueIndex(std::string str, std::size_t valueStart) {
-    std::size_t idx = valueStart;
-    std::stack<char> pairs;
-
-    while (idx < str.size()) {
-        if ((str[idx] == ',' || str[idx] == ' ') && pairs.empty()) {
-            return idx;
-        } else if (str[idx] == '{') {
-            pairs.push('}');
-        } else if (str[idx] == '[') {
-            pairs.push(']');
-        } else if (str[idx] == '"') {
-            if (!pairs.empty() && pairs.top() == '"') {
-                pairs.pop();
-            } else {
-                pairs.push('"');
-            }
-        } else if (!pairs.empty() && str[idx] == pairs.top()) {
-            pairs.pop();
-        }
-        idx++;
-    }
-    return idx;
-}
-
-inline std::size_t nextId(const std::string& str) {
-    return str.find(",") + 2; // ..., id
-}
 
 /******************************************************************************/
 /*                            attribute container                             */
