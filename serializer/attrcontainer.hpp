@@ -31,12 +31,6 @@ std::remove_reference_t<T> deserialize(const std::string& str) {
     return t;
 }
 
-template<typename T, std::enable_if_t<std::is_same_v<std::remove_reference_t<T>, std::string>>* = nullptr>
-std::string deserialize(const std::string& str) {
-    std::string t = str.substr(1, str.size() - 2);
-    return t;
-}
-
 template<typename T, std::enable_if_t<std::is_pointer_v<std::remove_reference_t<T>>>* = nullptr>
 std::remove_reference_t<T> deserialize(const std::string& str) {
     if (str == "nullptr") {
@@ -50,6 +44,26 @@ std::remove_reference_t<T> deserialize(const std::string& str) {
     } else {
         t->deserialize(str);
     }
+    return t;
+}
+
+template<typename T>
+using base_t = typename std::remove_const_t<std::remove_reference_t<T>>;
+
+template< typename T, typename base_t<T>::iterator* = nullptr,
+    std::enable_if_t<!std::is_same_v<base_t<T>, std::string>>* = nullptr,
+    std::enable_if_t<!std::is_pointer_v<typename base_t<T>::iterator::value_type>
+                || std::is_fundamental_v<std::remove_pointer_t<typename base_t<T>::iterator::value_type>>>* = nullptr
+    >
+base_t<T> deserialize(const std::string& str) {
+    base_t<T> result;
+    std::cout << "-----------------------------------------> value for iterable: " << str << std::endl;
+    return result;
+}
+
+template<typename T, std::enable_if_t<std::is_same_v<std::remove_reference_t<T>, std::string>>* = nullptr>
+std::string deserialize(const std::string& str) {
+    std::string t = str.substr(1, str.size() - 2);
     return t;
 }
 
@@ -74,6 +88,23 @@ std::string serialize(T elt) {
     } else {
         return "nullptr";
     }
+}
+
+template<
+    template<typename> class Container, typename T,
+    typename Container<T>::iterator* = nullptr,
+    std::enable_if_t<!std::is_pointer_v<T>
+                || std::is_fundamental_v<std::remove_pointer_t<T>>>* = nullptr
+    >
+std::string serialize(const Container<T>& elts) {
+    std::ostringstream oss;
+
+    oss << "[ ";
+    for (auto elt : elts) {
+        oss << serialize(elt) << ", ";
+    }
+    oss << "]";
+    return oss.str();
 }
 
 inline std::string serialize(std::string& elt) {
@@ -156,9 +187,9 @@ struct AttrContainer<H, Types...> {
             if (reference != nullptr) {
                 delete reference;
             }
-            reference = func::deserialize<H&>(str.substr(idxValue, idxEnd - idxValue));
+            reference = func::deserialize<H>(str.substr(idxValue, idxEnd - idxValue));
         } else {
-            reference = func::deserialize<H&>(str.substr(idxValue, idxEnd - idxValue));
+            reference = func::deserialize<H>(str.substr(idxValue, idxEnd - idxValue));
         }
         next.deserialize(str);
     }
@@ -198,9 +229,9 @@ struct AttrContainer<H> {
             if (reference != nullptr) {
                 delete reference;
             }
-            reference = func::deserialize<H&>(str.substr(idxValue, idxEnd - idxValue));
+            reference = func::deserialize<H>(str.substr(idxValue, idxEnd - idxValue));
         } else {
-            reference = func::deserialize<H&>(str.substr(idxValue, idxEnd - idxValue));
+            reference = func::deserialize<H>(str.substr(idxValue, idxEnd - idxValue));
         }
 
         reference = func::deserialize<decltype(reference)>(str.substr(idxValue, idxEnd - idxValue));

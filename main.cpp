@@ -1,5 +1,6 @@
 #include <iostream>
-#include "serializable.hpp"
+#include "serializer/serializable.hpp"
+#include <vector>
 
 /******************************************************************************/
 /*                                test classes                                */
@@ -24,10 +25,10 @@ private:
 };
 
 /* Test class that contains a stringifiable subclass **************************/
-class TestComposed : public Serializable<Test, int, double, std::string, int*, double*, Test*> {
+class TestComposed : public Serializable<Test, int, double, std::string, int*, double*, Test*, std::vector<int>> {
 public:
     TestComposed(const Test& _t = Test(0, 0), int _z = 0, double _w = 0, const std::string& _str = ""):
-        serializable(t, z, w, str, simple_nullptr, simple_ptr, test_ptr),
+        serializable(t, z, w, str, simple_nullptr, simple_ptr, test_ptr, vec),
         t(_t), z(_z), w(_w), str(_str) {
         simple_ptr = new double;
         *simple_ptr = 1.9;
@@ -43,6 +44,7 @@ public:
     void setT(const Test& newT) { t = newT; }
     void setSimple_ptr(double val) { *simple_ptr = val; }
     void setTest_ptr(Test* test) { test_ptr = test; }
+    void push_back(int v) { vec.push_back(v); }
 
 private :
     Test t;
@@ -52,6 +54,7 @@ private :
     int *simple_nullptr = nullptr;
     double *simple_ptr = nullptr;
     Test *test_ptr = nullptr;
+    std::vector<int> vec;
 };
 
 /******************************************************************************/
@@ -73,6 +76,8 @@ int main(int, char **) {
     testComposed.setT(Test(38, 427));
     testComposed.setSimple_ptr(9.5);
     testComposed.setTest_ptr(new Test(3, 8));
+    testComposed.push_back(1);
+    testComposed.push_back(2);
 
     // thanks to the references, the elements are changed
     std::cout << testComposed.serialize() << std::endl;
