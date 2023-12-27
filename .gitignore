@@ -1,3 +1,5 @@
 build
 prog
 .gdb_history
+.cache/clangd/index
+compile_commands.json
