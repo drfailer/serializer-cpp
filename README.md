@@ -53,8 +53,7 @@ int main(int argc, char **argv) {
 
 This method relies a lot on SFINAE, which means that a lot of conversion
 functions have been written. However, even if this simple library tries to be
-very generic, some types may not be handled properly. If there is any problem,
-the `handlers` namespace can be extended.
+very generic, some types may not be handled properly.
 
 ### Polymorphism
 
@@ -67,3 +66,6 @@ Here containers are detected with iterators. If a collection of elements has to
 be serialized, it must be iterable and it has to store only non-pointer types or
 pointers on fundamental types. This is due to the fact that polymophic types
 can not be handled.
+
+For now, **only sequential access containers like `std::vector` are handled**.
+The library should be completed to be able to handle maps, ...

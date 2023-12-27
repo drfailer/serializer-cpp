@@ -4,6 +4,8 @@ project(serializer)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+add_compile_options(-Wall -Wextra -g)
+
 ################################################################################
 # variables                                                                    #
 ################################################################################

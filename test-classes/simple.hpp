@@ -9,7 +9,7 @@ class Simple : public Serializable<int, int> {
     ~Simple() = default;
 
     /* copy *******************************************************************/
-    Simple operator=(const Simple &other) {
+    Simple operator=(const Simple &other) { // this is required for deserialization
         x = other.x;
         y = other.y;
         return *this;
@@ -25,5 +25,9 @@ class Simple : public Serializable<int, int> {
     int x;
     int y;
 };
+
+inline bool operator==(const Simple& lhs, const Simple& rhs) {
+    return lhs.getX() == rhs.getX() && lhs.getY() == rhs.getY();
+}
 
 #endif

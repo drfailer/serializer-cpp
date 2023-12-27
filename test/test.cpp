@@ -1,8 +1,10 @@
 #include "catch.hpp"
 #include "test-classes/composed.hpp"
 #include "test-classes/simple.hpp"
+#include "test-classes/withcontainer.hpp"
 #include "test-classes/withpointers.hpp"
 #include "test-classes/withstring.hpp"
+#include <iostream>
 #include <string>
 
 /******************************************************************************/
@@ -162,8 +164,45 @@ TEST_CASE ( "serialization/deserialisation with POINTERS ATTRIBUTE" ) {
 /*                  serialization with a container attribute                  */
 /******************************************************************************/
 
+/*
+ * NOTE: there is a probleme with precission for doubles.
+ */
 TEST_CASE ( "serialization/deserialisation with ITERABLES ATTRIBUTE" ) {
-    // TODO
+    WithContainer original;
+    WithContainer other;
+    std::string result;
+
+    // adding elements in containers
+    for (int i = 0; i < 10; ++i) {
+        original.addInt(i);
+        original.addDouble(double(i));
+        original.addSimple(Simple(i, 2 * i));
+    }
+
+    REQUIRE(original.getEmptyVec().size() == 0);
+    REQUIRE(other.getEmptyVec().size() == 0);
+    REQUIRE(original.getVec().size() == 10);
+    REQUIRE(original.getLst().size() == 10);
+    REQUIRE(original.getClassVec().size() == 10);
+    REQUIRE(other.getVec().size() == 0);
+    REQUIRE(other.getLst().size() == 0);
+    REQUIRE(other.getClassVec().size() == 0);
+
+    result = original.serialize();
+    other.deserialize(result);
+
+    std::cout << result << std::endl;
+
+    REQUIRE(other.getEmptyVec().size() == 0);
+    for (int i = 0; i < 10; ++i) {
+        REQUIRE(original.getVec()[i] == other.getVec()[i]);
+        REQUIRE(original.getClassVec()[i] == other.getClassVec()[i]);
+    }
+
+    auto it = original.getLst().begin();
+    for (double d : other.getLst()) {
+        REQUIRE(d == *it++);
+    }
 }
 
 /******************************************************************************/
