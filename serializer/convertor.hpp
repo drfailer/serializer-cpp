@@ -140,11 +140,11 @@ struct Convertor {
         auto it = elts.begin();
 
         if (it != elts.end()) {
-            oss << "[ ";
-            for (; it != elts.end() - 1; it++) {
-                oss << serialize(*it) << ", ";
+            oss << "[ " << *it++; // TODO: commencer par le premier (-1 par supporté pour les listes)
+            for (; it != elts.end(); it++) {
+                oss << ", " << serialize(*it);
             }
-            oss << serialize(*it) << " ]";
+            oss << " ]";
         }
         return oss.str();
     }
