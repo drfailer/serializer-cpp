@@ -20,9 +20,9 @@ public:
     ~Serializer() = default;
 
     /* serialize **************************************************************/
-    std::string serialize() const {
+    std::string serialize(std::string className) const {
         std::ostringstream oss;
-        oss << "{ " << container.serialize(convertor) << " }";
+        oss << "{ __CLASS_NAME__: " << className << ", " << container.serialize(convertor) << " }";
         return oss.str();
     }
 
