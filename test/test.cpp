@@ -1,4 +1,5 @@
 #include "catch.hpp"
+#include "serializer/parser.hpp"
 #include "test-classes/composed.hpp"
 #include "test-classes/simple.hpp"
 #include "test-classes/withcontainer.hpp"
@@ -190,8 +191,6 @@ TEST_CASE ( "serialization/deserialisation with ITERABLES ATTRIBUTE" ) {
 
     result = original.serialize();
     other.deserialize(result);
-
-    std::cout << result << std::endl;
 
     REQUIRE(other.getEmptyVec().size() == 0);
     for (int i = 0; i < 10; ++i) {

@@ -34,7 +34,7 @@ template <typename H, typename... Types> struct AttrContainer<H, Types...> {
 
     /* deserialize ************************************************************/
     void deserialize(const std::string &str, Convertor *convertor) {
-        std::size_t idxName = str.find(name);
+        std::size_t idxName = str.find(name + ": "); // TODO: problem here -> add a function to the parser
         std::size_t idxValue = idxName + name.size() + 2;
         std::size_t idxEnd = findEndValueIndex(str, idxValue);
 
@@ -75,7 +75,7 @@ template <typename H> struct AttrContainer<H> {
 
     /* deserialize ************************************************************/
     void deserialize(const std::string &str, Convertor *convertor) {
-        std::size_t idxName = str.find(name);
+        std::size_t idxName = str.find(name + ": "); // TODO: problem here -> add a function to the parser
         std::size_t idxValue = idxName + name.size() + 2;
         std::size_t idxEnd = findEndValueIndex(str, idxValue);
 
