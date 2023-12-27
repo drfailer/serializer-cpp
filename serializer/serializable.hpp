@@ -1,7 +1,8 @@
 #ifndef SERIALIZABLE_HPP
 #define SERIALIZABLE_HPP
-#include <sstream>
+#include "convertor.hpp"
 #include "serializer.hpp"
+#include <sstream>
 
 /******************************************************************************/
 /*                               stringifiable                                */
@@ -10,25 +11,25 @@
 // macro for calling the constructor
 #define serializable(...) Serializable(__VA_ARGS__, #__VA_ARGS__)
 
-template<typename ...Types>
-class Serializable {
-public:
+template <typename... Types> class Serializable {
+  public:
     /* constructor & destructor ***********************************************/
-    Serializable(Types& ...vars, std::string varsStr):
-        serializer(vars..., varsStr) { }
-    virtual ~Serializable() { }
+    Serializable(Types &...vars, std::string varsStr)
+        : serializer(vars..., varsStr) {}
+    virtual ~Serializable() {}
 
     /* serialize **************************************************************/
-    std::string serialize() const {
-        return serializer.serialize();
-    }
+    std::string serialize() const { return serializer.serialize(); }
 
     /* deserialize  ***********************************************************/
-    void deserialize(const std::string& str) {
-        serializer.deserialize(str);
+    void deserialize(const std::string &str) { serializer.deserialize(str); }
+
+    /* set convertor **********************************************************/
+    void setConvertor(Convertor *convertor) {
+        serializer.setConvertor(convertor);
     }
 
-private:
+  private:
     Serializer<Types...> serializer;
 };
 
@@ -36,8 +37,9 @@ private:
 /*                                 functions                                  */
 /******************************************************************************/
 
-template<typename ...Types>
-inline std::ostream& operator<<(std::ostream& os, const Serializable<Types...>& s) {
+template <typename... Types>
+inline std::ostream &operator<<(std::ostream &os,
+                                const Serializable<Types...> &s) {
     os << s.serialize();
     return os;
 }
