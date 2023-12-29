@@ -1,6 +1,6 @@
 #include "catch.hpp"
-#include "serializer/parser.hpp"
 #include "test-classes/composed.hpp"
+#include "test-classes/polymorphic.hpp"
 #include "test-classes/simple.hpp"
 #include "test-classes/withcontainer.hpp"
 #include "test-classes/withpointers.hpp"
@@ -209,5 +209,22 @@ TEST_CASE ( "serialization/deserialisation with ITERABLES ATTRIBUTE" ) {
 /******************************************************************************/
 
 TEST_CASE ( "implementing a convertor" ) {
-    // TODO
+    AbstractCollection original;
+    AbstractCollection other;
+    std::string result;
+
+    original.push_back(new Concrete1(1, 2.9));
+    original.push_back(new Concrete2("hello world"));
+
+    REQUIRE(original.getElements().size() == 2);
+    REQUIRE(other.getElements().size() == 0);
+
+    result = original.serialize();
+    other.deserialize(result);
+
+    REQUIRE(other.getElements().size() == original.getElements().size());
+    auto it = other.getElements().begin();
+    for (SuperAbstract* sa : original.getElements()) {
+        REQUIRE(*sa == *it++);
+    }
 }
