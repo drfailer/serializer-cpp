@@ -80,6 +80,7 @@ using iter_value_t = typename base_t<T>::iterator::value_type;
         return t;                                                              \
     }                                                                          \
                                                                                \
+    /*  NOTE: this one may not work all the time (need more test) */           \
     template <typename T, std::enable_if_t<                                    \
                               std::is_pointer_v<std::remove_reference_t<T>> && \
                               !std::is_abstract_v<std::remove_pointer_t<       \

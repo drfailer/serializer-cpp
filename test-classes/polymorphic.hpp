@@ -3,9 +3,7 @@
 #include "serializer/convertor.hpp"
 #include "serializer/parser.hpp"
 #include "serializer/serializer.hpp"
-#include "test-classes/simple.hpp"
 #include <iostream>
-#include <type_traits>
 #include <vector>
 
 /******************************************************************************/
@@ -88,6 +86,7 @@ class Concrete2 : public SuperAbstract {
 /*                                 convertor                                  */
 /******************************************************************************/
 
+/* we use a custom convertor for handling generics */
 struct AbstractCollectionConvertor {
     CONVERTOR;
 
