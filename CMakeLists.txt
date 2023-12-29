@@ -11,10 +11,9 @@ add_compile_options(-Wall -Wextra -g)
 ################################################################################
 
 set(serializer_files
-    ${CMAKE_SOURCE_DIR}/serializer/parser.cpp ${CMAKE_SOURCE_DIR}/serializer/parser.hpp
+    ${CMAKE_SOURCE_DIR}/serializer/parser.hpp
     ${CMAKE_SOURCE_DIR}/serializer/convertor.hpp
     ${CMAKE_SOURCE_DIR}/serializer/serializer.hpp
-    ${CMAKE_SOURCE_DIR}/serializer/serializable.hpp
     ${CMAKE_SOURCE_DIR}/serializer/attrcontainer.hpp
     )
 
