@@ -1,49 +1,45 @@
 # C++ serializer generation
 
-The purpose of this project is to automate serialization of C++ classes. In
-order for a class to be serializable, it must inherit from the `Serializable`
-class. It is a template class where template parameters are the types of the
-attributes that have to be serialized. As shown in the following example, we
-want to serialize the `Test` class that is composed by two integers `x` and `y`.
-In the example, the `Serializable` template is of type `<int, int>`.
+The purpose of this project is to use templates to automate generation of
+serialization and deserialisation methods for C++ classes.
 
-To generate the code properly, the `serializable` macro must be used in the
-constructor parameter list. This macro will help to generate identifiers of the
-attributes. For example, `serializable(x, y)` will allow the serialization of
-the attributes `x` and `y` with the identifiers `"x"` and `"y"`. If `this->x`
-is used instead of `x`, the identifier will be `"this->x"`. Notice that the
-deserialization will work anyway.
+## How to use
 
-Working with composed classes will work fine as long as all the subclasses are
-serializable.
+To generate code, the target class must use the `SERIALIZABLE` macro. This is a
+variadic macro function that takes the types of the attributes that will be
+serialized. Then we use the `SERIALIZER` macro function that takes the
+attributes to serialize as argument. This will transfer references to the
+serialized attributes. After this two things have been done, we can use,
+`serialize` and `deserialize` methods on the objects.
 
-## Example
+The `serialize` method returns a `std::string` and the `deserialize` method
+takes a `std::string` as argument and update the attributes of the object.
+
+### Example for a simple class
 
 ```cpp
-#include "serializable.hpp"
+class Simple {
+    SERIALIZABLE(int, int); // this class can be serialized
+  public:
+    // we have to call the SERIALIZER in the constructor parameters list
+    Simple(int _x = 0, int _y = 0) : SERIALIZER(x, y), x(_x), y(_y) {}
+    Simple(const Simple &other) : Simple(other.x, other.y) {}
+    ~Simple() = default;
 
-class Test : public Serializable<int, int> {
-public:
-    Test(int _x = 0, int _y = 0) : serializable(x, y), x(_x), y(_y) { }
-    Test(const Test& other): Test(other.x, other.y) { }
-    ~Test() = default;
-
-private:
+  private:
     int x;
     int y;
 };
 
-int main(int argc, char **argv) {
-    Test test1(1, 2);
-    Test test2();
+void main(int argc, char** argv) {
+    Simple s1(1, 2);
+    Simple s2;
+    std::string result;
 
-    // serialize a test
-    std::string test1Str = test1.serialize();
+    result = s.serialize();
+    s2.deserialize(result);
 
-    // we can extract the information from the string
-    test2.deserialization(test1Str);
-
-    return 0;
+    // s1 == s2
 }
 ```
 
@@ -53,7 +49,8 @@ int main(int argc, char **argv) {
 
 This method relies a lot on SFINAE, which means that a lot of conversion
 functions have been written. However, even if this simple library tries to be
-very generic, some types may not be handled properly.
+very generic, some types may not be handled properly. The library allow to
+create custom functions manually if required.
 
 ### Polymorphism
 
