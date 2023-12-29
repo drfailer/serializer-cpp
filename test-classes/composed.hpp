@@ -1,12 +1,13 @@
 #ifndef COMPOSED_HPP
 #define COMPOSED_HPP
-#include "serializer/serializable.hpp"
+#include "serializer/serializer.hpp"
 #include "test-classes/simple.hpp"
 
-class Composed : public Serializable<Simple, int, double> {
+class Composed {
+    SERIALIZABLE(Simple, int, double);
   public:
     Composed(const Simple &_s = Simple(0, 0), int _z = 0, double _w = 0.0)
-        : serializable(s, z, w), s(_s), z(_z), w(_w) {}
+        : SERIALIZER(s, z, w), s(_s), z(_z), w(_w) {}
     ~Composed() {}
 
     /* accessors **************************************************************/

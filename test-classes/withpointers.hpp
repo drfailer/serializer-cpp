@@ -1,12 +1,13 @@
 #ifndef WITHPOINTERS_HPP
 #define WITHPOINTERS_HPP
-#include "serializer/serializable.hpp"
+#include "serializer/serializer.hpp"
 #include "test-classes/simple.hpp"
 
-class WithPointers : public Serializable<int *, double *, Simple *> {
+class WithPointers {
+    SERIALIZABLE(int *, double *, Simple *);
   public:
     WithPointers(Simple *_classPointer)
-        : serializable(nullPointer, fundamentalPointer, classPointer),
+        : SERIALIZER(nullPointer, fundamentalPointer, classPointer),
           classPointer(_classPointer) {
         fundamentalPointer = new double;
         *fundamentalPointer = 1.9;

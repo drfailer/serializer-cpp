@@ -1,12 +1,13 @@
 #ifndef WITHSTRING_HPP
 #define WITHSTRING_HPP
-#include "serializer/serializable.hpp"
+#include "serializer/serializer.hpp"
 #include <string>
 
-class WithString : public Serializable<int, std::string> {
+class WithString {
+    SERIALIZABLE(int, std::string);
   public:
     WithString(int _x, std::string _str)
-        : serializable(x, str), x(_x), str(_str) {}
+        : SERIALIZER(x, str), x(_x), str(_str) {}
     ~WithString() = default;
 
     /* accessors **************************************************************/

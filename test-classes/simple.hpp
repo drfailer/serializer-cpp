@@ -1,10 +1,11 @@
 #ifndef SIMPLE_HPP
 #define SIMPLE_HPP
-#include "serializer/serializable.hpp"
+#include "serializer/serializer.hpp"
 
-class Simple : public Serializable<int, int> {
+class Simple {
+    SERIALIZABLE(int, int);
   public:
-    Simple(int _x = 0, int _y = 0) : serializable(x, y), x(_x), y(_y) {}
+    Simple(int _x = 0, int _y = 0) : SERIALIZER(x, y), x(_x), y(_y) {}
     Simple(const Simple &other) : Simple(other.x, other.y) {}
     ~Simple() = default;
 

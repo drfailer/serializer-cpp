@@ -12,27 +12,23 @@
 // macro for calling the constructor
 #define serializable(...) Serializable(__VA_ARGS__, #__VA_ARGS__, typeid(*this).name())
 
+// TODO: remove this or make it abstract and non template
 template <typename... Types> class Serializable {
   public:
     /* constructor & destructor ***********************************************/
     Serializable(Types &...vars, std::string varsStr, std::string className)
-        : serializer(vars..., varsStr), className(className) {}
+        : _serializer(vars..., varsStr, className) {}
+    Serializable() { }
     virtual ~Serializable() {}
 
     /* serialize **************************************************************/
-    std::string serialize() const { return serializer.serialize(className); }
+    virtual std::string serialize() const { return _serializer.serialize(); }
 
     /* deserialize  ***********************************************************/
-    void deserialize(const std::string &str) { serializer.deserialize(str); }
-
-    /* set convertor **********************************************************/
-    void setConvertor(Convertor *convertor) {
-        serializer.setConvertor(convertor);
-    }
+    virtual void deserialize(const std::string &str) { _serializer.deserialize(str); }
 
   private:
-    Serializer<Types...> serializer;
-    std::string className;
+    Serializer<Types...> _serializer;
 };
 
 /******************************************************************************/
