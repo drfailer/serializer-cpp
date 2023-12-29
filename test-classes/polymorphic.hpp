@@ -18,7 +18,7 @@ class SuperAbstract {
     virtual ~SuperAbstract() {}
 
     virtual void method() = 0;
-    virtual bool operator==(const SuperAbstract*) const = 0;
+    virtual bool operator==(const SuperAbstract *) const = 0;
 };
 
 /******************************************************************************/
@@ -42,8 +42,8 @@ class Concrete1 : public SuperAbstract {
     void method() override { std::cout << "Concrete1" << std::endl; }
 
     /* operator== *************************************************************/
-    bool operator==(const SuperAbstract* other) const override {
-        if (const Concrete1* c = dynamic_cast<const Concrete1*>(other)) {
+    bool operator==(const SuperAbstract *other) const override {
+        if (const Concrete1 *c = dynamic_cast<const Concrete1 *>(other)) {
             return x == c->x && y == c->y;
         }
         return false;
@@ -73,8 +73,8 @@ class Concrete2 : public SuperAbstract {
     void method() override { std::cout << "Concrete2" << std::endl; }
 
     /* operator== *************************************************************/
-    bool operator==(const SuperAbstract* other) const override {
-        if (const Concrete2* c = dynamic_cast<const Concrete2*>(other)) {
+    bool operator==(const SuperAbstract *other) const override {
+        if (const Concrete2 *c = dynamic_cast<const Concrete2 *>(other)) {
             return str == c->str;
         }
         return false;
@@ -91,17 +91,17 @@ class Concrete2 : public SuperAbstract {
 struct AbstractCollectionConvertor {
     CONVERTOR;
 
-    template <typename T, std::enable_if_t<std::is_same_v<
-                              base_t<T>, SuperAbstract *>> * = nullptr>
-    static SuperAbstract *deserialize(const std::string &str) {
+    /* deserialize function for SuperAbstract* type */
+    deserialize_custom_type(SuperAbstract *, const std::string &str) {
         std::string className = getClassName(str);
         SuperAbstract *out = nullptr;
 
-        if (className == typeid(Concrete1).name()) {
+        // we use class_name to find out the concrete type of element
+        if (className == class_name(Concrete1)) {
             Concrete1 *c1 = new Concrete1();
             c1->deserialize(str);
             out = c1;
-        } else if (className == typeid(Concrete2).name()) {
+        } else if (className == class_name(Concrete2)) {
             Concrete2 *c2 = new Concrete2();
             c2->deserialize(str);
             out = c2;
@@ -109,10 +109,10 @@ struct AbstractCollectionConvertor {
         return out;
     }
 
-    static std::string serialize(SuperAbstract* elt) {
-        if (Concrete1* c1 = dynamic_cast<Concrete1*>(elt)) {
+    static std::string serialize(SuperAbstract *elt) {
+        if (Concrete1 *c1 = dynamic_cast<Concrete1 *>(elt)) {
             return c1->serialize();
-        } else if (Concrete2* c2 = dynamic_cast<Concrete2*>(elt)) {
+        } else if (Concrete2 *c2 = dynamic_cast<Concrete2 *>(elt)) {
             return c2->serialize();
         }
         return "nullptr";

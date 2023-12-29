@@ -186,4 +186,22 @@ struct Convertor {
     CONVERTOR;
 };
 
+/******************************************************************************/
+/*                               helper macros                                */
+/******************************************************************************/
+
+/* facilitate the creation of a custom deserialize function for a specific type.
+ *
+ * Example:
+ * serialize_custom_type(MyType, const std::string str) {
+ *     ...
+ * }
+ */
+#define deserialize_custom_type(Type, input)                                   \
+    template <typename T,                                                      \
+              std::enable_if_t<std::is_same_v<base_t<T>, Type>> * = nullptr>   \
+    static Type deserialize(input)
+
+#define class_name(Type) typeid(Type).name()
+
 #endif
