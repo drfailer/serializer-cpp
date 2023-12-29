@@ -240,3 +240,42 @@ TEST_CASE("implementing a convertor (polymorphic class serialization)") {
         REQUIRE(*sa == *it++);
     }
 }
+
+/******************************************************************************/
+/*                                using files                                 */
+/******************************************************************************/
+
+TEST_CASE("serialization/deserialisation in a FILE") {
+    Simple original(10, 20);
+    Simple other(0, 0);
+
+    REQUIRE(original.getX() != other.getX());
+    REQUIRE(original.getY() != other.getY());
+
+    original.serializeFile("test_serialize.txt");
+    other.deserializeFile("test_serialize.txt");
+
+    // the serialisation and deserialisation work
+    REQUIRE(original.getX() == other.getX());
+    REQUIRE(original.getY() == other.getY());
+
+    original.setX(3); // modify an attribute
+
+    REQUIRE(original.getX() != other.getX());
+
+    original.serializeFile("test_serialize.txt");
+    other.deserializeFile("test_serialize.txt");
+
+    // the modification is taken in count by the serializer (references)
+    REQUIRE(original.getX() == other.getX());
+
+    original.setX(28);
+    original.setY(32);
+    Simple copied = original;
+
+    original.serializeFile("test_serialize.txt");
+    other.deserializeFile("test_serialize.txt");
+
+    REQUIRE(original.getX() == other.getX());
+    REQUIRE(original.getY() == other.getY());
+}
