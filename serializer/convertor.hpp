@@ -103,7 +103,9 @@ using iter_value_t = typename base_t<T>::iterator::value_type;
                                                                                \
     template <typename T, typename base_t<T>::iterator * = nullptr,            \
               std::enable_if_t<!std::is_same_v<base_t<T>, std::string>> * =    \
-                  nullptr>                                                     \
+                  nullptr, /* we have to make sure that the iterable value is  \
+                              serializable */                                  \
+              decltype(deserialize<iter_value_t<T>>) * = nullptr>              \
     static base_t<T> deserialize(const std::string &str) {                     \
         base_t<T> result;                                                      \
         std::size_t valueStart = 2;                                            \
@@ -156,7 +158,8 @@ using iter_value_t = typename base_t<T>::iterator::value_type;
     }                                                                          \
                                                                                \
     template <template <typename> class Container, typename T,                 \
-              typename Container<T>::iterator * = nullptr>                     \
+              typename Container<T>::iterator * = nullptr,                     \
+              decltype(serialize<T>) * = nullptr>                              \
     static std::string serialize(const Container<T> &elts) {                   \
         std::ostringstream oss;                                                \
         auto it = elts.begin();                                                \

@@ -88,7 +88,6 @@ class Concrete2 : public SuperAbstract {
 
 /* we use a custom convertor for handling generics */
 struct AbstractCollectionConvertor {
-    CONVERTOR;
 
     /* deserialize function for SuperAbstract* type */
     deserialize_custom_type(SuperAbstract *, const std::string &str) {
@@ -116,6 +115,8 @@ struct AbstractCollectionConvertor {
         }
         return "nullptr";
     }
+
+    CONVERTOR;
 };
 
 /******************************************************************************/
