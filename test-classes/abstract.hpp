@@ -1,7 +1,6 @@
 #ifndef ABSTRACT_HPP
 #define ABSTRACT_HPP
 #include "serializer/convertor.hpp"
-#include "serializer/parser.hpp"
 #include "serializer/serializer.hpp"
 #include <iostream>
 #include <vector>
@@ -11,6 +10,7 @@
 /******************************************************************************/
 
 class SuperAbstract {
+    SERIALIZABLE_EMPTY();
   public:
     SuperAbstract() {}
     virtual ~SuperAbstract() {}
@@ -24,7 +24,7 @@ class SuperAbstract {
 /******************************************************************************/
 
 class Concrete1 : public SuperAbstract {
-    SERIALIZABLE(int, double);
+    SERIALIZABLE_SUPER(SuperAbstract, int, double);
 
   public:
     Concrete1(int _x = 0, double _y = 0) : SERIALIZER(x, y), x(_x), y(_y) {}
@@ -57,7 +57,7 @@ class Concrete1 : public SuperAbstract {
 /******************************************************************************/
 
 class Concrete2 : public SuperAbstract {
-    SERIALIZABLE(std::string);
+    SERIALIZABLE_SUPER(SuperAbstract, std::string);
 
   public:
     Concrete2(const std::string &_str = "") : SERIALIZER(str), str(_str) {}
@@ -88,34 +88,7 @@ class Concrete2 : public SuperAbstract {
 
 /* we use a custom convertor for handling generics */
 struct AbstractCollectionConvertor {
-
-    /* deserialize function for SuperAbstract* type */
-    deserialize_custom_type(SuperAbstract *, const std::string &str) {
-        std::string className = getClassName(str);
-        SuperAbstract *out = nullptr;
-
-        // we use class_name to find out the concrete type of element
-        if (className == class_name(Concrete1)) {
-            Concrete1 *c1 = new Concrete1();
-            c1->deserialize(str);
-            out = c1;
-        } else if (className == class_name(Concrete2)) {
-            Concrete2 *c2 = new Concrete2();
-            c2->deserialize(str);
-            out = c2;
-        }
-        return out;
-    }
-
-    static std::string serialize(SuperAbstract *elt) {
-        if (Concrete1 *c1 = dynamic_cast<Concrete1 *>(elt)) {
-            return c1->serialize();
-        } else if (Concrete2 *c2 = dynamic_cast<Concrete2 *>(elt)) {
-            return c2->serialize();
-        }
-        return "nullptr";
-    }
-
+    DESERIALIZE_POLYMORPHIC(SuperAbstract, Concrete1, Concrete2);
     CONVERTOR;
 };
 

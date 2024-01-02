@@ -71,7 +71,8 @@ class Class2 : public SuperClass {
     SERIALIZABLE_SUPER(SuperClass, std::string);
 
   public:
-    Class2(const std::string &name = "", int age = 0, const std::string &_str = "")
+    Class2(const std::string &name = "", int age = 0,
+           const std::string &_str = "")
         : SuperClass(name, age), SERIALIZER(str), str(_str) {}
     ~Class2() = default;
 
@@ -97,25 +98,7 @@ class Class2 : public SuperClass {
 
 /* we use a custom convertor for handling generics */
 struct SuperConvertor {
-
-    /* deserialize function for SuperClass* type */
-    deserialize_custom_type(SuperClass *, const std::string &str) {
-        std::string className = getThisClassName(str);
-        SuperClass *out = nullptr;
-
-        // we use class_name to find out the concrete type of element
-        if (className == class_name(Class1)) {
-            Class1 *c1 = new Class1();
-            c1->deserialize(str);
-            out = c1;
-        } else if (className == class_name(Class2)) {
-            Class2 *c2 = new Class2();
-            c2->deserialize(str);
-            out = c2;
-        }
-        return out;
-    }
-
+    DESERIALIZE_POLYMORPHIC(SuperClass, Class1, Class2);
     CONVERTOR;
 };
 
