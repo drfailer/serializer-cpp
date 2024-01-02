@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include "test-classes/composed.hpp"
+#include "test-classes/abstract.hpp"
 #include "test-classes/polymorphic.hpp"
 #include "test-classes/simple.hpp"
 #include "test-classes/withcontainer.hpp"
@@ -237,6 +238,45 @@ TEST_CASE("implementing a convertor (polymorphic class serialization)") {
     REQUIRE(other.getElements().size() == original.getElements().size());
     auto it = other.getElements().begin();
     for (SuperAbstract *sa : original.getElements()) {
+        REQUIRE(*sa == *it++);
+    }
+}
+
+/******************************************************************************/
+/*                                inheritance                                 */
+/******************************************************************************/
+
+TEST_CASE("serialize super class") {
+    SuperCollection original;
+    SuperCollection other;
+    std::string result;
+    Class1 *c1 = new Class1("John", 20, 1, 2.9);
+    Class2 *c2 = new Class2("David", 30, "hello world");
+
+    // test with super class serialization:
+
+    result = c1->serialize();
+    Class1 c11;
+    c11.deserialize(result);
+    REQUIRE(c11.serialize() == c1->serialize());
+
+    result = c2->serialize();
+    Class2 c22;
+    c22.deserialize(result);
+    REQUIRE(c22.serialize() == c2->serialize());
+
+    original.push_back(c1);
+    original.push_back(c2);
+
+    REQUIRE(original.getElements().size() == 2);
+    REQUIRE(other.getElements().size() == 0);
+
+    result = original.serialize();
+    other.deserialize(result);
+
+    REQUIRE(other.getElements().size() == original.getElements().size());
+    auto it = other.getElements().begin();
+    for (SuperClass *sa : original.getElements()) {
         REQUIRE(*sa == *it++);
     }
 }

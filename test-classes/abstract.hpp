@@ -1,48 +1,34 @@
-#ifndef POLYMORPHIC_HPP
-#define POLYMORPHIC_HPP
+#ifndef ABSTRACT_HPP
+#define ABSTRACT_HPP
 #include "serializer/convertor.hpp"
 #include "serializer/parser.hpp"
 #include "serializer/serializer.hpp"
+#include <iostream>
 #include <vector>
 
 /******************************************************************************/
 /*                               super abstract                               */
 /******************************************************************************/
 
-class SuperClass {
-    SERIALIZABLE_POLYMORPHIC(std::string, int);
-
+class SuperAbstract {
   public:
-    SuperClass(std::string _name = "", int _age = 0)
-        : SERIALIZER(name, age), name(_name), age(_age) {}
-    virtual ~SuperClass() {}
+    SuperAbstract() {}
+    virtual ~SuperAbstract() {}
 
-    virtual bool operator==(const SuperClass *other) const {
-        return name == other->name && age == other->age;
-    }
-
-    /* accessors **************************************************************/
-    void setAge(int age) { this->age = age; }
-    void setName(std::string name) { this->name = name; }
-    int getAge() const { return age; }
-    std::string getName() const { return name; }
-
-  private:
-    std::string name;
-    int age;
+    virtual void method() = 0;
+    virtual bool operator==(const SuperAbstract *) const = 0;
 };
 
 /******************************************************************************/
 /*                              concrete class 1                              */
 /******************************************************************************/
 
-class Class1 : public SuperClass {
-    SERIALIZABLE_SUPER(SuperClass, int, double);
+class Concrete1 : public SuperAbstract {
+    SERIALIZABLE(int, double);
 
   public:
-    Class1(const std::string &name = "", int age = 0, int _x = 0, double _y = 0)
-        : SuperClass(name, age), SERIALIZER(x, y), x(_x), y(_y) {}
-    ~Class1() = default;
+    Concrete1(int _x = 0, double _y = 0) : SERIALIZER(x, y), x(_x), y(_y) {}
+    ~Concrete1() = default;
 
     /* accessors **************************************************************/
     void setX(int x) { this->x = x; }
@@ -50,10 +36,13 @@ class Class1 : public SuperClass {
     int getX() const { return x; }
     double getY() const { return y; }
 
+    /* method *****************************************************************/
+    void method() override { std::cout << "Concrete1" << std::endl; }
+
     /* operator== *************************************************************/
-    bool operator==(const SuperClass *other) const override {
-        if (const Class1 *c = dynamic_cast<const Class1 *>(other)) {
-            return x == c->x && y == c->y && SuperClass::operator==(other);
+    bool operator==(const SuperAbstract *other) const override {
+        if (const Concrete1 *c = dynamic_cast<const Concrete1 *>(other)) {
+            return x == c->x && y == c->y;
         }
         return false;
     }
@@ -67,22 +56,24 @@ class Class1 : public SuperClass {
 /*                              concrete class 2                              */
 /******************************************************************************/
 
-class Class2 : public SuperClass {
-    SERIALIZABLE_SUPER(SuperClass, std::string);
+class Concrete2 : public SuperAbstract {
+    SERIALIZABLE(std::string);
 
   public:
-    Class2(const std::string &name = "", int age = 0, const std::string &_str = "")
-        : SuperClass(name, age), SERIALIZER(str), str(_str) {}
-    ~Class2() = default;
+    Concrete2(const std::string &_str = "") : SERIALIZER(str), str(_str) {}
+    ~Concrete2() = default;
 
     /* accessors **************************************************************/
     void setStr(std::string str) { this->str = str; }
     std::string getStr() const { return str; }
 
+    /* method *****************************************************************/
+    void method() override { std::cout << "Concrete2" << std::endl; }
+
     /* operator== *************************************************************/
-    bool operator==(const SuperClass *other) const override {
-        if (const Class2 *c = dynamic_cast<const Class2 *>(other)) {
-            return str == c->str && SuperClass::operator==(other);
+    bool operator==(const SuperAbstract *other) const override {
+        if (const Concrete2 *c = dynamic_cast<const Concrete2 *>(other)) {
+            return str == c->str;
         }
         return false;
     }
@@ -96,24 +87,33 @@ class Class2 : public SuperClass {
 /******************************************************************************/
 
 /* we use a custom convertor for handling generics */
-struct SuperConvertor {
+struct AbstractCollectionConvertor {
 
-    /* deserialize function for SuperClass* type */
-    deserialize_custom_type(SuperClass *, const std::string &str) {
-        std::string className = getThisClassName(str);
-        SuperClass *out = nullptr;
+    /* deserialize function for SuperAbstract* type */
+    deserialize_custom_type(SuperAbstract *, const std::string &str) {
+        std::string className = getClassName(str);
+        SuperAbstract *out = nullptr;
 
         // we use class_name to find out the concrete type of element
-        if (className == class_name(Class1)) {
-            Class1 *c1 = new Class1();
+        if (className == class_name(Concrete1)) {
+            Concrete1 *c1 = new Concrete1();
             c1->deserialize(str);
             out = c1;
-        } else if (className == class_name(Class2)) {
-            Class2 *c2 = new Class2();
+        } else if (className == class_name(Concrete2)) {
+            Concrete2 *c2 = new Concrete2();
             c2->deserialize(str);
             out = c2;
         }
         return out;
+    }
+
+    static std::string serialize(SuperAbstract *elt) {
+        if (Concrete1 *c1 = dynamic_cast<Concrete1 *>(elt)) {
+            return c1->serialize();
+        } else if (Concrete2 *c2 = dynamic_cast<Concrete2 *>(elt)) {
+            return c2->serialize();
+        }
+        return "nullptr";
     }
 
     CONVERTOR;
@@ -123,22 +123,24 @@ struct SuperConvertor {
 /*                            abstract collection                             */
 /******************************************************************************/
 
-class SuperCollection {
-    SERIALIZABLE_WITH_CONVERTOR(SuperConvertor, std::vector<SuperClass *>);
+class AbstractCollection {
+    SERIALIZABLE_WITH_CONVERTOR(AbstractCollectionConvertor,
+                                std::vector<SuperAbstract *>);
 
   public:
-    SuperCollection() : SERIALIZER(elements) {}
-    ~SuperCollection() {
+    AbstractCollection() : SERIALIZER(elements) {}
+    ~AbstractCollection() {
         for (auto elt : elements) {
             delete elt;
         }
     }
 
-    void push_back(SuperClass *element) { elements.push_back(element); }
-    const std::vector<SuperClass *> &getElements() { return elements; }
+    /* accessors **************************************************************/
+    void push_back(SuperAbstract *element) { elements.push_back(element); }
+    const std::vector<SuperAbstract *> &getElements() { return elements; }
 
   private:
-    std::vector<SuperClass *> elements;
+    std::vector<SuperAbstract *> elements;
 };
 
 #endif
