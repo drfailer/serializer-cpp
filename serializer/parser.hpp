@@ -43,18 +43,28 @@ inline std::size_t nextId(const std::string &str) {
     return str.find(",") + 2; // ..., id
 }
 
-/*
- * getClassName
- *
- * return the name of the class that is deserilized (stored in str).
- */
-inline std::string getClassName(const std::string &str) {
-    constexpr std::size_t classNameIdStartIndex = 2; // { __CLASS_NAME__:
-    constexpr std::size_t classNameIdLength = 14;    // __CLASS_NAME__
-    constexpr std::size_t valueBegin =
-        classNameIdStartIndex + classNameIdLength + 2; // : value
+inline std::string getValue(const std::string &str, const std::string &id) {
+    std::size_t idStartIdx = str.find(id + ":");
+    std::size_t idLength = id.size();
+    std::size_t valueBegin = idStartIdx + idLength + 2;
     std::size_t valueEnd = findEndValueIndex(str, valueBegin);
     return str.substr(valueBegin, valueEnd - valueBegin);
+}
+
+inline std::string getSuperValue(const std::string &str) {
+    return getValue(str, "__SUPER__");
+}
+
+inline std::string getThisValue(const std::string &str) {
+    return getValue(str, "__THIS__");
+}
+
+inline std::string getThisClassName(const std::string &str) {
+    return getValue(getThisValue(str), "__CLASS_NAME__");
+}
+
+inline std::string getClassName(const std::string &str) {
+    return getValue(str, "__CLASS_NAME__");
 }
 
 #endif
