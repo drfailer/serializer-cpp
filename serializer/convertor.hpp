@@ -81,10 +81,12 @@ using iter_value_t = typename base_t<T>::iterator::value_type;
     }                                                                          \
                                                                                \
     /*  NOTE: this one may not work all the time (need more test) */           \
-    template <typename T, std::enable_if_t<                                    \
-                              std::is_pointer_v<std::remove_reference_t<T>> && \
-                              !std::is_abstract_v<std::remove_pointer_t<       \
-                                  std::remove_reference_t<T>>>> * = nullptr>   \
+    template <typename T,                                                      \
+              std::enable_if_t<                                                \
+                  std::is_pointer_v<std::remove_reference_t<T>> &&             \
+                  !std::is_polymorphic_v<std::remove_pointer_t<base_t<T>>> &&  \
+                  !std::is_abstract_v<std::remove_pointer_t<base_t<T>>>> * =   \
+                  nullptr>                                                     \
     static std::remove_reference_t<T> deserialize(const std::string &str) {    \
         if (str == "nullptr") {                                                \
             return nullptr;                                                    \
@@ -105,7 +107,7 @@ using iter_value_t = typename base_t<T>::iterator::value_type;
               std::enable_if_t<!std::is_same_v<base_t<T>, std::string>> * =    \
                   nullptr, /* we have to make sure that the iterable value is  \
                               serializable */                                  \
-              decltype(deserialize<iter_value_t<T>>) * = nullptr>              \
+              decltype(deserialize<iter_value_t<T>>("")) * = nullptr>          \
     static base_t<T> deserialize(const std::string &str) {                     \
         base_t<T> result;                                                      \
         std::size_t valueStart = 2;                                            \
@@ -186,7 +188,6 @@ using iter_value_t = typename base_t<T>::iterator::value_type;
 
 struct Convertor {
     Convertor() = delete;
-    virtual ~Convertor() {}
     CONVERTOR;
 };
 
