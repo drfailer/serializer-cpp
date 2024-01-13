@@ -94,9 +94,6 @@ template <typename Conv, typename H> struct AttrContainer<Conv, H> {
             reference = Conv::template deserialize<H>(
                 str.substr(idxValue, idxEnd - idxValue));
         }
-
-        reference = Conv::template deserialize<decltype(reference)>(
-            str.substr(idxValue, idxEnd - idxValue));
     }
 
     /* constructor ************************************************************/
