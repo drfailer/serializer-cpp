@@ -53,8 +53,8 @@
 #define SUPER_FN_IMPL(Super)                                                   \
     std::string serialize() const override {                                   \
         std::ostringstream oss;                                                \
-        oss << "{ __SUPER__: " << Super::serialize() << ", "                   \
-            << " __THIS__: " << __serializer__.serialize() << " }";            \
+        oss << "{ __THIS__: " << __serializer__.serialize() << ", "            \
+            << "__SUPER__: " << Super::serialize() << " }";                    \
         return oss.str();                                                      \
     }                                                                          \
     void serializeFile(const std::string &fn) const override {                 \
