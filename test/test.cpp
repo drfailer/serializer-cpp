@@ -6,6 +6,7 @@
 #include "test-classes/withcontainer.hpp"
 #include "test-classes/withpointers.hpp"
 #include "test-classes/withstring.hpp"
+#include "test-classes/multipleinheritance.hpp"
 #include <iostream>
 #include <string>
 
@@ -318,4 +319,45 @@ TEST_CASE("serialization/deserialisation in a FILE") {
 
     REQUIRE(original.getX() == other.getX());
     REQUIRE(original.getY() == other.getY());
+}
+
+/******************************************************************************/
+/*                            multiple inheritance                            */
+/******************************************************************************/
+
+TEST_CASE("multiple inheritance") {
+    mi::Collection original;
+    mi::Collection other;
+    std::string result;
+    mi::Daughter1 *c1 = new mi::Daughter1(10, "test1", 2.2);
+    mi::Daughter2 *c2 = new mi::Daughter2(10, "test2", 2.2, "job");
+    mi::Daughter2 *c3 = new mi::Daughter2(10, "test3", 2.2, "other job");
+
+    // test with super class serialization:
+
+    result = c1->serialize();
+    mi::Daughter1 c11;
+    c11.deserialize(result);
+    REQUIRE(c11.serialize() == c1->serialize());
+
+    result = c2->serialize();
+    mi::Daughter2 c22;
+    c22.deserialize(result);
+    REQUIRE(c22.serialize() == c2->serialize());
+
+    original.push_back(c1);
+    original.push_back(c2);
+    original.push_back(c3);
+
+    REQUIRE(original.getElements().size() == 3);
+    REQUIRE(other.getElements().size() == 0);
+
+    result = original.serialize();
+    other.deserialize(result);
+
+    REQUIRE(other.getElements().size() == original.getElements().size());
+    auto it = other.getElements().begin();
+    for (mi::Mother *m : original.getElements()) {
+        REQUIRE(*m == *it++);
+    }
 }
