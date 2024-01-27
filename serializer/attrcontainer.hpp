@@ -18,6 +18,9 @@ template <typename Conv, typename... Types> struct AttrContainer {
         return "";
     }
     void deserialize(std::string) { }
+
+    AttrContainer() {}
+    AttrContainer(const std::string&) {}
 };
 
 /*
@@ -60,45 +63,6 @@ template <typename Conv, typename H, typename... Types> struct AttrContainer<Con
     AttrContainer(H &head, Types &...types, const std::string &idsStr)
         : reference(head), name(idsStr.substr(0, idsStr.find(","))),
           next(types..., idsStr.substr(nextId(idsStr))) {}
-};
-
-/*
- * Specialisation with one type. This specialisation doesn't have the next
- * attribute.
- */
-template <typename Conv, typename H> struct AttrContainer<Conv, H> {
-    /* attributes *************************************************************/
-    H &reference;
-    std::string name;
-
-    /* serialize **************************************************************/
-    std::string serialize() const {
-        std::ostringstream oss;
-        oss << name << ": " << Conv::serialize(reference);
-        return oss.str();
-    }
-
-    /* deserialize ************************************************************/
-    void deserialize(const std::string &str) {
-        std::size_t idxName = str.find(name + ": "); // TODO: problem here -> add a function to the parser
-        std::size_t idxValue = idxName + name.size() + 2;
-        std::size_t idxEnd = findEndValueIndex(str, idxValue);
-
-        if constexpr (std::is_pointer_v<H>) {
-            if (reference != nullptr) {
-                delete reference;
-            }
-            reference = Conv::template deserialize<H>(
-                str.substr(idxValue, idxEnd - idxValue));
-        } else {
-            reference = Conv::template deserialize<H>(
-                str.substr(idxValue, idxEnd - idxValue));
-        }
-    }
-
-    /* constructor ************************************************************/
-    AttrContainer(H &head, const std::string &idsStr)
-        : reference(head), name(idsStr) {}
 };
 
 #endif
