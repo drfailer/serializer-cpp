@@ -29,3 +29,10 @@ include_directories(${CMAKE_SOURCE_DIR})
 ################################################################################
 
 add_executable(serializer-tests ${test_files} ${serializer_files})
+
+################################################################################
+# ctest                                                                        #
+################################################################################
+
+include(CTest)
+add_test(NAME serializer COMMAND serializer-tests)
