@@ -17,9 +17,13 @@ set(serializer_files
     ${CMAKE_SOURCE_DIR}/serializer/attrcontainer.hpp
     )
 
-set(test_files
+set(serializer_test_files
     ${CMAKE_SOURCE_DIR}/test/catch.cpp
     ${CMAKE_SOURCE_DIR}/test/test.cpp
+    )
+
+set(parser_test_files
+    ${CMAKE_SOURCE_DIR}/test/catch.cpp
     ${CMAKE_SOURCE_DIR}/test/test_parser.cpp
     )
 
@@ -29,7 +33,8 @@ include_directories(${CMAKE_SOURCE_DIR})
 # executable                                                                   #
 ################################################################################
 
-add_executable(serializer-tests ${test_files} ${serializer_files})
+add_executable(serializer-tests ${serializer_test_files} ${serializer_files})
+add_executable(parser-tests ${parser_test_files} ${serializer_files})
 
 ################################################################################
 # ctest                                                                        #
@@ -37,3 +42,4 @@ add_executable(serializer-tests ${test_files} ${serializer_files})
 
 include(CTest)
 add_test(NAME serializer COMMAND serializer-tests)
+add_test(NAME parser COMMAND parser-tests)
