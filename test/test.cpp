@@ -7,6 +7,7 @@
 #include "test-classes/withpointers.hpp"
 #include "test-classes/withstring.hpp"
 #include "test-classes/multipleinheritance.hpp"
+#include "test-classes/withSmartPtr.hpp"
 #include <iostream>
 #include <string>
 
@@ -360,4 +361,25 @@ TEST_CASE("multiple inheritance") {
     for (mi::Mother *m : original.getElements()) {
         REQUIRE(*m == *it++);
     }
+}
+
+/******************************************************************************/
+/*                               smart poiters                                */
+/******************************************************************************/
+
+TEST_CASE("smart pointers") {
+    WithSmartPtr original(1, 2.3, "hello");
+    WithSmartPtr other;
+    std::string result;
+
+    REQUIRE(original.getIntPtr() != other.getIntPtr());
+    REQUIRE(original.getDoublePtr() != other.getDoublePtr());
+    REQUIRE(original.getOtherType() != other.getOtherType());
+
+    result = original.serialize();
+    other.deserialize(result);
+
+    REQUIRE(original.getIntPtr() == other.getIntPtr());
+    REQUIRE(original.getDoublePtr() == other.getDoublePtr());
+    REQUIRE(original.getOtherType() == other.getOtherType());
 }
