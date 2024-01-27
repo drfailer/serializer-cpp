@@ -8,6 +8,7 @@
 #include "test-classes/withstring.hpp"
 #include "test-classes/multipleinheritance.hpp"
 #include "test-classes/withSmartPtr.hpp"
+#include "test-classes/withenums.hpp"
 #include <iostream>
 #include <string>
 
@@ -382,4 +383,27 @@ TEST_CASE("smart pointers") {
     REQUIRE(original.getIntPtr() == other.getIntPtr());
     REQUIRE(original.getDoublePtr() == other.getDoublePtr());
     REQUIRE(original.getOtherType() == other.getOtherType());
+}
+
+/******************************************************************************/
+/*                                   enums                                    */
+/******************************************************************************/
+
+TEST_CASE("enums") {
+    WithEnums original("str", SUNDAY, VISUAL, DndClasses::ROGUE);
+    WithEnums other;
+    std::string result;
+
+    REQUIRE(original.getNormalType() != other.getNormalType());
+    REQUIRE(original.getDay() != other.getDay());
+    REQUIRE(original.getMode() != other.getMode());
+    REQUIRE(original.getClass() != other.getClass());
+
+    result = original.serialize();
+    other.deserialize(result);
+
+    REQUIRE(original.getNormalType() == other.getNormalType());
+    REQUIRE(original.getDay() == other.getDay());
+    REQUIRE(original.getMode() == other.getMode());
+    REQUIRE(original.getClass() == other.getClass());
 }
