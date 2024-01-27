@@ -179,6 +179,14 @@ constexpr bool is_unique_v =
         return t;                                                              \
     }                                                                          \
                                                                                \
+    template <typename T, std::enable_if_t<std::is_enum_v<T>> * = nullptr>     \
+    static T deserialize(const std::string &str) {                             \
+        std::istringstream iss(str);                                           \
+        std::underlying_type_t<T> out;                                         \
+        iss >> out;                                                            \
+        return (T)out;                                                         \
+    }                                                                          \
+                                                                               \
     /* serialize ***********************************************************/  \
                                                                                \
     template <typename T, decltype(std::declval<T>().serialize()) * = nullptr> \
@@ -207,7 +215,7 @@ constexpr bool is_unique_v =
         }                                                                      \
     }                                                                          \
                                                                                \
-    template <typename SP, std::enable_if_t<is_smart_ptr_v<SP>>* = nullptr>    \
+    template <typename SP, std::enable_if_t<is_smart_ptr_v<SP>> * = nullptr>   \
     static std::string serialize(SP &elt) {                                    \
         if (elt != nullptr) {                                                  \
             if constexpr (std::is_abstract_v<typename SP::element_type>) {     \
@@ -234,6 +242,14 @@ constexpr bool is_unique_v =
             }                                                                  \
             oss << " ]";                                                       \
         }                                                                      \
+        return oss.str();                                                      \
+    }                                                                          \
+                                                                               \
+    template <typename T, std::enable_if_t<std::is_enum_v<T>> * = nullptr>     \
+    static inline std::string serialize(T &elt) {                              \
+        std::ostringstream oss;                                                \
+        std::underlying_type_t<T> v = (std::underlying_type_t<T>)elt;          \
+        oss << v;                                                              \
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
