@@ -2,6 +2,7 @@
 #define HANDLERS_HPP
 #include "parser.hpp"
 #include <algorithm>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -40,6 +41,33 @@ using base_t = typename std::remove_const_t<std::remove_reference_t<T>>;
 
 template <typename T>
 using iter_value_t = typename base_t<T>::iterator::value_type;
+
+template <typename SP> struct is_shared : std::false_type {};
+
+template <typename T> struct is_shared<std::shared_ptr<T>> : std::true_type {};
+
+template <typename SP> struct is_unique : std::false_type {};
+
+template <typename T> struct is_unique<std::unique_ptr<T>> : std::true_type {};
+
+template <typename SP> struct is_smart : std::false_type {};
+
+template <typename T> struct is_smart<std::shared_ptr<T>> : std::true_type {};
+
+template <typename T> struct is_smart<std::unique_ptr<T>> : std::true_type {};
+
+template <typename SP> using is_smart_t = typename is_smart<SP>::type;
+
+template <typename SP>
+constexpr bool is_smart_ptr_v = std::is_same_v<is_smart_t<SP>, std::true_type>;
+
+template <typename SP>
+constexpr bool is_shared_v =
+    std::is_same_v<typename is_shared<SP>::type, std::true_type>;
+
+template <typename SP>
+constexpr bool is_unique_v =
+    std::is_same_v<typename is_unique<SP>::type, std::true_type>;
 
 /******************************************************************************/
 /*                      default convertor implementation                      */
@@ -103,6 +131,26 @@ using iter_value_t = typename base_t<T>::iterator::value_type;
         return t;                                                              \
     }                                                                          \
                                                                                \
+    template <typename SP, std::enable_if_t<is_smart_ptr_v<SP>> * = nullptr>   \
+    static SP deserialize(const std::string &str) {                            \
+        if (str == "nullptr") {                                                \
+            return nullptr;                                                    \
+        }                                                                      \
+        SP t;                                                                  \
+        if constexpr (is_shared_v<SP>) {                                       \
+            t = std::make_shared<typename SP::element_type>();                 \
+        } else if constexpr (is_unique_v<SP>) {                                \
+            t = std::make_unique<typename SP::element_type>();                 \
+        }                                                                      \
+                                                                               \
+        if constexpr (std::is_fundamental_v<typename SP::element_type>) {      \
+            *t = deserialize<typename SP::element_type>(str);                  \
+        } else {                                                               \
+            t->deserialize(str);                                               \
+        }                                                                      \
+        return t;                                                              \
+    }                                                                          \
+                                                                               \
     template <typename T, typename base_t<T>::iterator * = nullptr,            \
               std::enable_if_t<!std::is_same_v<base_t<T>, std::string>> * =    \
                   nullptr, /* we have to make sure that the iterable value is  \
@@ -159,6 +207,19 @@ using iter_value_t = typename base_t<T>::iterator::value_type;
         }                                                                      \
     }                                                                          \
                                                                                \
+    template <typename SP, std::enable_if_t<is_smart_ptr_v<SP>>* = nullptr>    \
+    static std::string serialize(SP &elt) {                                    \
+        if (elt != nullptr) {                                                  \
+            if constexpr (std::is_abstract_v<typename SP::element_type>) {     \
+                return elt->serialize();                                       \
+            } else {                                                           \
+                return serialize<typename SP::element_type>(*elt);             \
+            }                                                                  \
+        } else {                                                               \
+            return "nullptr";                                                  \
+        }                                                                      \
+    }                                                                          \
+                                                                               \
     template <template <typename> class Container, typename T,                 \
               typename Container<T>::iterator * = nullptr,                     \
               decltype(serialize<T>) * = nullptr>                              \
@@ -207,8 +268,7 @@ struct Convertor {
               std::enable_if_t<std::is_same_v<base_t<T>, Type>> * = nullptr>   \
     static Type deserialize(input)
 
-#define serialize_custom_type(input)                                           \
-    static std::string serialize(input)
+#define serialize_custom_type(input) static std::string serialize(input)
 
 #define class_name(Type) typeid(Type).name()
 
