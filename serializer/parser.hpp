@@ -43,11 +43,29 @@ inline std::size_t nextId(const std::string &str) {
     return str.find(",") + 2; // ..., id
 }
 
-inline std::string getValue(const std::string &str, const std::string &id) {
-    std::size_t idStartIdx = str.find(id + ":");
+/*
+ * Return the value of the with the key `id` in the serialized string.
+ */
+inline std::string getValue(const std::string &str, const std::string &id,
+        bool strIsDefault = false) {
+    std::string_view sv = str;
     std::size_t idLength = id.size();
-    std::size_t valueBegin = idStartIdx + idLength + 2;
-    std::size_t valueEnd = findEndValueIndex(str, valueBegin);
+    std::size_t valueBegin, valueEnd;
+    std::size_t idStartIdx = 2; // { __firstid__: ... }
+
+    // find the beginning of the string
+    while (sv.substr(idStartIdx, idLength) != id) {
+        valueBegin = sv.find(":", idStartIdx) + 2;
+        idStartIdx = findEndValueIndex(str, valueBegin) + 2;
+
+        if (idStartIdx >= str.size()) {
+            return strIsDefault ? str : "";
+        }
+    }
+
+    // get the value
+    valueBegin = idStartIdx + idLength + 2;
+    valueEnd = findEndValueIndex(str, valueBegin);
     return str.substr(valueBegin, valueEnd - valueBegin);
 }
 
@@ -56,7 +74,7 @@ inline std::string getSuperValue(const std::string &str) {
 }
 
 inline std::string getThisValue(const std::string &str) {
-    return getValue(str, "__THIS__");
+    return getValue(str, "__THIS__", true);
 }
 
 inline std::string getThisClassName(const std::string &str) {

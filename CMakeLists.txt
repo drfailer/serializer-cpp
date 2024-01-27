@@ -20,6 +20,7 @@ set(serializer_files
 set(test_files
     ${CMAKE_SOURCE_DIR}/test/catch.cpp
     ${CMAKE_SOURCE_DIR}/test/test.cpp
+    ${CMAKE_SOURCE_DIR}/test/test_parser.cpp
     )
 
 include_directories(${CMAKE_SOURCE_DIR})
