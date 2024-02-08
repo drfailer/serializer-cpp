@@ -2,6 +2,7 @@
 #define PARSER_HPP
 #include <stack>
 #include <string>
+#include <utility>
 
 /*
  * findEndValueIndex
@@ -83,6 +84,19 @@ inline std::string getThisClassName(const std::string &str) {
 
 inline std::string getClassName(const std::string &str) {
     return getValue(str, "__CLASS_NAME__");
+}
+
+inline std::pair<std::string, std::string> parsePair(const std::string& str) {
+    std::string elt1;
+    std::string elt2;
+    std::size_t begin = 2;
+    std::size_t end = findEndValueIndex(str, begin);
+
+    elt1 = str.substr(begin, end - begin);
+    begin = end + 2;
+    end = str.size() - 2;
+    elt2 = str.substr(begin, end - begin);
+    return std::make_pair(elt1, elt2);
 }
 
 #endif
