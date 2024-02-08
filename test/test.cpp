@@ -414,14 +414,16 @@ TEST_CASE("enums") {
 /******************************************************************************/
 
 TEST_CASE("pairs") {
-    WithPair original(1, 2, "hello", "world");
+    WithPair original(1, 2, "hello", "world", Simple(10, 20), Composed(Simple(10, 20), 3, 3.14));
     WithPair other;
     std::string result;
 
     REQUIRE(original.getIntPair().first != other.getIntPair().first);
     REQUIRE(original.getIntPair().second != other.getIntPair().second);
     REQUIRE(original.getStringPair().first != other.getStringPair().first);
-    REQUIRE(original.getStringPair().second != other.getStringPair().second);
+    REQUIRE(original.getStringPair().first != other.getStringPair().first);
+    REQUIRE(original.getObjPair().second != other.getObjPair().second);
+    REQUIRE(original.getObjPair().second != other.getObjPair().second);
 
     result = original.serialize();
     other.deserialize(result);
@@ -430,4 +432,6 @@ TEST_CASE("pairs") {
     REQUIRE(original.getIntPair().second == other.getIntPair().second);
     REQUIRE(original.getStringPair().first == other.getStringPair().first);
     REQUIRE(original.getStringPair().second == other.getStringPair().second);
+    REQUIRE(original.getObjPair().second == other.getObjPair().second);
+    REQUIRE(original.getObjPair().second == other.getObjPair().second);
 }

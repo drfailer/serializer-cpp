@@ -31,4 +31,8 @@ inline bool operator==(const Simple& lhs, const Simple& rhs) {
     return lhs.getX() == rhs.getX() && lhs.getY() == rhs.getY();
 }
 
+inline bool operator!=(const Simple &lhs, const Simple &rhs) {
+    return !(lhs == rhs);
+}
+
 #endif
