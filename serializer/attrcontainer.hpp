@@ -36,7 +36,9 @@ template <typename Conv, typename H, typename... Types> struct AttrContainer<Con
     std::string serialize() const {
         std::ostringstream oss;
         oss << name << ": " << Conv::serialize(reference);
-        oss << ", " << next.serialize();
+        if constexpr(sizeof...(Types) > 0) {
+            oss << ", " << next.serialize();
+        }
         return oss.str();
     }
 
