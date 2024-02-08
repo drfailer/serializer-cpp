@@ -25,7 +25,7 @@
 template <template <typename> class Container, typename T,
           decltype(std::declval<Container<T>>().insert(std::declval<T>())) * =
               nullptr>
-void insert(Container<T> &container, T element) {
+void insert(Container<T> &container, const T &element) {
     container.insert(element);
 }
 
@@ -33,7 +33,7 @@ void insert(Container<T> &container, T element) {
 template <template <typename> class Container, typename T,
           decltype(std::declval<Container<T>>().push_back(
               std::declval<T>())) * = nullptr>
-void insert(Container<T> &container, T element) {
+void insert(Container<T> &container, const T &element) {
     container.push_back(element);
 }
 
@@ -191,14 +191,15 @@ template <typename T> constexpr bool is_pair_v = is_pair<T>::value;
     }                                                                          \
                                                                                \
     template <typename T, std::enable_if_t<is_pair_v<T>> * = nullptr>          \
-    static base_t<T> deserialize(const std::string &str) {                     \
+    static T deserialize(const std::string &str) {                             \
         using first_type = typename T::first_type;                             \
         using second_type = typename T::second_type;                           \
         std::pair<std::string, std::string> content = parsePair(str);          \
-        first_type elt1 = deserialize<first_type>(content.first);              \
-        second_type elt2 = deserialize<second_type>(content.second);           \
-        std::pair<first_type, second_type> p = std::make_pair(elt1, elt2);     \
-        return p;                                                              \
+        first_type elt1 =                                                      \
+            deserialize<std::remove_const_t<first_type>>(content.first);       \
+        second_type elt2 =                                                     \
+            deserialize<std::remove_const_t<second_type>>(content.second);     \
+        return T(elt1, elt2);                                                  \
     }                                                                          \
                                                                                \
     template <typename T, std::enable_if_t<std::is_enum_v<T>> * = nullptr>     \
@@ -268,7 +269,7 @@ template <typename T> constexpr bool is_pair_v = is_pair<T>::value;
     }                                                                          \
                                                                                \
     template <typename T, std::enable_if_t<is_pair_v<T>> * = nullptr>          \
-    static std::string serialize(T &elt) {                                     \
+    static std::string serialize(const T &elt) {                               \
         std::ostringstream oss;                                                \
         oss << "{ " << serialize(elt.first) << ", " << serialize(elt.second)   \
             << " }";                                                           \
@@ -276,14 +277,14 @@ template <typename T> constexpr bool is_pair_v = is_pair<T>::value;
     }                                                                          \
                                                                                \
     template <typename T, std::enable_if_t<std::is_enum_v<T>> * = nullptr>     \
-    static std::string serialize(T &elt) {                                     \
+    static std::string serialize(const T &elt) {                               \
         std::ostringstream oss;                                                \
         std::underlying_type_t<T> v = (std::underlying_type_t<T>)elt;          \
         oss << v;                                                              \
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
-    static inline std::string serialize(std::string &elt) {                    \
+    static inline std::string serialize(const std::string &elt) {              \
         std::ostringstream oss;                                                \
         oss << "\"" << elt << "\"";                                            \
         return oss.str();                                                      \

@@ -435,3 +435,30 @@ TEST_CASE("pairs") {
     REQUIRE(original.getObjPair().second == other.getObjPair().second);
     REQUIRE(original.getObjPair().second == other.getObjPair().second);
 }
+
+/******************************************************************************/
+/*                                    map                                     */
+/******************************************************************************/
+
+/* not working yet */
+/* #include "test-classes/withMap.hpp" */
+/* TEST_CASE("map") { */
+/*     WithMap original; */
+/*     WithMap other; */
+/*     std::string result; */
+
+/*     REQUIRE(original.getMap().size() == 0); */
+/*     REQUIRE(other.getMap().size() == 0); */
+
+/*     original.insert("hello", "pouf"); */
+/*     original.insert("world", "pouf"); */
+
+/*     REQUIRE(original.getMap().size() == 2); */
+
+/*     result = original.serialize(); */
+/*     other.deserialize(result); */
+
+/*     REQUIRE(other.getMap().size() == 2); */
+/*     REQUIRE(other.getMap().at("hello") == "pouf"); */
+/*     REQUIRE(other.getMap().at("world") == "pouf"); */
+/* } */
