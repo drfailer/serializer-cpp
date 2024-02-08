@@ -9,6 +9,7 @@
 #include "test-classes/multipleinheritance.hpp"
 #include "test-classes/withSmartPtr.hpp"
 #include "test-classes/withenums.hpp"
+#include "test-classes/withPair.hpp"
 #include <iostream>
 #include <string>
 
@@ -406,4 +407,27 @@ TEST_CASE("enums") {
     REQUIRE(original.getDay() == other.getDay());
     REQUIRE(original.getMode() == other.getMode());
     REQUIRE(original.getClass() == other.getClass());
+}
+
+/******************************************************************************/
+/*                                   pairs                                    */
+/******************************************************************************/
+
+TEST_CASE("pairs") {
+    WithPair original(1, 2, "hello", "world");
+    WithPair other;
+    std::string result;
+
+    REQUIRE(original.getIntPair().first != other.getIntPair().first);
+    REQUIRE(original.getIntPair().second != other.getIntPair().second);
+    REQUIRE(original.getStringPair().first != other.getStringPair().first);
+    REQUIRE(original.getStringPair().second != other.getStringPair().second);
+
+    result = original.serialize();
+    other.deserialize(result);
+
+    REQUIRE(original.getIntPair().first == other.getIntPair().first);
+    REQUIRE(original.getIntPair().second == other.getIntPair().second);
+    REQUIRE(original.getStringPair().first == other.getStringPair().first);
+    REQUIRE(original.getStringPair().second == other.getStringPair().second);
 }
