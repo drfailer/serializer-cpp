@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 /*
  * The convertor contains serialize and deserialize template functions that are
@@ -68,6 +69,16 @@ constexpr bool is_shared_v =
 template <typename SP>
 constexpr bool is_unique_v =
     std::is_same_v<typename is_unique<SP>::type, std::true_type>;
+
+template <typename T> struct is_pair {
+    static const bool value = false;
+};
+
+template <typename T1, typename T2> struct is_pair<std::pair<T1, T2>> {
+    static const bool value = true;
+};
+
+template <typename T> constexpr bool is_pair_v = is_pair<T>::value;
 
 /******************************************************************************/
 /*                      default convertor implementation                      */
@@ -179,6 +190,17 @@ constexpr bool is_unique_v =
         return t;                                                              \
     }                                                                          \
                                                                                \
+    template <typename T, std::enable_if_t<is_pair_v<T>> * = nullptr>          \
+    static base_t<T> deserialize(const std::string &str) {                     \
+        using first_type = typename T::first_type;                             \
+        using second_type = typename T::second_type;                           \
+        std::pair<std::string, std::string> content = parsePair(str);          \
+        first_type elt1 = deserialize<first_type>(content.first);              \
+        second_type elt2 = deserialize<second_type>(content.second);           \
+        std::pair<first_type, second_type> p = std::make_pair(elt1, elt2);     \
+        return p;                                                              \
+    }                                                                          \
+                                                                               \
     template <typename T, std::enable_if_t<std::is_enum_v<T>> * = nullptr>     \
     static T deserialize(const std::string &str) {                             \
         std::istringstream iss(str);                                           \
@@ -245,8 +267,16 @@ constexpr bool is_unique_v =
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
+    template <typename T, std::enable_if_t<is_pair_v<T>> * = nullptr>          \
+    static std::string serialize(T &elt) {                                     \
+        std::ostringstream oss;                                                \
+        oss << "{ " << serialize(elt.first) << ", " << serialize(elt.second)   \
+            << " }";                                                           \
+        return oss.str();                                                      \
+    }                                                                          \
+                                                                               \
     template <typename T, std::enable_if_t<std::is_enum_v<T>> * = nullptr>     \
-    static inline std::string serialize(T &elt) {                              \
+    static std::string serialize(T &elt) {                                     \
         std::ostringstream oss;                                                \
         std::underlying_type_t<T> v = (std::underlying_type_t<T>)elt;          \
         oss << v;                                                              \
