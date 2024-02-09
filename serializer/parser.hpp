@@ -3,6 +3,11 @@
 #include <stack>
 #include <string>
 #include <utility>
+#include <map>
+
+/******************************************************************************/
+/*                         general parsing functions                          */
+/******************************************************************************/
 
 /*
  * findEndValueIndex
@@ -36,6 +41,37 @@ inline std::size_t findEndValueIndex(const std::string &str,
 }
 
 /*
+ * parseOneLvl
+ *
+ * Parse on level of a serialized object string. Parsing on level means that we
+ * only treat ids and values in the current brackets without treating nested
+ * elements ("{ level }", "{ id: { nested element } }").
+ */
+inline std::map<std::string, std::string> parseOneLvl(const std::string& str) {
+    std::map<std::string, std::string> result;
+    std::size_t idx = 2; // { ...
+    std::size_t end;
+
+    while (idx < str.size() - 1) {
+        /* withdraw the id */
+        end = str.find(':', idx);
+        // if we remove the spaces in the serialized string, this won't be a
+        // problem anymore:
+        if (end >= str.size()) break; // security for the empty serilizer (there
+                                      // is an empty value at the end)
+        std::string id = str.substr(idx, end - idx);
+
+        /* withdraw the value */
+        idx += id.size() + 2; // id: ...
+        end = findEndValueIndex(str, idx);
+        std::string value = str.substr(idx, end - idx);
+        idx = end + 2;
+        result.insert(std::make_pair(id, value));
+    }
+    return result;
+}
+
+/*
  * nextId
  *
  * find the index of the nex identifier in str.
@@ -43,6 +79,10 @@ inline std::size_t findEndValueIndex(const std::string &str,
 inline std::size_t nextId(const std::string &str) {
     return str.find(",") + 2; // ..., id
 }
+
+/******************************************************************************/
+/*                                 get values                                 */
+/******************************************************************************/
 
 /*
  * Return the value of the with the key `id` in the serialized string.
@@ -85,6 +125,10 @@ inline std::string getThisClassName(const std::string &str) {
 inline std::string getClassName(const std::string &str) {
     return getValue(str, "__CLASS_NAME__");
 }
+
+/******************************************************************************/
+/*                                   pairs                                    */
+/******************************************************************************/
 
 inline std::pair<std::string, std::string> parsePair(const std::string& str) {
     std::string elt1;
