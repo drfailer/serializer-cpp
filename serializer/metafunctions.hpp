@@ -1,6 +1,7 @@
 #ifndef METAFUNCTIONS_HPP
 #define METAFUNCTIONS_HPP
 #include <memory>
+#include <string>
 #include <type_traits>
 
 /******************************************************************************/
@@ -12,6 +13,41 @@ using base_t = typename std::remove_const_t<std::remove_reference_t<T>>;
 
 template <typename T>
 using iter_value_t = typename base_t<T>::iterator::value_type;
+
+/******************************************************************************/
+/*                                  pointers                                  */
+/******************************************************************************/
+
+template <typename T>
+constexpr bool is_concrete_ptr =
+    std::is_pointer_v<std::remove_reference_t<T>> &&
+    !std::is_polymorphic_v<std::remove_pointer_t<base_t<T>>> &&
+    !std::is_abstract_v<std::remove_pointer_t<base_t<T>>>;
+
+/******************************************************************************/
+/*                                   string                                   */
+/******************************************************************************/
+
+template <typename T>
+constexpr bool is_string_v =
+    std::is_same_v<std::remove_reference_t<T>, std::string>;
+
+/******************************************************************************/
+/*                                  iterator                                  */
+/******************************************************************************/
+
+/* non functional yet */
+/* template <typename T, typename U = void> */
+/* struct is_iterable : std::false_type {}; */
+
+/* template <typename T> */
+/* struct is_iterable<T, typename base_t<T>::iterator> : std::true_type {}; */
+
+/* template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value; */
+
+/* template <typename T> */
+/* constexpr bool is_deserializable_iterator_v = */
+/*     !is_string_v<T> && is_iterable_v<T>; */
 
 /******************************************************************************/
 /*                               smart pointers                               */

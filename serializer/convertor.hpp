@@ -1,7 +1,7 @@
 #ifndef HANDLERS_HPP
 #define HANDLERS_HPP
-#include "parser.hpp"
 #include "metafunctions.hpp"
+#include "parser.hpp"
 #include <algorithm>
 #include <sstream>
 #include <string>
@@ -68,21 +68,15 @@ void insert(Container<T> &container, const T &element) {
         return t;                                                              \
     }                                                                          \
                                                                                \
-    template <typename T, std::enable_if_t<std::is_fundamental_v<              \
-                              std::remove_reference_t<T>>> * = nullptr>        \
-    static std::remove_reference_t<T> deserialize(const std::string &str) {    \
-        std::remove_reference_t<T> t;                                          \
+    template <typename T,                                                      \
+              std::enable_if_t<std::is_fundamental_v<T>> * = nullptr>          \
+    static T deserialize(const std::string &str) {                             \
+        T t;                                                                   \
         std::istringstream(str) >> t;                                          \
         return t;                                                              \
     }                                                                          \
                                                                                \
-    /*  NOTE: this one may not work all the time (need more test) */           \
-    template <typename T,                                                      \
-              std::enable_if_t<                                                \
-                  std::is_pointer_v<std::remove_reference_t<T>> &&             \
-                  !std::is_polymorphic_v<std::remove_pointer_t<base_t<T>>> &&  \
-                  !std::is_abstract_v<std::remove_pointer_t<base_t<T>>>> * =   \
-                  nullptr>                                                     \
+    template <typename T, std::enable_if_t<is_concrete_ptr<T>> * = nullptr>    \
     static std::remove_reference_t<T> deserialize(const std::string &str) {    \
         if (str == "nullptr") {                                                \
             return nullptr;                                                    \
@@ -120,7 +114,7 @@ void insert(Container<T> &container, const T &element) {
     }                                                                          \
                                                                                \
     template <typename T, typename base_t<T>::iterator * = nullptr,            \
-              std::enable_if_t<!std::is_same_v<base_t<T>, std::string>> * =    \
+              std::enable_if_t<!is_string_v<T>> * =                            \
                   nullptr, /* we have to make sure that the iterable value is  \
                               serializable */                                  \
               decltype(deserialize<iter_value_t<T>>("")) * = nullptr>          \
@@ -139,9 +133,7 @@ void insert(Container<T> &container, const T &element) {
         return result;                                                         \
     }                                                                          \
                                                                                \
-    template <typename T,                                                      \
-              std::enable_if_t<std::is_same_v<std::remove_reference_t<T>,      \
-                                              std::string>> * = nullptr>       \
+    template <typename T, std::enable_if_t<is_string_v<T>> * = nullptr>        \
     static std::string deserialize(const std::string &str) {                   \
         std::string t = str.substr(1, str.size() - 2);                         \
         return t;                                                              \
