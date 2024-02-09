@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include "serializer/parser.hpp"
+#include <map>
 #include <string>
 
 /******************************************************************************/
@@ -78,4 +79,47 @@ TEST_CASE("parsePair") {
     /* with objects */
     REQUIRE(withObjects_result.first == "{ element11: test, element12: { sub } }");
     REQUIRE(withObjects_result.second == "{ element2: { sub } }");
+}
+
+/******************************************************************************/
+/*                            test parse one level                            */
+/******************************************************************************/
+
+TEST_CASE("parseOneLvl") {
+    std::map<std::string, std::string> result;
+
+    /* normal */
+    result = parseOneLvl(normal);
+    REQUIRE(result.size() == 2);
+    REQUIRE(result.find("__CLASS_NAME__") != result.end());
+    REQUIRE(result.at("__CLASS_NAME__") == "N2mi9Daughter1E");
+    REQUIRE(result.find("money") != result.end());
+    REQUIRE(result.at("money") == "2.2");
+    result.clear();
+
+    /* with more values */
+    result = parseOneLvl("{ number: 1, string: \"hello\", pair: { 1, 2 }, double: 3.3, array: [ 1, 2, 3 ], objArray: [ { obj }, { obj } ] }");
+    REQUIRE(result.size() == 6);
+    REQUIRE(result.find("number") != result.end());
+    REQUIRE(result.at("number") == "1");
+    REQUIRE(result.find("string") != result.end());
+    REQUIRE(result.at("string") == "\"hello\"");
+    REQUIRE(result.find("pair") != result.end());
+    REQUIRE(result.at("pair") == "{ 1, 2 }");
+    REQUIRE(result.find("double") != result.end());
+    REQUIRE(result.at("double") == "3.3");
+    REQUIRE(result.find("array") != result.end());
+    REQUIRE(result.at("array") == "[ 1, 2, 3 ]");
+    REQUIRE(result.find("objArray") != result.end());
+    REQUIRE(result.at("objArray") == "[ { obj }, { obj } ]");
+    result.clear();
+
+    /* with nested elements (should not happend normally but it is still important) */
+    result = parseOneLvl(withMultipleSuper);
+    REQUIRE(result.size() == 2);
+    REQUIRE(result.find("__THIS__") != result.end());
+    REQUIRE(result.at("__THIS__") == "{ __CLASS_NAME__: N2mi9Daughter2E, jobName: \"job\" }");
+    REQUIRE(result.find("__SUPER__") != result.end());
+    REQUIRE(result.at("__SUPER__") == "{ __THIS__: { __CLASS_NAME__: N2mi9Daughter1E, money: 2.2 }, __SUPER__: { __CLASS_NAME__: N2mi6MotherE, age: 10, name: \"test2\" } }");
+    result.clear();
 }
