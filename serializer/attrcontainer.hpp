@@ -4,6 +4,7 @@
 #include "parser.hpp"
 #include <string>
 #include <type_traits>
+#include <map>
 
 /******************************************************************************/
 /*                            attribute container                             */
@@ -17,7 +18,7 @@ template <typename Conv, typename... Types> struct AttrContainer {
     std::string serialize() const {
         return "";
     }
-    void deserialize(std::string) { }
+    void deserialize(const std::map<std::string, std::string> &) { }
 
     AttrContainer() {}
     AttrContainer(const std::string&) {}
@@ -43,22 +44,15 @@ template <typename Conv, typename H, typename... Types> struct AttrContainer<Con
     }
 
     /* deserialize ************************************************************/
-    void deserialize(const std::string &str) {
-        std::size_t idxName = str.find(name + ": "); // TODO: problem here -> add a function to the parser
-        std::size_t idxValue = idxName + name.size() + 2;
-        std::size_t idxEnd = findEndValueIndex(str, idxValue);
-
+    void deserialize(const std::map<std::string, std::string> &elts) {
         if constexpr (std::is_pointer_v<H>) {
             if (reference != nullptr) {
                 delete reference;
+                reference = nullptr;
             }
-            reference = Conv::template deserialize<H>(
-                str.substr(idxValue, idxEnd - idxValue));
-        } else {
-            reference = Conv::template deserialize<H>(
-                str.substr(idxValue, idxEnd - idxValue));
         }
-        next.deserialize(str);
+        reference = Conv::template deserialize<H>(elts.at(name));
+        next.deserialize(elts);
     }
 
     /* constructor ************************************************************/

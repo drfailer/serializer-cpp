@@ -38,7 +38,9 @@ template <typename Conv, typename... Types> class Serializer {
     }
 
     /* deserialize  ***********************************************************/
-    void deserialize(const std::string &str) { container.deserialize(str); }
+    void deserialize(const std::string &str) {
+        container.deserialize(parseOneLvl(str));
+    }
 
     void deserializeFile(const std::string &fileName) {
         std::ifstream file(fileName);
