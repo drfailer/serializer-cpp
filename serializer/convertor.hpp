@@ -1,8 +1,8 @@
 #ifndef HANDLERS_HPP
 #define HANDLERS_HPP
 #include "parser.hpp"
+#include "metafunctions.hpp"
 #include <algorithm>
-#include <memory>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -36,49 +36,6 @@ template <template <typename> class Container, typename T,
 void insert(Container<T> &container, const T &element) {
     container.push_back(element);
 }
-
-template <typename T>
-using base_t = typename std::remove_const_t<std::remove_reference_t<T>>;
-
-template <typename T>
-using iter_value_t = typename base_t<T>::iterator::value_type;
-
-template <typename SP> struct is_shared : std::false_type {};
-
-template <typename T> struct is_shared<std::shared_ptr<T>> : std::true_type {};
-
-template <typename SP> struct is_unique : std::false_type {};
-
-template <typename T> struct is_unique<std::unique_ptr<T>> : std::true_type {};
-
-template <typename SP> struct is_smart : std::false_type {};
-
-template <typename T> struct is_smart<std::shared_ptr<T>> : std::true_type {};
-
-template <typename T> struct is_smart<std::unique_ptr<T>> : std::true_type {};
-
-template <typename SP> using is_smart_t = typename is_smart<SP>::type;
-
-template <typename SP>
-constexpr bool is_smart_ptr_v = std::is_same_v<is_smart_t<SP>, std::true_type>;
-
-template <typename SP>
-constexpr bool is_shared_v =
-    std::is_same_v<typename is_shared<SP>::type, std::true_type>;
-
-template <typename SP>
-constexpr bool is_unique_v =
-    std::is_same_v<typename is_unique<SP>::type, std::true_type>;
-
-template <typename T> struct is_pair {
-    static const bool value = false;
-};
-
-template <typename T1, typename T2> struct is_pair<std::pair<T1, T2>> {
-    static const bool value = true;
-};
-
-template <typename T> constexpr bool is_pair_v = is_pair<T>::value;
 
 /******************************************************************************/
 /*                      default convertor implementation                      */
