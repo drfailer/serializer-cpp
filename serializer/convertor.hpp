@@ -202,7 +202,7 @@ void insert(Container<T> &container, const T &element) {
                                                                                \
     template <template <typename> class Container, typename T,                 \
               typename Container<T>::iterator * = nullptr,                     \
-              decltype(serialize<T>) * = nullptr>                              \
+              decltype(serialize(std::declval<const T &>())) * = nullptr>      \
     static std::string serialize(const Container<T> &elts) {                   \
         std::ostringstream oss;                                                \
         auto it = elts.begin();                                                \

@@ -10,6 +10,7 @@
 #include "test-classes/withSmartPtr.hpp"
 #include "test-classes/withenums.hpp"
 #include "test-classes/withPair.hpp"
+#include "test-classes/withconvertor.hpp"
 #include <iostream>
 #include <string>
 
@@ -434,6 +435,42 @@ TEST_CASE("pairs") {
     REQUIRE(original.getStringPair().second == other.getStringPair().second);
     REQUIRE(original.getObjPair().second == other.getObjPair().second);
     REQUIRE(original.getObjPair().second == other.getObjPair().second);
+}
+
+/******************************************************************************/
+/*                                 convertor                                  */
+/******************************************************************************/
+
+TEST_CASE("serialize unknown type") {
+    WithConvertor original;
+    WithConvertor other;
+    std::string result;
+
+    original.addInt(1);
+    original.addInt(2);
+    original.addInt(3);
+    original.addUnknown(Unknown(1));
+    original.addUnknown(Unknown(2));
+    original.addUnknown(Unknown(3));
+
+    REQUIRE(original.getInts().size() != 0);
+    REQUIRE(original.getUnknowns().size() != 0);
+    REQUIRE(other.getInts().size() == 0);
+    REQUIRE(other.getUnknowns().size() == 0);
+
+    result = original.serialize();
+    other.deserialize(result);
+
+    REQUIRE(other.getInts().size() == original.getInts().size());
+    REQUIRE(other.getUnknowns().size() == original.getUnknowns().size());
+
+    for (std::size_t i = 0; i < other.getInts().size(); ++i) {
+        REQUIRE(other.getInts().at(i) == original.getInts().at(i));
+    }
+
+    for (std::size_t i = 0; i < other.getInts().size(); ++i) {
+        REQUIRE(other.getUnknowns().at(i) == original.getUnknowns().at(i));
+    }
 }
 
 /******************************************************************************/
