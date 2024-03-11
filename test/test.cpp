@@ -11,7 +11,7 @@
 #include "test-classes/withenums.hpp"
 #include "test-classes/withPair.hpp"
 #include "test-classes/withconvertor.hpp"
-#include <iostream>
+#include "test-classes/withMap.hpp"
 #include <string>
 
 /******************************************************************************/
@@ -477,25 +477,23 @@ TEST_CASE("serialize unknown type") {
 /*                                    map                                     */
 /******************************************************************************/
 
-/* not working yet */
-/* #include "test-classes/withMap.hpp" */
-/* TEST_CASE("map") { */
-/*     WithMap original; */
-/*     WithMap other; */
-/*     std::string result; */
+TEST_CASE("map") {
+    WithMap original;
+    WithMap other;
+    std::string result;
 
-/*     REQUIRE(original.getMap().size() == 0); */
-/*     REQUIRE(other.getMap().size() == 0); */
+    REQUIRE(original.getMap().size() == 0);
+    REQUIRE(other.getMap().size() == 0);
 
-/*     original.insert("hello", "pouf"); */
-/*     original.insert("world", "pouf"); */
+    original.insert("hello", "pouf");
+    original.insert("world", "pouf");
 
-/*     REQUIRE(original.getMap().size() == 2); */
+    REQUIRE(original.getMap().size() == 2);
 
-/*     result = original.serialize(); */
-/*     other.deserialize(result); */
+    result = original.serialize();
+    other.deserialize(result);
 
-/*     REQUIRE(other.getMap().size() == 2); */
-/*     REQUIRE(other.getMap().at("hello") == "pouf"); */
-/*     REQUIRE(other.getMap().at("world") == "pouf"); */
-/* } */
+    REQUIRE(other.getMap().size() == 2);
+    REQUIRE(other.getMap().at("hello") == "pouf");
+    REQUIRE(other.getMap().at("world") == "pouf");
+}

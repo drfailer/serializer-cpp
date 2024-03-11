@@ -22,18 +22,18 @@
 /******************************************************************************/
 
 // sorted container
-template <template <typename> class Container, typename T,
-          decltype(std::declval<Container<T>>().insert(std::declval<T>())) * =
+template <typename Container, typename T,
+          decltype(std::declval<Container>().insert(std::declval<T>())) * =
               nullptr>
-void insert(Container<T> &container, const T &element) {
+void insert(Container &container, const T &element) {
     container.insert(element);
 }
 
 // sequence container
-template <template <typename> class Container, typename T,
-          decltype(std::declval<Container<T>>().push_back(
+template <typename Container, typename T,
+          decltype(std::declval<Container>().push_back(
               std::declval<T>())) * = nullptr>
-void insert(Container<T> &container, const T &element) {
+void insert(Container &container, const T &element) {
     container.push_back(element);
 }
 
@@ -113,6 +113,26 @@ void insert(Container<T> &container, const T &element) {
         return t;                                                              \
     }                                                                          \
                                                                                \
+    template <typename T, std::enable_if_t<is_pair_v<T>> * = nullptr>          \
+    static T deserialize(const std::string &str) {                             \
+        using first_type = typename T::first_type;                             \
+        using second_type = typename T::second_type;                           \
+        std::pair<std::string, std::string> content = parsePair(str);          \
+        first_type elt1 =                                                      \
+            deserialize<std::remove_const_t<first_type>>(content.first);       \
+        second_type elt2 =                                                     \
+            deserialize<std::remove_const_t<second_type>>(content.second);     \
+        return T(elt1, elt2);                                                  \
+    }                                                                          \
+                                                                               \
+    template <typename T, std::enable_if_t<std::is_enum_v<T>> * = nullptr>     \
+    static T deserialize(const std::string &str) {                             \
+        std::istringstream iss(str);                                           \
+        std::underlying_type_t<T> out;                                         \
+        iss >> out;                                                            \
+        return (T)out;                                                         \
+    }                                                                          \
+                                                                               \
     template <typename T, typename base_t<T>::iterator * = nullptr,            \
               std::enable_if_t<!is_string_v<T>> * =                            \
                   nullptr, /* we have to make sure that the iterable value is  \
@@ -137,26 +157,6 @@ void insert(Container<T> &container, const T &element) {
     static std::string deserialize(const std::string &str) {                   \
         std::string t = str.substr(1, str.size() - 2);                         \
         return t;                                                              \
-    }                                                                          \
-                                                                               \
-    template <typename T, std::enable_if_t<is_pair_v<T>> * = nullptr>          \
-    static T deserialize(const std::string &str) {                             \
-        using first_type = typename T::first_type;                             \
-        using second_type = typename T::second_type;                           \
-        std::pair<std::string, std::string> content = parsePair(str);          \
-        first_type elt1 =                                                      \
-            deserialize<std::remove_const_t<first_type>>(content.first);       \
-        second_type elt2 =                                                     \
-            deserialize<std::remove_const_t<second_type>>(content.second);     \
-        return T(elt1, elt2);                                                  \
-    }                                                                          \
-                                                                               \
-    template <typename T, std::enable_if_t<std::is_enum_v<T>> * = nullptr>     \
-    static T deserialize(const std::string &str) {                             \
-        std::istringstream iss(str);                                           \
-        std::underlying_type_t<T> out;                                         \
-        iss >> out;                                                            \
-        return (T)out;                                                         \
     }                                                                          \
                                                                                \
     /* serialize ***********************************************************/  \
@@ -200,23 +200,6 @@ void insert(Container<T> &container, const T &element) {
         }                                                                      \
     }                                                                          \
                                                                                \
-    template <template <typename> class Container, typename T,                 \
-              typename Container<T>::iterator * = nullptr,                     \
-              decltype(serialize(std::declval<const T &>())) * = nullptr>      \
-    static std::string serialize(const Container<T> &elts) {                   \
-        std::ostringstream oss;                                                \
-        auto it = elts.begin();                                                \
-                                                                               \
-        if (it != elts.end()) {                                                \
-            oss << "[ " << serialize(*it++);                                   \
-            for (; it != elts.end(); it++) {                                   \
-                oss << ", " << serialize(*it);                                 \
-            }                                                                  \
-            oss << " ]";                                                       \
-        }                                                                      \
-        return oss.str();                                                      \
-    }                                                                          \
-                                                                               \
     template <typename T, std::enable_if_t<is_pair_v<T>> * = nullptr>          \
     static std::string serialize(const T &elt) {                               \
         std::ostringstream oss;                                                \
@@ -233,6 +216,26 @@ void insert(Container<T> &container, const T &element) {
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
+    template <typename T, typename base_t<T>::iterator * = nullptr,            \
+              std::enable_if_t<!is_string_v<T>> * =                            \
+                  nullptr, /* we have to make sure that the iterable value is  \
+                              serializable */                                  \
+              decltype(serialize(std::declval<const iter_value_t<T> &>())) * = \
+                  nullptr>                                                     \
+    static std::string serialize(const T &elts) {                              \
+        std::ostringstream oss;                                                \
+        auto it = elts.begin();                                                \
+                                                                               \
+        if (it != elts.end()) {                                                \
+            oss << "[ " << serialize(*it++);                                   \
+            for (; it != elts.end(); it++) {                                   \
+                oss << ", " << serialize(*it);                                 \
+            }                                                                  \
+            oss << " ]";                                                       \
+        }                                                                      \
+        return oss.str();                                                      \
+    }                                                                          \
+                                                                               \
     static inline std::string serialize(const std::string &elt) {              \
         std::ostringstream oss;                                                \
         oss << "\"" << elt << "\"";                                            \
@@ -244,7 +247,6 @@ void insert(Container<T> &container, const T &element) {
 /******************************************************************************/
 
 struct Convertor {
-    Convertor() = delete;
     CONVERTOR;
 };
 
