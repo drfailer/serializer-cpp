@@ -1,17 +1,18 @@
 #include "catch.hpp"
-#include "test-classes/composed.hpp"
 #include "test-classes/abstract.hpp"
+#include "test-classes/composed.hpp"
+#include "test-classes/multipleinheritance.hpp"
 #include "test-classes/polymorphic.hpp"
 #include "test-classes/simple.hpp"
-#include "test-classes/withcontainer.hpp"
-#include "test-classes/withpointers.hpp"
-#include "test-classes/withstring.hpp"
-#include "test-classes/multipleinheritance.hpp"
-#include "test-classes/withSmartPtr.hpp"
-#include "test-classes/withenums.hpp"
-#include "test-classes/withPair.hpp"
-#include "test-classes/withconvertor.hpp"
 #include "test-classes/withMap.hpp"
+#include "test-classes/withPair.hpp"
+#include "test-classes/withSmartPtr.hpp"
+#include "test-classes/withcontainer.hpp"
+#include "test-classes/withconvertor.hpp"
+#include "test-classes/withenums.hpp"
+#include "test-classes/withpointers.hpp"
+#include "test-classes/withset.hpp"
+#include "test-classes/withstring.hpp"
 #include <string>
 
 /******************************************************************************/
@@ -415,7 +416,8 @@ TEST_CASE("enums") {
 /******************************************************************************/
 
 TEST_CASE("pairs") {
-    WithPair original(1, 2, "hello", "world", Simple(10, 20), Composed(Simple(10, 20), 3, 3.14));
+    WithPair original(1, 2, "hello", "world", Simple(10, 20),
+                      Composed(Simple(10, 20), 3, 3.14));
     WithPair other;
     std::string result;
 
@@ -493,7 +495,36 @@ TEST_CASE("map") {
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(other.getMap().size() == 2);
+    REQUIRE(other.getMap().size() == original.getMap().size());
     REQUIRE(other.getMap().at("hello") == "pouf");
     REQUIRE(other.getMap().at("world") == "pouf");
+}
+
+/******************************************************************************/
+/*                                    set                                     */
+/******************************************************************************/
+
+TEST_CASE("set") {
+    WithSet original;
+    WithSet other;
+    std::string result;
+
+    REQUIRE(original.getSet().size() == 0);
+    REQUIRE(other.getSet().size() == 0);
+
+    original.insert("hello");
+    original.insert("world");
+
+    REQUIRE(original.getSet().size() == 2);
+
+    result = original.serialize();
+    other.deserialize(result);
+
+    REQUIRE(other.getSet().size() == original.getSet().size());
+    auto original_it = original.getSet().begin();
+    for (auto other_it = other.getSet().begin();
+         other_it != other.getSet().end(); other_it++) {
+        REQUIRE(*other_it == *original_it);
+        original_it++;
+    }
 }

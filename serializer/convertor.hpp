@@ -133,6 +133,12 @@ void insert(Container &container, const T &element) {
         return (T)out;                                                         \
     }                                                                          \
                                                                                \
+    template <typename T, std::enable_if_t<is_string_v<T>> * = nullptr>        \
+    static std::string deserialize(const std::string &str) {                   \
+        std::string t = str.substr(1, str.size() - 2);                         \
+        return t;                                                              \
+    }                                                                          \
+                                                                               \
     template <typename T, typename T::iterator * = nullptr,                    \
               std::enable_if_t<!is_string_v<T>> * =                            \
                   nullptr, /* we have to make sure that the iterable value is  \
@@ -151,12 +157,6 @@ void insert(Container &container, const T &element) {
         }                                                                      \
                                                                                \
         return result;                                                         \
-    }                                                                          \
-                                                                               \
-    template <typename T, std::enable_if_t<is_string_v<T>> * = nullptr>        \
-    static std::string deserialize(const std::string &str) {                   \
-        std::string t = str.substr(1, str.size() - 2);                         \
-        return t;                                                              \
     }                                                                          \
                                                                                \
     /* serialize ***********************************************************/  \
@@ -216,6 +216,12 @@ void insert(Container &container, const T &element) {
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
+    static inline std::string serialize(const std::string &elt) {              \
+        std::ostringstream oss;                                                \
+        oss << "\"" << elt << "\"";                                            \
+        return oss.str();                                                      \
+    }                                                                          \
+                                                                               \
     template <typename T, typename T::iterator * = nullptr,                    \
               std::enable_if_t<!is_string_v<T>> * =                            \
                   nullptr, /* we have to make sure that the iterable value is  \
@@ -233,12 +239,6 @@ void insert(Container &container, const T &element) {
             }                                                                  \
             oss << " ]";                                                       \
         }                                                                      \
-        return oss.str();                                                      \
-    }                                                                          \
-                                                                               \
-    static inline std::string serialize(const std::string &elt) {              \
-        std::ostringstream oss;                                                \
-        oss << "\"" << elt << "\"";                                            \
         return oss.str();                                                      \
     }
 
