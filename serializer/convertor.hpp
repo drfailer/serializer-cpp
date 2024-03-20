@@ -22,17 +22,17 @@
 /******************************************************************************/
 
 // sorted container
-template <typename Container, typename T,
-          decltype(std::declval<Container>().insert(std::declval<T>())) * =
-              nullptr>
+template <
+    typename Container, typename T,
+    decltype(std::declval<Container>().insert(std::declval<T>())) * = nullptr>
 void insert(Container &container, const T &element) {
     container.insert(element);
 }
 
 // sequence container
 template <typename Container, typename T,
-          decltype(std::declval<Container>().push_back(
-              std::declval<T>())) * = nullptr>
+          decltype(std::declval<Container>().push_back(std::declval<T>())) * =
+              nullptr>
 void insert(Container &container, const T &element) {
     container.push_back(element);
 }
@@ -133,13 +133,13 @@ void insert(Container &container, const T &element) {
         return (T)out;                                                         \
     }                                                                          \
                                                                                \
-    template <typename T, typename base_t<T>::iterator * = nullptr,            \
+    template <typename T, typename T::iterator * = nullptr,                    \
               std::enable_if_t<!is_string_v<T>> * =                            \
                   nullptr, /* we have to make sure that the iterable value is  \
                               serializable */                                  \
               decltype(deserialize<iter_value_t<T>>("")) * = nullptr>          \
-    static base_t<T> deserialize(const std::string &str) {                     \
-        base_t<T> result;                                                      \
+    static T deserialize(const std::string &str) {                             \
+        T result;                                                              \
         std::size_t valueStart = 2;                                            \
         std::size_t valueEnd;                                                  \
                                                                                \
@@ -216,7 +216,7 @@ void insert(Container &container, const T &element) {
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
-    template <typename T, typename base_t<T>::iterator * = nullptr,            \
+    template <typename T, typename T::iterator * = nullptr,                    \
               std::enable_if_t<!is_string_v<T>> * =                            \
                   nullptr, /* we have to make sure that the iterable value is  \
                               serializable */                                  \
