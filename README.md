@@ -3,6 +3,8 @@
 The purpose of this project is to use templates to automate generation of
 serialization and deserialisation methods for C++ classes.
 
+The best way to learn how to use the lib is to check the [wiki](https://github.com/drfailer/serializer-cpp/wiki).
+
 ## Example
 
 To generate code, the target class must use the `SERIALIZABLE` macro. This is a
@@ -54,8 +56,6 @@ create custom functions manually if required.
 
 The pointers are supported by the library but they have to be initialized
 properly before the deserialisation (either `nullptr` or a valid memory adress).
-
-Elements are dynamically allocated so the usage of smart pointers is recommended.
 
 ### Polymorphism
 
