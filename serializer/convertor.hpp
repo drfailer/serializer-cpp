@@ -140,10 +140,7 @@ void insert(Container &container, const T &element) {
     }                                                                          \
                                                                                \
     template <typename T, typename T::iterator * = nullptr,                    \
-              std::enable_if_t<!is_string_v<T>> * =                            \
-                  nullptr, /* we have to make sure that the iterable value is  \
-                              serializable */                                  \
-              decltype(deserialize<iter_value_t<T>>("")) * = nullptr>          \
+              std::enable_if_t<!is_string_v<T>> * = nullptr>                   \
     static T deserialize(const std::string &str) {                             \
         T result;                                                              \
         std::size_t valueStart = 2;                                            \
@@ -223,11 +220,7 @@ void insert(Container &container, const T &element) {
     }                                                                          \
                                                                                \
     template <typename T, typename T::iterator * = nullptr,                    \
-              std::enable_if_t<!is_string_v<T>> * =                            \
-                  nullptr, /* we have to make sure that the iterable value is  \
-                              serializable */                                  \
-              decltype(serialize(std::declval<const iter_value_t<T> &>())) * = \
-                  nullptr>                                                     \
+              std::enable_if_t<!is_string_v<T>> * = nullptr>                   \
     static std::string serialize(const T &elts) {                              \
         std::ostringstream oss;                                                \
         auto it = elts.begin();                                                \

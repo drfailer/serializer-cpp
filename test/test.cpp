@@ -197,6 +197,7 @@ TEST_CASE("serialization/deserialisation with ITERABLES ATTRIBUTE") {
         original.addInt(i);
         original.addDouble(double(i));
         original.addSimple(Simple(i, 2 * i));
+        original.addVec(std::vector<int>{1*i, 2*i, 3*i, 4*i, 5*i});
     }
 
     REQUIRE(original.getEmptyVec().size() == 0);
@@ -207,6 +208,7 @@ TEST_CASE("serialization/deserialisation with ITERABLES ATTRIBUTE") {
     REQUIRE(other.getVec().size() == 0);
     REQUIRE(other.getLst().size() == 0);
     REQUIRE(other.getClassVec().size() == 0);
+    REQUIRE(other.getVec2D().size() == 0);
 
     result = original.serialize();
     other.deserialize(result);
@@ -215,6 +217,9 @@ TEST_CASE("serialization/deserialisation with ITERABLES ATTRIBUTE") {
     for (int i = 0; i < 10; ++i) {
         REQUIRE(original.getVec()[i] == other.getVec()[i]);
         REQUIRE(original.getClassVec()[i] == other.getClassVec()[i]);
+        for (int j = 0; j < 5; ++j) {
+            REQUIRE(original.getVec2D().at(i).at(j) == original.getVec2D().at(i).at(j));
+        }
     }
 
     auto it = original.getLst().begin();
