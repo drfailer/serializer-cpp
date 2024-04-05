@@ -20,12 +20,13 @@
 /******************************************************************************/
 
 TEST_CASE("serialization/deserialisation on a SIMPLE CLASS") {
-    Simple original(10, 20);
+    Simple original(10, 20, "hello \"world!\\");
     Simple other(0, 0);
     std::string result;
 
     REQUIRE(original.getX() != other.getX());
     REQUIRE(original.getY() != other.getY());
+    REQUIRE(original.getStr() != other.getStr());
 
     result = original.serialize();
     other.deserialize(result);
@@ -238,7 +239,7 @@ TEST_CASE("implementing a convertor (polymorphic class serialization)") {
     std::string result;
 
     original.push_back(new Concrete1(1, 2.9));
-    original.push_back(new Concrete2("hello world"));
+    original.push_back(new Concrete2("hello \"test\" world"));
 
     REQUIRE(original.getElements().size() == 2);
     REQUIRE(other.getElements().size() == 0);

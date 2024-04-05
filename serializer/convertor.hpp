@@ -135,7 +135,7 @@ void insert(Container &container, const T &element) {
                                                                                \
     template <typename T, std::enable_if_t<is_string_v<T>> * = nullptr>        \
     static std::string deserialize(const std::string &str) {                   \
-        std::string t = str.substr(1, str.size() - 2);                         \
+        std::string t = unescapeStr(str.substr(1, str.size() - 2));            \
         return t;                                                              \
     }                                                                          \
                                                                                \
@@ -215,7 +215,7 @@ void insert(Container &container, const T &element) {
                                                                                \
     static inline std::string serialize(const std::string &elt) {              \
         std::ostringstream oss;                                                \
-        oss << "\"" << elt << "\"";                                            \
+        oss << "\"" << escapeStr(elt) << "\"";                                 \
         return oss.str();                                                      \
     }                                                                          \
                                                                                \

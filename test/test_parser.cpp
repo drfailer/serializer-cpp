@@ -123,3 +123,25 @@ TEST_CASE("parseOneLvl") {
     REQUIRE(result.at("__SUPER__") == "{ __THIS__: { __CLASS_NAME__: N2mi9Daughter1E, money: 2.2 }, __SUPER__: { __CLASS_NAME__: N2mi6MotherE, age: 10, name: \"test2\" } }");
     result.clear();
 }
+
+/******************************************************************************/
+/*                               string escape                                */
+/******************************************************************************/
+
+TEST_CASE("escape string") {
+    std::string str1 = "hello \" world";
+    std::string str2 = "hello \"world\"";
+    std::string str3 = "hello \"world\"\"";
+
+    REQUIRE("hello \\\" world" == escapeStr("hello \" world"));
+    REQUIRE("hello \\\"world\\\"" == escapeStr("hello \"world\""));
+    REQUIRE("hello \\\"world\\\"\\\"" == escapeStr("hello \"world\"\""));
+
+    REQUIRE(str1 == unescapeStr("hello \\\" world"));
+    REQUIRE(str2 == unescapeStr("hello \\\"world\\\""));
+    REQUIRE(str3 == unescapeStr("hello \\\"world\\\"\\\""));
+
+    REQUIRE(str1 == unescapeStr(escapeStr(str1)));
+    REQUIRE(str2 == unescapeStr(escapeStr(str2)));
+    REQUIRE(str3 == unescapeStr(escapeStr(str3)));
+}

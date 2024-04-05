@@ -1,9 +1,9 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
+#include <map>
 #include <stack>
 #include <string>
 #include <utility>
-#include <map>
 
 /******************************************************************************/
 /*                         general parsing functions                          */
@@ -20,6 +20,9 @@ inline std::size_t findEndValueIndex(const std::string &str,
     std::stack<char> pairs;
 
     while (idx < str.size()) {
+        if (str[idx] == '\\') {
+            idx += 2;
+        }
         if ((str[idx] == ',' || str[idx] == ' ') && pairs.empty()) {
             return idx;
         } else if (str[idx] == '{') {
@@ -47,7 +50,7 @@ inline std::size_t findEndValueIndex(const std::string &str,
  * only treat ids and values in the current brackets without treating nested
  * elements ("{ level }", "{ id: { nested element } }").
  */
-inline std::map<std::string, std::string> parseOneLvl(const std::string& str) {
+inline std::map<std::string, std::string> parseOneLvl(const std::string &str) {
     std::map<std::string, std::string> result;
     std::size_t idx = 2; // { ...
     std::size_t end;
@@ -57,8 +60,9 @@ inline std::map<std::string, std::string> parseOneLvl(const std::string& str) {
         end = str.find(':', idx);
         // if we remove the spaces in the serialized string, this won't be a
         // problem anymore:
-        if (end >= str.size()) break; // security for the empty serilizer (there
-                                      // is an empty value at the end)
+        if (end >= str.size())
+            break; // security for the empty serilizer (there
+                   // is an empty value at the end)
         std::string id = str.substr(idx, end - idx);
 
         /* withdraw the value */
@@ -88,7 +92,7 @@ inline std::size_t nextId(const std::string &str) {
  * Return the value of the with the key `id` in the serialized string.
  */
 inline std::string getValue(const std::string &str, const std::string &id,
-        bool strIsDefault = false) {
+                            bool strIsDefault = false) {
     std::string_view sv = str;
     std::size_t idLength = id.size();
     std::size_t valueBegin, valueEnd;
@@ -130,7 +134,7 @@ inline std::string getClassName(const std::string &str) {
 /*                                   pairs                                    */
 /******************************************************************************/
 
-inline std::pair<std::string, std::string> parsePair(const std::string& str) {
+inline std::pair<std::string, std::string> parsePair(const std::string &str) {
     std::string elt1;
     std::string elt2;
     std::size_t begin = 2;
@@ -141,6 +145,37 @@ inline std::pair<std::string, std::string> parsePair(const std::string& str) {
     end = str.size() - 2;
     elt2 = str.substr(begin, end - begin);
     return std::make_pair(elt1, elt2);
+}
+
+/******************************************************************************/
+/*                               escape strings                               */
+/******************************************************************************/
+
+inline std::string escapeStr(const std::string &str) {
+    std::string result = "";
+
+    for (char c : str) {
+        if (c == '"' || c == '\\') {
+            result.push_back('\\');
+        }
+        result.push_back(c);
+    }
+    return result;
+}
+
+inline std::string unescapeStr(const std::string &str) {
+    std::string result = "";
+    std::string::const_iterator it = str.begin();
+
+    for (; it != str.end(); it++) {
+        if (*it == '\\' && (*(it + 1) == '"' || *(it + 1) == '\\')) {
+            it++;
+            result.push_back(*it);
+        } else {
+            result.push_back(*it);
+        }
+    }
+    return result;
 }
 
 #endif
