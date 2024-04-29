@@ -5,6 +5,8 @@
 #include <string>
 #include <utility>
 
+namespace serializer::parser {
+
 /******************************************************************************/
 /*                         general parsing functions                          */
 /******************************************************************************/
@@ -177,5 +179,7 @@ inline std::string unescapeStr(const std::string &str) {
     }
     return result;
 }
+
+} // namespace serializer::parser
 
 #endif

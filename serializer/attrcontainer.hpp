@@ -2,9 +2,11 @@
 #define ATTRCONTAINER_HPP
 #include "convertor.hpp"
 #include "parser.hpp"
+#include <map>
 #include <string>
 #include <type_traits>
-#include <map>
+
+namespace serializer {
 
 /******************************************************************************/
 /*                            attribute container                             */
@@ -15,19 +17,18 @@
  * the identifiers and the references on the attributes of the serialized class.
  */
 template <typename Conv, typename... Types> struct AttrContainer {
-    std::string serialize() const {
-        return "";
-    }
-    void deserialize(const std::map<std::string, std::string> &) { }
+    std::string serialize() const { return ""; }
+    void deserialize(const std::map<std::string, std::string> &) {}
 
     AttrContainer() {}
-    AttrContainer(const std::string&) {}
+    AttrContainer(const std::string &) {}
 };
 
 /*
  * Specialisation for handeling more than one type.
  */
-template <typename Conv, typename H, typename... Types> struct AttrContainer<Conv, H, Types...> {
+template <typename Conv, typename H, typename... Types>
+struct AttrContainer<Conv, H, Types...> {
     /* attributes *************************************************************/
     H &reference;
     std::string name;
@@ -37,7 +38,7 @@ template <typename Conv, typename H, typename... Types> struct AttrContainer<Con
     std::string serialize() const {
         std::ostringstream oss;
         oss << name << ": " << Conv::serialize(reference);
-        if constexpr(sizeof...(Types) > 0) {
+        if constexpr (sizeof...(Types) > 0) {
             oss << ", " << next.serialize();
         }
         return oss.str();
@@ -58,7 +59,9 @@ template <typename Conv, typename H, typename... Types> struct AttrContainer<Con
     /* constructor ************************************************************/
     AttrContainer(H &head, Types &...types, const std::string &idsStr)
         : reference(head), name(idsStr.substr(0, idsStr.find(","))),
-          next(types..., idsStr.substr(nextId(idsStr))) {}
+          next(types..., idsStr.substr(parser::nextId(idsStr))) {}
 };
+
+} // namespace serializer
 
 #endif

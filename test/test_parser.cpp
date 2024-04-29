@@ -36,9 +36,10 @@ std::string withMultipleSuper_superValue_superValue =
 /******************************************************************************/
 
 TEST_CASE("getThisValue") {
-    REQUIRE(getThisValue(normal) == normal);
-    REQUIRE(getThisValue(withSuper) == withSuper_thisValue);
-    REQUIRE(getThisValue(withMultipleSuper) == withMultipleSuper_thisValue);
+    REQUIRE(serializer::parser::getThisValue(normal) == normal);
+    REQUIRE(serializer::parser::getThisValue(withSuper) == withSuper_thisValue);
+    REQUIRE(serializer::parser::getThisValue(withMultipleSuper) ==
+            withMultipleSuper_thisValue);
 }
 
 /******************************************************************************/
@@ -46,13 +47,15 @@ TEST_CASE("getThisValue") {
 /******************************************************************************/
 
 TEST_CASE("getSuperValue") {
-    REQUIRE(getSuperValue(normal) == "");
-    REQUIRE(getSuperValue(withSuper) == withSuper_superValue);
-    REQUIRE(getSuperValue(withMultipleSuper) == withMultipleSuper_superValue);
-    REQUIRE(getThisValue(getSuperValue(withMultipleSuper)) ==
-            withMultipleSuper_superValue_thisValue);
-    REQUIRE(getSuperValue(getSuperValue(withMultipleSuper)) ==
-            withMultipleSuper_superValue_superValue);
+    REQUIRE(serializer::parser::getSuperValue(normal) == "");
+    REQUIRE(serializer::parser::getSuperValue(withSuper) ==
+            withSuper_superValue);
+    REQUIRE(serializer::parser::getSuperValue(withMultipleSuper) ==
+            withMultipleSuper_superValue);
+    REQUIRE(serializer::parser::getThisValue(serializer::parser::getSuperValue(
+                withMultipleSuper)) == withMultipleSuper_superValue_thisValue);
+    REQUIRE(serializer::parser::getSuperValue(serializer::parser::getSuperValue(
+                withMultipleSuper)) == withMultipleSuper_superValue_superValue);
 }
 
 /******************************************************************************/
@@ -62,11 +65,15 @@ TEST_CASE("getSuperValue") {
 TEST_CASE("parsePair") {
     std::string basic = "{ 1, 2 }";
     std::string string = "{ \"string1\", \"string2\" }";
-    std::string withObjects = "{ { element11: test, element12: { sub } }, { element2: { sub } } }";
+    std::string withObjects =
+        "{ { element11: test, element12: { sub } }, { element2: { sub } } }";
 
-    std::pair<std::string, std::string> basic_result = parsePair(basic);
-    std::pair<std::string, std::string> string_result = parsePair(string);
-    std::pair<std::string, std::string> withObjects_result = parsePair(withObjects);
+    std::pair<std::string, std::string> basic_result =
+        serializer::parser::parsePair(basic);
+    std::pair<std::string, std::string> string_result =
+        serializer::parser::parsePair(string);
+    std::pair<std::string, std::string> withObjects_result =
+        serializer::parser::parsePair(withObjects);
 
     /* basic test */
     REQUIRE(basic_result.first == "1");
@@ -77,7 +84,8 @@ TEST_CASE("parsePair") {
     REQUIRE(string_result.second == "\"string2\"");
 
     /* with objects */
-    REQUIRE(withObjects_result.first == "{ element11: test, element12: { sub } }");
+    REQUIRE(withObjects_result.first ==
+            "{ element11: test, element12: { sub } }");
     REQUIRE(withObjects_result.second == "{ element2: { sub } }");
 }
 
@@ -89,7 +97,7 @@ TEST_CASE("parseOneLvl") {
     std::map<std::string, std::string> result;
 
     /* normal */
-    result = parseOneLvl(normal);
+    result = serializer::parser::parseOneLvl(normal);
     REQUIRE(result.size() == 2);
     REQUIRE(result.find("__CLASS_NAME__") != result.end());
     REQUIRE(result.at("__CLASS_NAME__") == "N2mi9Daughter1E");
@@ -98,7 +106,9 @@ TEST_CASE("parseOneLvl") {
     result.clear();
 
     /* with more values */
-    result = parseOneLvl("{ number: 1, string: \"hello\", pair: { 1, 2 }, double: 3.3, array: [ 1, 2, 3 ], objArray: [ { obj }, { obj } ] }");
+    result = serializer::parser::parseOneLvl(
+        "{ number: 1, string: \"hello\", pair: { 1, 2 }, double: 3.3, array: [ "
+        "1, 2, 3 ], objArray: [ { obj }, { obj } ] }");
     REQUIRE(result.size() == 6);
     REQUIRE(result.find("number") != result.end());
     REQUIRE(result.at("number") == "1");
@@ -114,13 +124,18 @@ TEST_CASE("parseOneLvl") {
     REQUIRE(result.at("objArray") == "[ { obj }, { obj } ]");
     result.clear();
 
-    /* with nested elements (should not happend normally but it is still important) */
-    result = parseOneLvl(withMultipleSuper);
+    /* with nested elements (should not happend normally but it is still
+     * important) */
+    result = serializer::parser::parseOneLvl(withMultipleSuper);
     REQUIRE(result.size() == 2);
     REQUIRE(result.find("__THIS__") != result.end());
-    REQUIRE(result.at("__THIS__") == "{ __CLASS_NAME__: N2mi9Daughter2E, jobName: \"job\" }");
+    REQUIRE(result.at("__THIS__") ==
+            "{ __CLASS_NAME__: N2mi9Daughter2E, jobName: \"job\" }");
     REQUIRE(result.find("__SUPER__") != result.end());
-    REQUIRE(result.at("__SUPER__") == "{ __THIS__: { __CLASS_NAME__: N2mi9Daughter1E, money: 2.2 }, __SUPER__: { __CLASS_NAME__: N2mi6MotherE, age: 10, name: \"test2\" } }");
+    REQUIRE(result.at("__SUPER__") ==
+            "{ __THIS__: { __CLASS_NAME__: N2mi9Daughter1E, money: 2.2 }, "
+            "__SUPER__: { __CLASS_NAME__: N2mi6MotherE, age: 10, name: "
+            "\"test2\" } }");
     result.clear();
 }
 
@@ -133,15 +148,21 @@ TEST_CASE("escape string") {
     std::string str2 = "hello \"world\"";
     std::string str3 = "hello \"world\"\"";
 
-    REQUIRE("hello \\\" world" == escapeStr("hello \" world"));
-    REQUIRE("hello \\\"world\\\"" == escapeStr("hello \"world\""));
-    REQUIRE("hello \\\"world\\\"\\\"" == escapeStr("hello \"world\"\""));
+    REQUIRE("hello \\\" world" ==
+            serializer::parser::escapeStr("hello \" world"));
+    REQUIRE("hello \\\"world\\\"" ==
+            serializer::parser::escapeStr("hello \"world\""));
+    REQUIRE("hello \\\"world\\\"\\\"" ==
+            serializer::parser::escapeStr("hello \"world\"\""));
 
-    REQUIRE(str1 == unescapeStr("hello \\\" world"));
-    REQUIRE(str2 == unescapeStr("hello \\\"world\\\""));
-    REQUIRE(str3 == unescapeStr("hello \\\"world\\\"\\\""));
+    REQUIRE(str1 == serializer::parser::unescapeStr("hello \\\" world"));
+    REQUIRE(str2 == serializer::parser::unescapeStr("hello \\\"world\\\""));
+    REQUIRE(str3 == serializer::parser::unescapeStr("hello \\\"world\\\"\\\""));
 
-    REQUIRE(str1 == unescapeStr(escapeStr(str1)));
-    REQUIRE(str2 == unescapeStr(escapeStr(str2)));
-    REQUIRE(str3 == unescapeStr(escapeStr(str3)));
+    REQUIRE(str1 == serializer::parser::unescapeStr(
+                        serializer::parser::escapeStr(str1)));
+    REQUIRE(str2 == serializer::parser::unescapeStr(
+                        serializer::parser::escapeStr(str2)));
+    REQUIRE(str3 == serializer::parser::unescapeStr(
+                        serializer::parser::escapeStr(str3)));
 }

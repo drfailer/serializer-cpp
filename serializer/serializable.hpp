@@ -62,8 +62,8 @@
         file << serialize() << std::endl;                                      \
     }                                                                          \
     void deserialize(const std::string &str) override {                        \
-        Super::deserialize(getSuperValue(str));                                \
-        __serializer__.deserialize(getThisValue(str));                         \
+        Super::deserialize(serializer::parser::getSuperValue(str));            \
+        __serializer__.deserialize(serializer::parser::getThisValue(str));     \
     }                                                                          \
     void deserializeFile(const std::string &fn) override {                     \
         std::ifstream file(fn);                                                \
@@ -79,7 +79,7 @@
  */
 #define __SERIALIZABLE__(CONV, IMPL, ...)                                      \
   private:                                                                     \
-    Serializer<CONV, __VA_ARGS__> __serializer__;                              \
+    serializer::Serializer<CONV, __VA_ARGS__> __serializer__;                  \
                                                                                \
   public:                                                                      \
     IMPL;                                                                      \
@@ -92,7 +92,7 @@
  */
 #define SERIALIZABLE_EMPTY()                                                   \
   private:                                                                     \
-    Serializer<Convertor> __serializer__;                                      \
+    serializer::Serializer<Convertor> __serializer__;                          \
                                                                                \
   public:                                                                      \
     POLYMORPHIC_FN_IMPL;                                                       \

@@ -8,6 +8,8 @@
 /* WARN: don't move this */
 #include "serializable.hpp"
 
+namespace serializer {
+
 // NOTE: we should use static asserts to create useful error messages
 // NOTE: removing the ' ' (spaces) in the serialized strings could be
 // interesting
@@ -39,7 +41,7 @@ template <typename Conv, typename... Types> class Serializer {
 
     /* deserialize  ***********************************************************/
     void deserialize(const std::string &str) {
-        container.deserialize(parseOneLvl(str));
+        container.deserialize(parser::parseOneLvl(str));
     }
 
     void deserializeFile(const std::string &fileName) {
@@ -53,6 +55,8 @@ template <typename Conv, typename... Types> class Serializer {
   private:
     AttrContainer<Conv, Types...> container;
     std::string className;
+};
+
 };
 
 #endif

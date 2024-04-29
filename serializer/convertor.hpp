@@ -117,7 +117,8 @@ void insert(Container &container, const T &element) {
     static T deserialize(const std::string &str) {                             \
         using first_type = typename T::first_type;                             \
         using second_type = typename T::second_type;                           \
-        std::pair<std::string, std::string> content = parsePair(str);          \
+        std::pair<std::string, std::string> content =                          \
+            serializer::parser::parsePair(str);                                \
         first_type elt1 =                                                      \
             deserialize<std::remove_const_t<first_type>>(content.first);       \
         second_type elt2 =                                                     \
@@ -135,7 +136,8 @@ void insert(Container &container, const T &element) {
                                                                                \
     template <serializer::concepts::String T>                                  \
     static std::string deserialize(const std::string &str) {                   \
-        std::string t = unescapeStr(str.substr(1, str.size() - 2));            \
+        std::string t =                                                        \
+            serializer::parser::unescapeStr(str.substr(1, str.size() - 2));    \
         return t;                                                              \
     }                                                                          \
                                                                                \
@@ -146,7 +148,7 @@ void insert(Container &container, const T &element) {
         std::size_t valueEnd;                                                  \
                                                                                \
         while (valueStart < str.size()) {                                      \
-            valueEnd = findEndValueIndex(str, valueStart);                     \
+            valueEnd = serializer::parser::findEndValueIndex(str, valueStart); \
             insert(result,                                                     \
                    deserialize<serializer::mtf::iter_value_t<T>>(              \
                        str.substr(valueStart, valueEnd - valueStart)));        \
@@ -215,7 +217,7 @@ void insert(Container &container, const T &element) {
                                                                                \
     static std::string serialize(const std::string &elt) {                     \
         std::ostringstream oss;                                                \
-        oss << "\"" << escapeStr(elt) << "\"";                                 \
+        oss << "\"" << serializer::parser::escapeStr(elt) << "\"";             \
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
@@ -241,6 +243,8 @@ void insert(Container &container, const T &element) {
 struct Convertor {
     CONVERTOR;
 };
+
+namespace serializer::helper {
 
 /******************************************************************************/
 /*                               helper macros                                */
@@ -293,6 +297,8 @@ RT type_switch_fn(const std::string &className, const std::string &str) {
     return type_switch_fn<RT, Types...>(className, str);
 }
 
+} // namespace serializer::helper
+
 /*
  * Generates a deserialize function for the polymorphic type GenericType.
  */
@@ -301,8 +307,8 @@ RT type_switch_fn(const std::string &className, const std::string &str) {
               std::enable_if_t<std::is_same_v<serializer::mtf::base_t<T>,      \
                                               GenericType *>> * = nullptr>     \
     static GenericType *deserialize(const std::string &str) {                  \
-        return type_switch_fn<GenericType *, __VA_ARGS__>(                     \
-            getThisClassName(str), str);                                       \
+        return serializer::helper::type_switch_fn<GenericType *, __VA_ARGS__>( \
+            serializer::parser::getThisClassName(str), str);                   \
     }
 
 #endif

@@ -83,6 +83,6 @@ template <typename T1, typename T2> struct is_pair<std::pair<T1, T2>> {
 
 template <typename T> constexpr bool is_pair_v = is_pair<T>::value;
 
-}; // namespace serializer::mtf
+} // namespace serializer::mtf
 
 #endif
