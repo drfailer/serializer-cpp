@@ -4,6 +4,8 @@
 #include <string>
 #include <type_traits>
 
+namespace serializer::mtf {
+
 /******************************************************************************/
 /*                              transform types                               */
 /******************************************************************************/
@@ -19,7 +21,7 @@ using iter_value_t = typename base_t<T>::iterator::value_type;
 /******************************************************************************/
 
 template <typename T>
-constexpr bool is_concrete_ptr =
+constexpr bool is_concrete_ptr_v =
     std::is_pointer_v<std::remove_reference_t<T>> &&
     !std::is_polymorphic_v<std::remove_pointer_t<base_t<T>>> &&
     !std::is_abstract_v<std::remove_pointer_t<base_t<T>>>;
@@ -31,19 +33,6 @@ constexpr bool is_concrete_ptr =
 template <typename T>
 constexpr bool is_string_v =
     std::is_same_v<std::remove_reference_t<T>, std::string>;
-
-/******************************************************************************/
-/*                                  iterator                                  */
-/******************************************************************************/
-
-template <typename, typename = void> struct is_iterable : std::false_type {};
-
-template <typename T>
-struct is_iterable<
-    T, std::void_t<decltype(std::declval<typename T::iterator::value_type>())>>
-    : std::true_type {};
-
-template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
 
 /******************************************************************************/
 /*                               smart pointers                               */
@@ -94,18 +83,6 @@ template <typename T1, typename T2> struct is_pair<std::pair<T1, T2>> {
 
 template <typename T> constexpr bool is_pair_v = is_pair<T>::value;
 
-/******************************************************************************/
-/*                              is serializable                               */
-/******************************************************************************/
-
-template <typename T, typename U = void>
-struct is_deserializable : std::false_type {};
-
-template <typename T>
-struct is_deserializable<T, decltype(std::declval<T>().deserialize(""))>
-    : std::true_type {};
-
-template <typename T>
-constexpr bool is_deserializable_v = is_deserializable<T>::value;
+}; // namespace serializer::mtf
 
 #endif

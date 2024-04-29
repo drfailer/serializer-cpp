@@ -1,5 +1,6 @@
 #ifndef HANDLERS_HPP
 #define HANDLERS_HPP
+#include "concepts.hpp"
 #include "metafunctions.hpp"
 #include "parser.hpp"
 #include <algorithm>
@@ -60,23 +61,21 @@ void insert(Container &container, const T &element) {
 #define CONVERTOR                                                              \
     /* deserialize ********************************************************/   \
                                                                                \
-    template <typename T,                                                      \
-              decltype(std::declval<T>().deserialize("")) * = nullptr>         \
+    template <serializer::concepts::Deserializable T>                          \
     static std::remove_reference_t<T> deserialize(const std::string &str) {    \
         std::remove_reference_t<T> t;                                          \
         t.deserialize(str);                                                    \
         return t;                                                              \
     }                                                                          \
                                                                                \
-    template <typename T,                                                      \
-              std::enable_if_t<std::is_fundamental_v<T>> * = nullptr>          \
+    template <serializer::concepts::Fundamental T>                             \
     static T deserialize(const std::string &str) {                             \
         T t;                                                                   \
         std::istringstream(str) >> t;                                          \
         return t;                                                              \
     }                                                                          \
                                                                                \
-    template <typename T, std::enable_if_t<is_concrete_ptr<T>> * = nullptr>    \
+    template <serializer::concepts::ConcretePtr T>                             \
     static std::remove_reference_t<T> deserialize(const std::string &str) {    \
         if (str == "nullptr") {                                                \
             return nullptr;                                                    \
@@ -93,15 +92,15 @@ void insert(Container &container, const T &element) {
         return t;                                                              \
     }                                                                          \
                                                                                \
-    template <typename SP, std::enable_if_t<is_smart_ptr_v<SP>> * = nullptr>   \
+    template <serializer::concepts::SmartPtr SP>                               \
     static SP deserialize(const std::string &str) {                            \
         if (str == "nullptr") {                                                \
             return nullptr;                                                    \
         }                                                                      \
         SP t;                                                                  \
-        if constexpr (is_shared_v<SP>) {                                       \
+        if constexpr (serializer::mtf::is_shared_v<SP>) {                      \
             t = std::make_shared<typename SP::element_type>();                 \
-        } else if constexpr (is_unique_v<SP>) {                                \
+        } else if constexpr (serializer::mtf::is_unique_v<SP>) {               \
             t = std::make_unique<typename SP::element_type>();                 \
         }                                                                      \
                                                                                \
@@ -113,7 +112,8 @@ void insert(Container &container, const T &element) {
         return t;                                                              \
     }                                                                          \
                                                                                \
-    template <typename T, std::enable_if_t<is_pair_v<T>> * = nullptr>          \
+    template <typename T,                                                      \
+              std::enable_if_t<serializer::mtf::is_pair_v<T>> * = nullptr>     \
     static T deserialize(const std::string &str) {                             \
         using first_type = typename T::first_type;                             \
         using second_type = typename T::second_type;                           \
@@ -125,7 +125,7 @@ void insert(Container &container, const T &element) {
         return T(elt1, elt2);                                                  \
     }                                                                          \
                                                                                \
-    template <typename T, std::enable_if_t<std::is_enum_v<T>> * = nullptr>     \
+    template <serializer::concepts::Enum T>                                    \
     static T deserialize(const std::string &str) {                             \
         std::istringstream iss(str);                                           \
         std::underlying_type_t<T> out;                                         \
@@ -133,14 +133,13 @@ void insert(Container &container, const T &element) {
         return (T)out;                                                         \
     }                                                                          \
                                                                                \
-    template <typename T, std::enable_if_t<is_string_v<T>> * = nullptr>        \
+    template <serializer::concepts::String T>                                  \
     static std::string deserialize(const std::string &str) {                   \
         std::string t = unescapeStr(str.substr(1, str.size() - 2));            \
         return t;                                                              \
     }                                                                          \
                                                                                \
-    template <typename T, std::enable_if_t<!is_string_v<T> &&                  \
-                                           is_iterable_v<T>> * = nullptr>      \
+    template <serializer::concepts::NonStringIterable T>                       \
     static T deserialize(const std::string &str) {                             \
         T result;                                                              \
         std::size_t valueStart = 2;                                            \
@@ -148,8 +147,9 @@ void insert(Container &container, const T &element) {
                                                                                \
         while (valueStart < str.size()) {                                      \
             valueEnd = findEndValueIndex(str, valueStart);                     \
-            insert(result, deserialize<iter_value_t<T>>(str.substr(            \
-                               valueStart, valueEnd - valueStart)));           \
+            insert(result,                                                     \
+                   deserialize<serializer::mtf::iter_value_t<T>>(              \
+                       str.substr(valueStart, valueEnd - valueStart)));        \
             valueStart = valueEnd + 2; /* value1, value2 */                    \
         }                                                                      \
                                                                                \
@@ -158,20 +158,19 @@ void insert(Container &container, const T &element) {
                                                                                \
     /* serialize ***********************************************************/  \
                                                                                \
-    template <typename T, decltype(std::declval<T>().serialize()) * = nullptr> \
+    template <serializer::concepts::Serializable T>                            \
     static std::string serialize(T &elt) {                                     \
         return elt.serialize();                                                \
     }                                                                          \
                                                                                \
-    template <typename T,                                                      \
-              std::enable_if_t<std::is_fundamental_v<T>> * = nullptr>          \
+    template <serializer::concepts::Fundamental T>                             \
     static std::string serialize(T &elt) {                                     \
         std::ostringstream oss;                                                \
         oss << elt;                                                            \
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
-    template <typename T, std::enable_if_t<std::is_pointer_v<T>> * = nullptr>  \
+    template <serializer::concepts::Pointer T>                                 \
     static std::string serialize(T elt) {                                      \
         if (elt != nullptr) {                                                  \
             if constexpr (std::is_abstract_v<std::remove_pointer_t<T>>) {      \
@@ -184,7 +183,7 @@ void insert(Container &container, const T &element) {
         }                                                                      \
     }                                                                          \
                                                                                \
-    template <typename SP, std::enable_if_t<is_smart_ptr_v<SP>> * = nullptr>   \
+    template <serializer::concepts::SmartPtr SP>                               \
     static std::string serialize(SP &elt) {                                    \
         if (elt != nullptr) {                                                  \
             if constexpr (std::is_abstract_v<typename SP::element_type>) {     \
@@ -197,7 +196,8 @@ void insert(Container &container, const T &element) {
         }                                                                      \
     }                                                                          \
                                                                                \
-    template <typename T, std::enable_if_t<is_pair_v<T>> * = nullptr>          \
+    template <typename T,                                                      \
+              std::enable_if_t<serializer::mtf::is_pair_v<T>> * = nullptr>     \
     static std::string serialize(const T &elt) {                               \
         std::ostringstream oss;                                                \
         oss << "{ " << serialize(elt.first) << ", " << serialize(elt.second)   \
@@ -205,7 +205,7 @@ void insert(Container &container, const T &element) {
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
-    template <typename T, std::enable_if_t<std::is_enum_v<T>> * = nullptr>     \
+    template <serializer::concepts::Enum T>                                    \
     static std::string serialize(const T &elt) {                               \
         std::ostringstream oss;                                                \
         std::underlying_type_t<T> v = (std::underlying_type_t<T>)elt;          \
@@ -213,14 +213,13 @@ void insert(Container &container, const T &element) {
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
-    static inline std::string serialize(const std::string &elt) {              \
+    static std::string serialize(const std::string &elt) {                     \
         std::ostringstream oss;                                                \
         oss << "\"" << escapeStr(elt) << "\"";                                 \
         return oss.str();                                                      \
     }                                                                          \
                                                                                \
-    template <typename T, std::enable_if_t<!is_string_v<T> &&                  \
-                                           is_iterable_v<T>> * = nullptr>      \
+    template <serializer::concepts::NonStringIterable T>                       \
     static std::string serialize(const T &elts) {                              \
         std::ostringstream oss;                                                \
         auto it = elts.begin();                                                \
@@ -255,8 +254,8 @@ struct Convertor {
  * }
  */
 #define deserialize_custom_type(Type, input)                                   \
-    template <typename T,                                                      \
-              std::enable_if_t<std::is_same_v<base_t<T>, Type>> * = nullptr>   \
+    template <typename T, std::enable_if_t<std::is_same_v<                     \
+                              serializer::mtf::base_t<T>, Type>> * = nullptr>  \
     static Type deserialize(input)
 
 #define serialize_custom_type(input) static std::string serialize(input)
@@ -299,8 +298,8 @@ RT type_switch_fn(const std::string &className, const std::string &str) {
  */
 #define DESERIALIZE_POLYMORPHIC(GenericType, ...)                              \
     template <typename T,                                                      \
-              std::enable_if_t<std::is_same_v<base_t<T>, GenericType *>> * =   \
-                  nullptr>                                                     \
+              std::enable_if_t<std::is_same_v<serializer::mtf::base_t<T>,      \
+                                              GenericType *>> * = nullptr>     \
     static GenericType *deserialize(const std::string &str) {                  \
         return type_switch_fn<GenericType *, __VA_ARGS__>(                     \
             getThisClassName(str), str);                                       \
