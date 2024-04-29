@@ -36,18 +36,14 @@ constexpr bool is_string_v =
 /*                                  iterator                                  */
 /******************************************************************************/
 
-/* non functional yet */
-/* template <typename T, typename U = void> */
-/* struct is_iterable : std::false_type {}; */
+template <typename, typename = void> struct is_iterable : std::false_type {};
 
-/* template <typename T> */
-/* struct is_iterable<T, typename base_t<T>::iterator> : std::true_type {}; */
+template <typename T>
+struct is_iterable<
+    T, std::void_t<decltype(std::declval<typename T::iterator::value_type>())>>
+    : std::true_type {};
 
-/* template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value; */
-
-/* template <typename T> */
-/* constexpr bool is_deserializable_iterator_v = */
-/*     !is_string_v<T> && is_iterable_v<T>; */
+template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
 
 /******************************************************************************/
 /*                               smart pointers                               */
