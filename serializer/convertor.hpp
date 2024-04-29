@@ -104,10 +104,11 @@ void insert(Container &container, const T &element) {
             t = std::make_unique<typename SP::element_type>();                 \
         }                                                                      \
                                                                                \
-        if constexpr (std::is_fundamental_v<typename SP::element_type>) {      \
-            *t = deserialize<typename SP::element_type>(str);                  \
-        } else {                                                               \
+        if constexpr (serializer::concepts::Deserializable<                    \
+                          typename SP::element_type>) {                        \
             t->deserialize(str);                                               \
+        } else {                                                               \
+            *t = deserialize<typename SP::element_type>(str);                  \
         }                                                                      \
         return t;                                                              \
     }                                                                          \
@@ -188,7 +189,8 @@ void insert(Container &container, const T &element) {
     template <serializer::concepts::SmartPtr SP>                               \
     static std::string serialize(SP &elt) {                                    \
         if (elt != nullptr) {                                                  \
-            if constexpr (std::is_abstract_v<typename SP::element_type>) {     \
+            if constexpr (serializer::concepts::Serializable<                  \
+                              typename SP::element_type>) {                    \
                 return elt->serialize();                                       \
             } else {                                                           \
                 return serialize<typename SP::element_type>(*elt);             \
