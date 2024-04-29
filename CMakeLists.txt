@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16.3..3.28.1)
 
 project(serializer)
 
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 add_compile_options(-Wall -Wextra -g)
