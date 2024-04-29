@@ -258,8 +258,8 @@ namespace serializer::helper {
  * }
  */
 #define deserialize_custom_type(Type, input)                                   \
-    template <typename T, std::enable_if_t<std::is_same_v<                     \
-                              serializer::mtf::base_t<T>, Type>> * = nullptr>  \
+    template <typename T>                                                      \
+        requires std::is_same_v<serializer::mtf::base_t<T>, Type>              \
     static Type deserialize(input)
 
 #define serialize_custom_type(input) static std::string serialize(input)
@@ -303,9 +303,8 @@ RT type_switch_fn(const std::string &className, const std::string &str) {
  * Generates a deserialize function for the polymorphic type GenericType.
  */
 #define DESERIALIZE_POLYMORPHIC(GenericType, ...)                              \
-    template <typename T,                                                      \
-              std::enable_if_t<std::is_same_v<serializer::mtf::base_t<T>,      \
-                                              GenericType *>> * = nullptr>     \
+    template <typename T>                                                      \
+        requires std::is_same_v<serializer::mtf::base_t<T>, GenericType *>     \
     static GenericType *deserialize(const std::string &str) {                  \
         return serializer::helper::type_switch_fn<GenericType *, __VA_ARGS__>( \
             serializer::parser::getThisClassName(str), str);                   \
