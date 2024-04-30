@@ -3,7 +3,8 @@
 #include "concepts.hpp"
 #include "metafunctions.hpp"
 #include "parser.hpp"
-#include "utils.h"
+#include "serializer/exceptions.hpp"
+#include "utils.hpp"
 #include <algorithm>
 #include <sstream>
 #include <string>
@@ -240,14 +241,12 @@
 struct Convertor {
     template <serializer::concepts::NonSerializable T>
     static std::string serialize(const T &) {
-        throw "error: non serializable";
-        return "";
+        throw serializer::exceptions::UnsupportedTypeError<T>();
     }
 
     template <serializer::concepts::NonDeserializable T>
     static T deserialize(const std::string &) {
-        throw "error: non serializable";
-        return T();
+        throw serializer::exceptions::UnsupportedTypeError<T>();
     }
 
     CONVERTOR;
