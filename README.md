@@ -1,7 +1,8 @@
 # C++ serializer generation
 
-The purpose of this project is to use templates to automate generation of
-serialization and deserialisation methods for C++ classes.
+The purpose of this project is to use templates and concepts (C++20) to
+automate generation of serialization and deserialisation methods for C++
+classes.
 
 The best way to learn how to use the lib is to check the [wiki](https://github.com/drfailer/serializer-cpp/wiki).
 
@@ -47,7 +48,7 @@ void main(int argc, char** argv) {
 
 ### Genericity
 
-This method relies a lot on SFINAE, which means that a lot of conversion
+This method relies a lot on concepts, which means that a lot of conversion
 functions have been written. However, even if this simple library tries to be
 very generic, some types may not be handled properly. The library allow to
 create custom functions manually if required.
@@ -65,8 +66,8 @@ be handled manually. There is a convenient macro for this.
 ### Containers
 
 Containers are detected with iterators so the majority of the containers of the
-standard library. External containers that implements the iterator trait
-properly will be supported too. However, the elements inside the containers must
-be serializable.
+standard library are supported. External containers that are iterable will be
+supported too (`QList` from Qt for instance). However, the elements inside the
+containers must be serializable.
 
 **Static arrays are not supported.**
