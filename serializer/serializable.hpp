@@ -10,7 +10,7 @@
     __serializer__(__VA_ARGS__, #__VA_ARGS__, typeid(*this).name())
 
 /* Used to create a serializable class with the default convertor. */
-#define DEFAULT_CONVERTOR Convertor
+#define DEFAULT_CONVERTOR serializer::Convertor
 
 /*
  * Generates de the default implementation for serialization / deserialization
@@ -92,7 +92,7 @@
  */
 #define SERIALIZABLE_EMPTY()                                                   \
   private:                                                                     \
-    serializer::Serializer<Convertor> __serializer__;                          \
+    serializer::Serializer<DEFAULT_CONVERTOR> __serializer__;                  \
                                                                                \
   public:                                                                      \
     POLYMORPHIC_FN_IMPL;                                                       \
@@ -117,14 +117,14 @@
 
 /* Generates the code for the serializable with a custom implementation. */
 #define SERIALIZABLE_WITH_IMPL(IMPL, ...)                                      \
-    __SERIALIZABLE__(Convertor, IMPL, __VA_ARGS__)
+    __SERIALIZABLE__(DEFAULT_CONVERTOR, IMPL, __VA_ARGS__)
 
 /*
  * Generates the code for the serializable with the default convertor and use
  * the implementation for serializing the super class.
  */
 #define SERIALIZABLE_SUPER(Super, ...)                                         \
-    __SERIALIZABLE__(Convertor, SUPER_FN_IMPL(Super), __VA_ARGS__)
+    __SERIALIZABLE__(DEFAULT_CONVERTOR, SUPER_FN_IMPL(Super), __VA_ARGS__)
 
 /*
  * Generates the code for the serializable with a custom convertor and use

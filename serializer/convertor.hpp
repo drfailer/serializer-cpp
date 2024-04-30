@@ -238,6 +238,8 @@
 /*                          default convertor class                           */
 /******************************************************************************/
 
+namespace serializer {
+
 struct Convertor {
     template <serializer::concepts::NonSerializable T>
     static std::string serialize(const T &) {
@@ -251,5 +253,7 @@ struct Convertor {
 
     CONVERTOR;
 };
+
+}
 
 #endif
