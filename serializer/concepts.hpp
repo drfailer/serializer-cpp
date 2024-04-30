@@ -1,15 +1,15 @@
 #ifndef CONCEPTS_HPP
 #define CONCEPTS_HPP
-#include <type_traits>
 #include "metafunctions.hpp"
+#include <type_traits>
 
 namespace serializer::concepts {
 
 template <typename T>
-concept Serializable = requires (T obj) { obj.serialize(); };
+concept Serializable = requires(T obj) { obj.serialize(); };
 
 template <typename T>
-concept Deserializable = requires (T obj) { obj.deserialize(""); };
+concept Deserializable = requires(T obj) { obj.deserialize(""); };
 
 template <typename T>
 concept SmartPtr = mtf::is_smart_ptr_v<T>;
@@ -34,6 +34,38 @@ concept Iterable = requires { typename T::iterator; };
 
 template <typename T>
 concept NonStringIterable = !String<T> && Iterable<T>;
+
+template <typename T>
+concept TupleLike = requires(T obj) {
+    std::get<0>(obj);
+    typename std::tuple_element_t<0, T>;
+    std::tuple_size_v<T>;
+};
+
+/* unsuported types */
+
+template <typename T>
+concept Unsuported =
+    !SmartPtr<T> && !ConcretePtr<T> && !Pointer<T> && !Fundamental<T> &&
+    !Enum<T> && !String<T> && !Iterable<T> && !TupleLike<T>;
+
+template <typename T>
+concept NonSerializable = !Serializable<T> && Unsuported<T>;
+
+template <typename T>
+concept NonDeserializable = !Deserializable<T> && Unsuported<T>;
+
+/* for insert helper function */
+
+template <typename Container, typename T>
+concept Insertable = requires (Container obj) {
+    obj.insert(std::declval<T>());
+};
+
+template <typename Container, typename T>
+concept PushBackable = requires (Container obj) {
+    obj.push_back(std::declval<T>());
+};
 
 }; // namespace serializer::concepts
 
