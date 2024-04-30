@@ -42,6 +42,22 @@ void insert(Container &container, const T &element, size_t idx) {
     container[idx] = element;
 }
 
+template <class T, size_t... Idx>
+    requires serializer::concepts::TupleLike<T>
+std::string convertTuple(T &obj, std::index_sequence<Idx...>) {
+    std::ostringstream oss;
+    oss << "{ ";
+    (oss << ... << std::get<Idx>(obj)) << " ";
+    oss << "}";
+    return oss.str();
+}
+
+template <template <typename...> class T, typename... Types>
+    requires serializer::concepts::TupleLike<T<Types...>>
+std::string convertTuple(T<Types...> &obj) {
+    return convertTuple(obj, std::make_index_sequence<sizeof...(Types)>());
+}
+
 /******************************************************************************/
 /*                      default convertor implementation                      */
 /******************************************************************************/
@@ -117,18 +133,26 @@ void insert(Container &container, const T &element, size_t idx) {
         return t;                                                              \
     }                                                                          \
                                                                                \
-    template <typename T,                                                      \
-              std::enable_if_t<serializer::mtf::is_pair_v<T>> * = nullptr>     \
+    template <class T, size_t... Idx>                                          \
+    static T deserializeTuple(const std::string &str,                          \
+                              std::index_sequence<Idx...>) {                   \
+        T tuple;                                                               \
+        std::pair<std::string, std::string> content = std::make_pair("", str); \
+        (                                                                      \
+            [&] {                                                              \
+                content = serializer::parser::parseTuple(content.second);      \
+                std::get<Idx>(tuple) =                                         \
+                    deserialize<std::tuple_element_t<Idx, T>>(content.first);  \
+            }(),                                                               \
+            ...);                                                              \
+        return tuple;                                                          \
+    }                                                                          \
+                                                                               \
+    template <serializer::concepts::TupleLike T>                               \
+        requires(!serializer::concepts::Array<T>)                              \
     static T deserialize(const std::string &str) {                             \
-        using first_type = typename T::first_type;                             \
-        using second_type = typename T::second_type;                           \
-        std::pair<std::string, std::string> content =                          \
-            serializer::parser::parsePair(str);                                \
-        first_type elt1 =                                                      \
-            deserialize<std::remove_const_t<first_type>>(content.first);       \
-        second_type elt2 =                                                     \
-            deserialize<std::remove_const_t<second_type>>(content.second);     \
-        return T(elt1, elt2);                                                  \
+        return deserializeTuple<serializer::mtf::remove_const_tuple_t<T>>(     \
+            str, std::make_index_sequence<std::tuple_size_v<T>>());            \
     }                                                                          \
                                                                                \
     template <serializer::concepts::Enum T>                                    \
@@ -211,13 +235,21 @@ void insert(Container &container, const T &element, size_t idx) {
         }                                                                      \
     }                                                                          \
                                                                                \
-    template <typename T,                                                      \
-              std::enable_if_t<serializer::mtf::is_pair_v<T>> * = nullptr>     \
-    static std::string serialize(const T &elt) {                               \
+    template <class T, size_t... Idx>                                          \
+    static std::string serializeTuple(const T &tuple,                          \
+                                      std::index_sequence<Idx...>) {           \
         std::ostringstream oss;                                                \
-        oss << "{ " << serialize(elt.first) << ", " << serialize(elt.second)   \
-            << " }";                                                           \
+        oss << "{ ";                                                           \
+        (oss << ... << (serialize(std::get<Idx>(tuple)) + ", "));              \
+        oss << " }";                                                           \
         return oss.str();                                                      \
+    }                                                                          \
+                                                                               \
+    template <serializer::concepts::TupleLike T>                               \
+        requires(!serializer::concepts::Array<T>)                              \
+    static std::string serialize(const T &tuple) {                             \
+        return serializeTuple(                                                 \
+            tuple, std::make_index_sequence<std::tuple_size_v<T>>());          \
     }                                                                          \
                                                                                \
     template <serializer::concepts::Enum T>                                    \

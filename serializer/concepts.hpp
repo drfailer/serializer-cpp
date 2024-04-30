@@ -42,6 +42,9 @@ concept TupleLike = requires(T obj) {
     std::tuple_size_v<T>;
 };
 
+template <typename T>
+concept Array = mtf::is_std_array_v<T>;
+
 /* unsuported types */
 
 template <typename T>

@@ -6,6 +6,7 @@
 #include "test-classes/simple.hpp"
 #include "test-classes/withMap.hpp"
 #include "test-classes/withPair.hpp"
+#include "test-classes/withtuple.hpp"
 #include "test-classes/withSmartPtr.hpp"
 #include "test-classes/withcontainer.hpp"
 #include "test-classes/withconvertor.hpp"
@@ -464,6 +465,71 @@ TEST_CASE("pairs") {
     auto otherSecondIt = other.getContainerPair().second.begin();
     while (originalSecondIt != original.getContainerPair().second.end()) {
         REQUIRE(*originalSecondIt++ == *otherSecondIt++);
+    }
+}
+
+/******************************************************************************/
+/*                                   tuples                                   */
+/******************************************************************************/
+
+TEST_CASE("tuples") {
+    std::vector<int> v = { 1, 2 ,3 ,4 };
+    std::set<std::string> s = { "hello", "world" };
+    std::map<std::string, std::string> m = { {"foo", "barr"}, {"hello", "wolrd"} };
+    WithTuple original(1, 2, 1.618, "hello", "world", "!", Simple(10, 20),
+                      Composed(Simple(10, 20), 3, 3.14), v, s, m);
+    WithTuple other;
+    std::string result;
+
+    REQUIRE(std::get<0>(original.getNumberTuple()) != std::get<0>(other.getNumberTuple()));
+    REQUIRE(std::get<1>(original.getNumberTuple()) != std::get<1>(other.getNumberTuple()));
+    REQUIRE(std::get<2>(original.getNumberTuple()) != std::get<2>(other.getNumberTuple()));
+
+    REQUIRE(std::get<0>(original.getStringTuple()) != std::get<0>(other.getStringTuple()));
+    REQUIRE(std::get<1>(original.getStringTuple()) != std::get<1>(other.getStringTuple()));
+    REQUIRE(std::get<2>(original.getStringTuple()) != std::get<2>(other.getStringTuple()));
+
+    REQUIRE(std::get<0>(original.getObjTuple()) != std::get<0>(other.getObjTuple()));
+    REQUIRE(std::get<1>(original.getObjTuple()) != std::get<1>(other.getObjTuple()));
+
+    REQUIRE(std::get<0>(original.getContainerTuple()).size() != std::get<0>(other.getContainerTuple()).size());
+    REQUIRE(std::get<1>(original.getContainerTuple()).size() != std::get<1>(other.getContainerTuple()).size());
+    REQUIRE(std::get<2>(original.getContainerTuple()).size() != std::get<2>(other.getContainerTuple()).size());
+
+    result = original.serialize();
+    other.deserialize(result);
+
+    REQUIRE(std::get<0>(original.getNumberTuple()) == std::get<0>(other.getNumberTuple()));
+    REQUIRE(std::get<1>(original.getNumberTuple()) == std::get<1>(other.getNumberTuple()));
+    REQUIRE(std::get<2>(original.getNumberTuple()) == std::get<2>(other.getNumberTuple()));
+
+    REQUIRE(std::get<0>(original.getStringTuple()) == std::get<0>(other.getStringTuple()));
+    REQUIRE(std::get<1>(original.getStringTuple()) == std::get<1>(other.getStringTuple()));
+    REQUIRE(std::get<2>(original.getStringTuple()) == std::get<2>(other.getStringTuple()));
+
+    REQUIRE(std::get<0>(original.getObjTuple()) == std::get<0>(other.getObjTuple()));
+    REQUIRE(std::get<1>(original.getObjTuple()) == std::get<1>(other.getObjTuple()));
+
+    REQUIRE(std::get<0>(original.getContainerTuple()).size() == std::get<0>(other.getContainerTuple()).size());
+    REQUIRE(std::get<1>(original.getContainerTuple()).size() == std::get<1>(other.getContainerTuple()).size());
+    REQUIRE(std::get<2>(original.getContainerTuple()).size() == std::get<2>(other.getContainerTuple()).size());
+
+    auto originalFirstIt = std::get<0>(original.getContainerTuple()).begin();
+    auto otherFirstIt = std::get<0>(other.getContainerTuple()).begin();
+    while (originalFirstIt != std::get<0>(original.getContainerTuple()).end()) {
+        REQUIRE(*originalFirstIt++ == *otherFirstIt++);
+    }
+
+    auto originalSecondIt = std::get<1>(original.getContainerTuple()).begin();
+    auto otherSecondIt = std::get<1>(other.getContainerTuple()).begin();
+    while (originalSecondIt != std::get<1>(original.getContainerTuple()).end()) {
+        REQUIRE(*originalSecondIt++ == *otherSecondIt++);
+    }
+
+    auto originalThirdIt = std::get<2>(original.getContainerTuple()).begin();
+    auto otherThirdIt = std::get<2>(other.getContainerTuple()).begin();
+    while (originalThirdIt != std::get<2>(original.getContainerTuple()).end()) {
+        REQUIRE(*originalThirdIt++ == *otherThirdIt++);
     }
 }
 
