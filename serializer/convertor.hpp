@@ -23,19 +23,23 @@
 /******************************************************************************/
 
 // sorted container
-template <
-    typename Container, typename T,
-    decltype(std::declval<Container>().insert(std::declval<T>())) * = nullptr>
+template <typename Container, typename T>
+    requires serializer::concepts::Insertable<Container, T>
 void insert(Container &container, const T &element) {
     container.insert(element);
 }
 
 // sequence container
-template <typename Container, typename T,
-          decltype(std::declval<Container>().push_back(std::declval<T>())) * =
-              nullptr>
+template <typename Container, typename T>
+    requires serializer::concepts::PushBackable<Container, T>
 void insert(Container &container, const T &element) {
     container.push_back(element);
+}
+
+// arrays
+template <typename Container, typename T>
+void insert(Container &container, const T &element, size_t idx) {
+    container[idx] = element;
 }
 
 /******************************************************************************/
@@ -147,12 +151,19 @@ void insert(Container &container, const T &element) {
         T result;                                                              \
         std::size_t valueStart = 2;                                            \
         std::size_t valueEnd;                                                  \
+        size_t idx = 0;                                                        \
+        using valueType = serializer::mtf::iter_value_t<T>;                    \
                                                                                \
         while (valueStart < str.size()) {                                      \
             valueEnd = serializer::parser::findEndValueIndex(str, valueStart); \
-            insert(result,                                                     \
-                   deserialize<serializer::mtf::iter_value_t<T>>(              \
-                       str.substr(valueStart, valueEnd - valueStart)));        \
+            auto value = deserialize<valueType>(                               \
+                str.substr(valueStart, valueEnd - valueStart));                \
+            if constexpr (serializer::concepts::Insertable<T, valueType> ||    \
+                          serializer::concepts::PushBackable<T, valueType>) {  \
+                insert(result, value);                                         \
+            } else {                                                           \
+                insert(result, value, idx++);                                  \
+            }                                                                  \
             valueStart = valueEnd + 2; /* value1, value2 */                    \
         }                                                                      \
                                                                                \
@@ -243,6 +254,18 @@ void insert(Container &container, const T &element) {
 /******************************************************************************/
 
 struct Convertor {
+    template <serializer::concepts::NonSerializable T>
+    static std::string serialize(const T &) {
+        throw "error: non serializable";
+        return "";
+    }
+
+    template <serializer::concepts::NonDeserializable T>
+    static T deserialize(const std::string &) {
+        throw "error: non serializable";
+        return T();
+    }
+
     CONVERTOR;
 };
 

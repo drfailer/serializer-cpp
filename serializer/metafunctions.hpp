@@ -14,7 +14,17 @@ template <typename T>
 using base_t = typename std::remove_const_t<std::remove_reference_t<T>>;
 
 template <typename T>
-using iter_value_t = typename base_t<T>::iterator::value_type;
+struct iter_value {
+    using type = typename base_t<T>::iterator::value_type;
+};
+
+template <typename T, size_t N>
+struct iter_value<std::array<T, N>> {
+    using type = T;
+};
+
+template <typename T>
+using iter_value_t = iter_value<T>::type;
 
 /******************************************************************************/
 /*                                  pointers                                  */

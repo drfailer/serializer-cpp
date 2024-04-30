@@ -199,6 +199,7 @@ TEST_CASE("serialization/deserialisation with ITERABLES ATTRIBUTE") {
         original.addDouble(double(i));
         original.addSimple(Simple(i, 2 * i));
         original.addVec(std::vector<int>{1*i, 2*i, 3*i, 4*i, 5*i});
+        original.addArr(i, i*2);
     }
 
     REQUIRE(original.getEmptyVec().size() == 0);
@@ -206,10 +207,12 @@ TEST_CASE("serialization/deserialisation with ITERABLES ATTRIBUTE") {
     REQUIRE(original.getVec().size() == 10);
     REQUIRE(original.getLst().size() == 10);
     REQUIRE(original.getClassVec().size() == 10);
+    REQUIRE(original.getArr().size() == 10);
     REQUIRE(other.getVec().size() == 0);
     REQUIRE(other.getLst().size() == 0);
     REQUIRE(other.getClassVec().size() == 0);
     REQUIRE(other.getVec2D().size() == 0);
+    REQUIRE(other.getArr().size() == 10);
 
     result = original.serialize();
     other.deserialize(result);
@@ -218,6 +221,7 @@ TEST_CASE("serialization/deserialisation with ITERABLES ATTRIBUTE") {
     for (int i = 0; i < 10; ++i) {
         REQUIRE(original.getVec()[i] == other.getVec()[i]);
         REQUIRE(original.getClassVec()[i] == other.getClassVec()[i]);
+        REQUIRE(original.getArr()[i] == other.getArr()[i]);
         for (int j = 0; j < 5; ++j) {
             REQUIRE(original.getVec2D().at(i).at(j) == original.getVec2D().at(i).at(j));
         }
@@ -422,8 +426,10 @@ TEST_CASE("enums") {
 /******************************************************************************/
 
 TEST_CASE("pairs") {
+    std::vector<int> v = { 1, 2 ,3 ,4 };
+    std::set<std::string> s = { "hello", "world" };
     WithPair original(1, 2, "hello", "world", Simple(10, 20),
-                      Composed(Simple(10, 20), 3, 3.14));
+                      Composed(Simple(10, 20), 3, 3.14), v, s);
     WithPair other;
     std::string result;
 
@@ -433,6 +439,8 @@ TEST_CASE("pairs") {
     REQUIRE(original.getStringPair().first != other.getStringPair().first);
     REQUIRE(original.getObjPair().second != other.getObjPair().second);
     REQUIRE(original.getObjPair().second != other.getObjPair().second);
+    REQUIRE(original.getContainerPair().first.size() != other.getContainerPair().first.size());
+    REQUIRE(original.getContainerPair().second.size() != other.getContainerPair().second.size());
 
     result = original.serialize();
     other.deserialize(result);
@@ -443,6 +451,20 @@ TEST_CASE("pairs") {
     REQUIRE(original.getStringPair().second == other.getStringPair().second);
     REQUIRE(original.getObjPair().second == other.getObjPair().second);
     REQUIRE(original.getObjPair().second == other.getObjPair().second);
+    REQUIRE(original.getContainerPair().first.size() == other.getContainerPair().first.size());
+    REQUIRE(original.getContainerPair().second.size() == other.getContainerPair().second.size());
+
+    auto originalFirstIt = original.getContainerPair().first.begin();
+    auto otherFirstIt = other.getContainerPair().first.begin();
+    while (originalFirstIt != original.getContainerPair().first.end()) {
+        REQUIRE(*originalFirstIt++ == *otherFirstIt++);
+    }
+
+    auto originalSecondIt = original.getContainerPair().second.begin();
+    auto otherSecondIt = other.getContainerPair().second.begin();
+    while (originalSecondIt != original.getContainerPair().second.end()) {
+        REQUIRE(*originalSecondIt++ == *otherSecondIt++);
+    }
 }
 
 /******************************************************************************/
