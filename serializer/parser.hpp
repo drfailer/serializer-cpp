@@ -133,20 +133,18 @@ inline std::string getClassName(const std::string &str) {
 }
 
 /******************************************************************************/
-/*                                   pairs                                    */
+/*                                   tuples                                   */
 /******************************************************************************/
 
-inline std::pair<std::string, std::string> parsePair(const std::string &str) {
-    std::string elt1;
-    std::string elt2;
+inline std::pair<std::string, std::string> parseTuple(const std::string &str) {
+    std::string value;
+    std::string rest;
     std::size_t begin = 2;
     std::size_t end = findEndValueIndex(str, begin);
 
-    elt1 = str.substr(begin, end - begin);
-    begin = end + 2;
-    end = str.size() - 2;
-    elt2 = str.substr(begin, end - begin);
-    return std::make_pair(elt1, elt2);
+    value = str.substr(begin, end - begin);
+    rest = str.substr(end);
+    return std::make_pair(value, rest);
 }
 
 /******************************************************************************/

@@ -59,37 +59,6 @@ TEST_CASE("getSuperValue") {
 }
 
 /******************************************************************************/
-/*                             test pair parsing                              */
-/******************************************************************************/
-
-TEST_CASE("parsePair") {
-    std::string basic = "{ 1, 2 }";
-    std::string string = "{ \"string1\", \"string2\" }";
-    std::string withObjects =
-        "{ { element11: test, element12: { sub } }, { element2: { sub } } }";
-
-    std::pair<std::string, std::string> basic_result =
-        serializer::parser::parsePair(basic);
-    std::pair<std::string, std::string> string_result =
-        serializer::parser::parsePair(string);
-    std::pair<std::string, std::string> withObjects_result =
-        serializer::parser::parsePair(withObjects);
-
-    /* basic test */
-    REQUIRE(basic_result.first == "1");
-    REQUIRE(basic_result.second == "2");
-
-    /* with strings */
-    REQUIRE(string_result.first == "\"string1\"");
-    REQUIRE(string_result.second == "\"string2\"");
-
-    /* with objects */
-    REQUIRE(withObjects_result.first ==
-            "{ element11: test, element12: { sub } }");
-    REQUIRE(withObjects_result.second == "{ element2: { sub } }");
-}
-
-/******************************************************************************/
 /*                            test parse one level                            */
 /******************************************************************************/
 
@@ -165,4 +134,28 @@ TEST_CASE("escape string") {
                         serializer::parser::escapeStr(str2)));
     REQUIRE(str3 == serializer::parser::unescapeStr(
                         serializer::parser::escapeStr(str3)));
+}
+
+/******************************************************************************/
+/*                                parse tuple                                 */
+/******************************************************************************/
+
+TEST_CASE("parse tuple") {
+    std::string tupleValue = "{ 14, \"string\", { objects }, 12 }";
+    std::pair<std::string, std::string> content =
+        serializer::parser::parseTuple(tupleValue);
+
+    REQUIRE(content.first == "14");
+    REQUIRE(content.second == ", \"string\", { objects }, 12 }");
+    content = serializer::parser::parseTuple(content.second);
+
+    REQUIRE(content.first == "\"string\"");
+    REQUIRE(content.second == ", { objects }, 12 }");
+    content = serializer::parser::parseTuple(content.second);
+
+    REQUIRE(content.first == "{ objects }");
+    REQUIRE(content.second == ", 12 }");
+    content = serializer::parser::parseTuple(content.second);
+
+    REQUIRE(content.first == "12");
 }
