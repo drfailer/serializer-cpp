@@ -3,60 +3,12 @@
 #include "concepts.hpp"
 #include "metafunctions.hpp"
 #include "parser.hpp"
+#include "utils.h"
 #include <algorithm>
 #include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
-
-/*
- * The convertor contains serialize and deserialize template functions that are
- * used for serializing various types. Here, we use SFINAE to generate the right
- * implementations for the different types.
- *
- * Implementations of the functions are defined in a macro to allow the user to
- * create its own Convertor class.
- */
-
-/******************************************************************************/
-/*                              helper functions                              */
-/******************************************************************************/
-
-// sorted container
-template <typename Container, typename T>
-    requires serializer::concepts::Insertable<Container, T>
-void insert(Container &container, const T &element) {
-    container.insert(element);
-}
-
-// sequence container
-template <typename Container, typename T>
-    requires serializer::concepts::PushBackable<Container, T>
-void insert(Container &container, const T &element) {
-    container.push_back(element);
-}
-
-// arrays
-template <typename Container, typename T>
-void insert(Container &container, const T &element, size_t idx) {
-    container[idx] = element;
-}
-
-template <class T, size_t... Idx>
-    requires serializer::concepts::TupleLike<T>
-std::string convertTuple(T &obj, std::index_sequence<Idx...>) {
-    std::ostringstream oss;
-    oss << "{ ";
-    (oss << ... << std::get<Idx>(obj)) << " ";
-    oss << "}";
-    return oss.str();
-}
-
-template <template <typename...> class T, typename... Types>
-    requires serializer::concepts::TupleLike<T<Types...>>
-std::string convertTuple(T<Types...> &obj) {
-    return convertTuple(obj, std::make_index_sequence<sizeof...(Types)>());
-}
 
 /******************************************************************************/
 /*                      default convertor implementation                      */
@@ -184,9 +136,9 @@ std::string convertTuple(T<Types...> &obj) {
                 str.substr(valueStart, valueEnd - valueStart));                \
             if constexpr (serializer::concepts::Insertable<T, valueType> ||    \
                           serializer::concepts::PushBackable<T, valueType>) {  \
-                insert(result, value);                                         \
+                serializer::utility::insert(result, value);                    \
             } else {                                                           \
-                insert(result, value, idx++);                                  \
+                serializer::utility::insert(result, value, idx++);             \
             }                                                                  \
             valueStart = valueEnd + 2; /* value1, value2 */                    \
         }                                                                      \
@@ -300,71 +252,5 @@ struct Convertor {
 
     CONVERTOR;
 };
-
-namespace serializer::helper {
-
-/******************************************************************************/
-/*                               helper macros                                */
-/******************************************************************************/
-
-/* facilitate the creation of a custom deserialize function for a specific type.
- *
- * Example:
- * serialize_custom_type(MyType, const std::string str) {
- *     ...
- * }
- */
-#define deserialize_custom_type(Type, input)                                   \
-    template <typename T>                                                      \
-        requires std::is_same_v<serializer::mtf::base_t<T>, Type>              \
-    static Type deserialize(input)
-
-#define serialize_custom_type(input) static std::string serialize(input)
-
-#define class_name(Type) typeid(Type).name()
-
-/******************************************************************************/
-/*                          deserialize polymorphic                           */
-/******************************************************************************/
-
-/*
- * This macro will generate a deserialize function for polymorphic types. The
- * purpose is to help the user to easily create its own convertor that is
- * capable of handling polymorphic types.
- *
- * Here we juste have to use the macro DESERIALIZE_POLYMORPHIC. It takes as
- * arguemnts the super class and the list of classes that inherits from this
- * super class. The resulting function will return a heap allocated pointer of
- * type Super class that is created using the right constructor.
- */
-
-template <typename RT>
-RT type_switch_fn(const std::string &, const std::string &) {
-    return nullptr;
-}
-
-template <typename RT, typename T, typename... Types>
-RT type_switch_fn(const std::string &className, const std::string &str) {
-    static_assert(!std::is_abstract_v<T>, "The type shouldn't be abstract.");
-    if (className == class_name(T)) {
-        T *elt = new T();
-        elt->deserialize(str);
-        return elt;
-    }
-    return type_switch_fn<RT, Types...>(className, str);
-}
-
-} // namespace serializer::helper
-
-/*
- * Generates a deserialize function for the polymorphic type GenericType.
- */
-#define DESERIALIZE_POLYMORPHIC(GenericType, ...)                              \
-    template <typename T>                                                      \
-        requires std::is_same_v<serializer::mtf::base_t<T>, GenericType *>     \
-    static GenericType *deserialize(const std::string &str) {                  \
-        return serializer::helper::type_switch_fn<GenericType *, __VA_ARGS__>( \
-            serializer::parser::getThisClassName(str), str);                   \
-    }
 
 #endif
