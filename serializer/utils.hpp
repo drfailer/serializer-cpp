@@ -6,8 +6,8 @@ namespace serializer::utility {
 
 /*
  * The convertor contains serialize and deserialize template functions that are
- * used for serializing various types. Here, we use concepts to generate the right
- * implementations for the different types.
+ * used for serializing various types. Here, we use concepts to generate the
+ * right implementations for the different types.
  *
  * Implementations of the functions are defined in a macro to allow the user to
  * create its own Convertor class.
@@ -53,7 +53,8 @@ void insert(Container &container, const T &element, size_t idx) {
         requires std::is_same_v<serializer::mtf::base_t<T>, Type>              \
     static Type deserialize(input)
 
-#define serialize_custom_type(input) static std::string serialize(input)
+#define serialize_custom_type(input)                                           \
+    static std::string serialize(input, std::string &str)
 
 #define class_name(Type) typeid(Type).name()
 
@@ -97,7 +98,8 @@ RT type_switch_fn(const std::string &className, const std::string &str) {
     template <typename T>                                                      \
         requires std::is_same_v<serializer::mtf::base_t<T>, GenericType *>     \
     static GenericType *deserialize(const std::string &str) {                  \
-        return serializer::utility::type_switch_fn<GenericType *, __VA_ARGS__>( \
+        return serializer::utility::type_switch_fn<GenericType *,              \
+                                                   __VA_ARGS__>(               \
             serializer::parser::getThisClassName(str), str);                   \
     }
 

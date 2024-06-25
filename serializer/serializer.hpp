@@ -29,8 +29,16 @@ template <typename Conv, typename... Types> class Serializer {
     /* serialize **************************************************************/
     std::string serialize() const {
         std::ostringstream oss;
-        oss << "{ __CLASS_NAME__: " << className << ", "
-            << container.serialize() << " }";
+        std::string str;
+        container.serialize(str);
+        oss << "{ __CLASS_NAME__: " << className << ", " << str << " }";
+        return oss.str();
+    }
+
+    std::string serialize(std::string &str) const {
+        std::ostringstream oss;
+        container.serialize(str);
+        oss << "{ __CLASS_NAME__: " << className << ", " << str << " }";
         return oss.str();
     }
 

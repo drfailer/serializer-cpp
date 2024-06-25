@@ -17,7 +17,7 @@ namespace serializer {
  * the identifiers and the references on the attributes of the serialized class.
  */
 template <typename Conv, typename... Types> struct AttrContainer {
-    std::string serialize() const { return ""; }
+    std::string serialize(std::string &str) const { return str; }
     void deserialize(const std::map<std::string, std::string> &) {}
 
     AttrContainer() {}
@@ -35,13 +35,11 @@ struct AttrContainer<Conv, H, Types...> {
     AttrContainer<Conv, Types...> next;
 
     /* serialize **************************************************************/
-    std::string serialize() const {
-        std::ostringstream oss;
-        oss << name << ": " << Conv::serialize(reference);
+    std::string serialize(std::string &str) const {
+        Conv::serialize(reference, str);
         if constexpr (sizeof...(Types) > 0) {
-            oss << ", " << next.serialize();
+            next.serialize(str);
         }
-        return oss.str();
     }
 
     /* deserialize ************************************************************/

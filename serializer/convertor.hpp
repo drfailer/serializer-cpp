@@ -150,88 +150,79 @@
     /* serialize ***********************************************************/  \
                                                                                \
     template <serializer::concepts::Serializable T>                            \
-    static std::string serialize(T &elt) {                                     \
-        return elt.serialize();                                                \
+    static std::string serialize(T &elt, std::string &str) {                   \
+        /* TODO: optimize this */                                              \
+        return str.append(elt.serialize());                                    \
     }                                                                          \
                                                                                \
     template <serializer::concepts::Fundamental T>                             \
-    static std::string serialize(T &elt) {                                     \
-        std::ostringstream oss;                                                \
-        oss << elt;                                                            \
-        return oss.str();                                                      \
+    static std::string serialize(T &elt, std::string &str) {                   \
+        return str.append(reinterpret_cast<char *>(&elt), sizeof(T));          \
     }                                                                          \
                                                                                \
     template <serializer::concepts::Pointer T>                                 \
-    static std::string serialize(T elt) {                                      \
+    static std::string serialize(T elt, std::string &str) {                    \
         if (elt != nullptr) {                                                  \
             if constexpr (std::is_abstract_v<std::remove_pointer_t<T>>) {      \
-                return elt->serialize();                                       \
+                str.append(elt->serialize());                                  \
+                return str;                                                    \
             } else {                                                           \
-                return serialize<std::remove_pointer_t<T>>(*elt);              \
+                /* ptr mode: address or content ? */                           \
+                return serialize<std::remove_pointer_t<T>>(*elt, str);         \
             }                                                                  \
         } else {                                                               \
-            return "nullptr";                                                  \
+            return str.append("\0");                                           \
         }                                                                      \
     }                                                                          \
                                                                                \
     template <serializer::concepts::SmartPtr SP>                               \
-    static std::string serialize(SP &elt) {                                    \
+    static std::string serialize(SP &elt, std::string &str) {                  \
         if (elt != nullptr) {                                                  \
             if constexpr (serializer::concepts::Serializable<                  \
                               typename SP::element_type>) {                    \
-                return elt->serialize();                                       \
+                return str.append(elt->serialize());                           \
             } else {                                                           \
-                return serialize<typename SP::element_type>(*elt);             \
+                return serialize<typename SP::element_type>(*elt, str);        \
             }                                                                  \
         } else {                                                               \
-            return "nullptr";                                                  \
+            return str.append("\0");                                           \
         }                                                                      \
     }                                                                          \
                                                                                \
     template <class T, size_t... Idx>                                          \
-    static std::string serializeTuple(const T &tuple,                          \
+    static std::string serializeTuple(const T &tuple, std::string &str,        \
                                       std::index_sequence<Idx...>) {           \
-        std::ostringstream oss;                                                \
-        oss << "{ ";                                                           \
-        (oss << ... << (serialize(std::get<Idx>(tuple)) + ", "));              \
-        oss << " }";                                                           \
-        return oss.str();                                                      \
+        ([&] { serialize(std::get<Idx>(tuple), str); }(), ...);                \
+        return str;                                                            \
     }                                                                          \
                                                                                \
     template <serializer::concepts::TupleLike T>                               \
         requires(!serializer::concepts::Array<T>)                              \
-    static std::string serialize(const T &tuple) {                             \
+    static std::string serialize(const T &tuple, std::string &str) {           \
         return serializeTuple(                                                 \
-            tuple, std::make_index_sequence<std::tuple_size_v<T>>());          \
+            tuple, str, std::make_index_sequence<std::tuple_size_v<T>>());     \
     }                                                                          \
                                                                                \
     template <serializer::concepts::Enum T>                                    \
-    static std::string serialize(const T &elt) {                               \
-        std::ostringstream oss;                                                \
-        std::underlying_type_t<T> v = (std::underlying_type_t<T>)elt;          \
-        oss << v;                                                              \
-        return oss.str();                                                      \
+    static std::string serialize(const T &elt, std::string &str) {             \
+        std::underlying_type_t<T> value = (std::underlying_type_t<T>)elt;      \
+        return str.append(reinterpret_cast<char *>(&value), sizeof(value));    \
     }                                                                          \
                                                                                \
-    static std::string serialize(const std::string &elt) {                     \
-        std::ostringstream oss;                                                \
-        oss << "\"" << serializer::parser::escapeStr(elt) << "\"";             \
-        return oss.str();                                                      \
+    static std::string serialize(const std::string &elt, std::string &str) {   \
+        str.append(reinterpret_cast<char *>(elt.size()), sizeof(elt.size()));  \
+        return str.append(elt);                                                \
     }                                                                          \
                                                                                \
     template <serializer::concepts::NonStringIterable T>                       \
-    static std::string serialize(const T &elts) {                              \
-        std::ostringstream oss;                                                \
-        auto it = elts.begin();                                                \
+    static std::string serialize(const T &elts, std::string &str) {            \
+        str.append(reinterpret_cast<char *>(std::size(elts)),                  \
+                   sizeof(std::size(elts)));                                   \
                                                                                \
-        if (it != elts.end()) {                                                \
-            oss << "[ " << serialize(*it++);                                   \
-            for (; it != elts.end(); it++) {                                   \
-                oss << ", " << serialize(*it);                                 \
-            }                                                                  \
-            oss << " ]";                                                       \
+        for (auto elt : elts) {                                                \
+            str.append(serialize(elt, str));                                   \
         }                                                                      \
-        return oss.str();                                                      \
+        return str;                                                            \
     }
 
 /******************************************************************************/
@@ -254,6 +245,6 @@ struct Convertor {
     CONVERTOR;
 };
 
-}
+} // namespace serializer
 
 #endif

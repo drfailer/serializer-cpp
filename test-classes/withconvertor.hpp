@@ -33,6 +33,8 @@ struct TestConvertor {
     serialize_custom_type(const Unknown &u) {
         std::ostringstream oss;
         oss << u.getX();
+        int i = u.getX();
+        str.append(reinterpret_cast<char*>(&i));
         return oss.str();
     }
 
