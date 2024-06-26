@@ -4,6 +4,7 @@
 #include "serializer/serializable.hpp"
 #include "serializer/serializer.hpp"
 #include <sstream>
+#include <string>
 #include <vector>
 
 /******************************************************************************/
@@ -33,13 +34,13 @@ struct TestConvertor {
     serialize_custom_type(const Unknown &u) {
         std::ostringstream oss;
         oss << u.getX();
-        int i = u.getX();
-        str.append(reinterpret_cast<char*>(&i));
+//        int i = u.getX();
+//        str.append(reinterpret_cast<char*>(&i), sizeof(i));
         return oss.str();
     }
 
-    deserialize_custom_type(Unknown, const std::string &str) {
-        std::istringstream iss(str);
+    deserialize_custom_type(Unknown, str) {
+        std::istringstream iss((std::string(str)));
         int x;
         iss >> x;
         return Unknown(x);

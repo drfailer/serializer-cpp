@@ -51,10 +51,10 @@ void insert(Container &container, const T &element, size_t idx) {
 #define deserialize_custom_type(Type, input)                                   \
     template <typename T>                                                      \
         requires std::is_same_v<serializer::mtf::base_t<T>, Type>              \
-    static Type deserialize(input)
+    static Type deserialize(std::string_view &input)
 
 #define serialize_custom_type(input)                                           \
-    static std::string serialize(input, std::string &str)
+    static std::string serialize(input, std::string const &)
 
 #define class_name(Type) typeid(Type).name()
 
@@ -74,16 +74,17 @@ void insert(Container &container, const T &element, size_t idx) {
  */
 
 template <typename RT>
-RT type_switch_fn(const std::string &, const std::string &) {
+RT type_switch_fn(const std::string_view &, std::string_view &) {
     return nullptr;
 }
 
 template <typename RT, typename T, typename... Types>
-RT type_switch_fn(const std::string &className, const std::string &str) {
+RT type_switch_fn(const std::string_view &className, std::string_view &str) {
     static_assert(!std::is_abstract_v<T>, "The type shouldn't be abstract.");
     if (className == class_name(T)) {
         T *elt = new T();
-        elt->deserialize(str);
+        //  todo: optimize this
+        elt->deserialize(std::string(str));
         return elt;
     }
     return type_switch_fn<RT, Types...>(className, str);
@@ -97,10 +98,13 @@ RT type_switch_fn(const std::string &className, const std::string &str) {
 #define DESERIALIZE_POLYMORPHIC(GenericType, ...)                              \
     template <typename T>                                                      \
         requires std::is_same_v<serializer::mtf::base_t<T>, GenericType *>     \
-    static GenericType *deserialize(const std::string &str) {                  \
+    static GenericType *deserialize(std::string_view &str) {                   \
+        size_t size = *reinterpret_cast<const size_t *>(str.data());           \
+        std::string_view className = str.substr(size);                         \
+        std::string_view strv = str.substr(sizeof(size) + size);               \
         return serializer::utility::type_switch_fn<GenericType *,              \
-                                                   __VA_ARGS__>(               \
-            serializer::parser::getThisClassName(str), str);                   \
+                                                   __VA_ARGS__>(className,     \
+                                                                strv);         \
     }
 
 #endif

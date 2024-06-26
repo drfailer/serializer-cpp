@@ -18,7 +18,7 @@ namespace serializer {
  */
 template <typename Conv, typename... Types> struct AttrContainer {
     std::string serialize(std::string &str) const { return str; }
-    void deserialize(const std::map<std::string, std::string> &) {}
+    void deserialize(std::string_view&) {}
 
     AttrContainer() {}
     AttrContainer(const std::string &) {}
@@ -40,18 +40,19 @@ struct AttrContainer<Conv, H, Types...> {
         if constexpr (sizeof...(Types) > 0) {
             next.serialize(str);
         }
+        return str;
     }
 
     /* deserialize ************************************************************/
-    void deserialize(const std::map<std::string, std::string> &elts) {
+    void deserialize(std::string_view &str) {
         if constexpr (std::is_pointer_v<H>) {
             if (reference != nullptr) {
                 delete reference;
                 reference = nullptr;
             }
         }
-        reference = Conv::template deserialize<H>(elts.at(name));
-        next.deserialize(elts);
+        reference = Conv::template deserialize<H>(str);
+        next.deserialize(str);
     }
 
     /* constructor ************************************************************/

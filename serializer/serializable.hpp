@@ -24,6 +24,9 @@
     void deserialize(const std::string &str) {                                 \
         __serializer__.deserialize(str);                                       \
     }                                                                          \
+    void deserialize(std::string_view &str) {                                  \
+        __serializer__.deserialize(str);                                       \
+    }                                                                          \
     void deserializeFile(const std::string &fn) {                              \
         __serializer__.deserializeFile(fn);                                    \
     }
@@ -42,6 +45,9 @@
     virtual void deserialize(const std::string &str) {                         \
         __serializer__.deserialize(str);                                       \
     }                                                                          \
+    virtual void deserialize(std::string_view &str) {                          \
+        __serializer__.deserialize(str);                                       \
+    }                                                                          \
     virtual void deserializeFile(const std::string &fn) {                      \
         __serializer__.deserializeFile(fn);                                    \
     }
@@ -52,10 +58,7 @@
  */
 #define SUPER_FN_IMPL(Super)                                                   \
     std::string serialize() const override {                                   \
-        std::ostringstream oss;                                                \
-        oss << "{ __THIS__: " << __serializer__.serialize() << ", "            \
-            << "__SUPER__: " << Super::serialize() << " }";                    \
-        return oss.str();                                                      \
+        return __serializer__.serialize() + Super::serialize();                \
     }                                                                          \
     void serializeFile(const std::string &fn) const override {                 \
         std::ofstream file(fn);                                                \
@@ -64,6 +67,10 @@
     void deserialize(const std::string &str) override {                        \
         Super::deserialize(serializer::parser::getSuperValue(str));            \
         __serializer__.deserialize(serializer::parser::getThisValue(str));     \
+    }                                                                          \
+    void deserialize(std::string_view &str) override {                         \
+        Super::deserialize(str);                                               \
+        __serializer__.deserialize(str);                                       \
     }                                                                          \
     void deserializeFile(const std::string &fn) override {                     \
         std::ifstream file(fn);                                                \

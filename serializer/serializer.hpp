@@ -21,25 +21,24 @@ namespace serializer {
 template <typename Conv, typename... Types> class Serializer {
   public:
     /* constructor & destructor ***********************************************/
-    Serializer(Types &...args, std::string idsStr, std::string className)
-        : container(args..., idsStr), className(className) {}
-    Serializer() : container(), className("") {}
+    Serializer(Types &...args, std::string const &idsStr, std::string className)
+        : container(args..., idsStr), className(std::move(className)) {}
+    Serializer() : container() {}
     ~Serializer() = default;
 
     /* serialize **************************************************************/
-    std::string serialize() const {
-        std::ostringstream oss;
+    [[nodiscard]] std::string serialize() const {
         std::string str;
-        container.serialize(str);
-        oss << "{ __CLASS_NAME__: " << className << ", " << str << " }";
-        return oss.str();
+        return serialize(str);
     }
 
-    std::string serialize(std::string &str) const {
-        std::ostringstream oss;
+    // used to optimize the serialization of objects
+    std::string &serialize(std::string &str) const {
+        auto size = className.size();
+        str.append(reinterpret_cast<char*>(&size), sizeof(size));
+        str.append(className);
         container.serialize(str);
-        oss << "{ __CLASS_NAME__: " << className << ", " << str << " }";
-        return oss.str();
+        return str;
     }
 
     void serializeFile(const std::string &fileName) const {
@@ -49,7 +48,14 @@ template <typename Conv, typename... Types> class Serializer {
 
     /* deserialize  ***********************************************************/
     void deserialize(const std::string &str) {
-        container.deserialize(parser::parseOneLvl(str));
+        std::string_view strv = str;
+        deserialize(strv);
+    }
+
+    void deserialize(std::string_view &str) {
+        auto size = *reinterpret_cast<const decltype(className.size())*>(str.data());
+        str = str.substr(size + sizeof(size));
+        container.deserialize(str);
     }
 
     void deserializeFile(const std::string &fileName) {

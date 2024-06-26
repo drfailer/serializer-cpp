@@ -10,6 +10,7 @@ template <typename T>
 class UnsupportedTypeError : public std::exception {
   public:
     UnsupportedTypeError() {
+//        std::remove_reference<T> *obj;
         T *obj;
         std::ostringstream oss;
         oss << "error: the default convertor doesn't support the type '"

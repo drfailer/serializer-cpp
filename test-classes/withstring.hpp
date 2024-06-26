@@ -2,12 +2,13 @@
 #define WITHSTRING_HPP
 #include "serializer/serializer.hpp"
 #include <string>
+#include <utility>
 
 class WithString {
     SERIALIZABLE(int, std::string);
   public:
     WithString(int _x, std::string _str)
-        : SERIALIZER(x, str), x(_x), str(_str) {}
+        : SERIALIZER(x, str), x(_x), str(std::move(_str)) {}
     ~WithString() = default;
 
     /* accessors **************************************************************/
@@ -18,7 +19,7 @@ class WithString {
 
   private:
     int x;
-    std::string str;
+    std::string str = "";
 };
 
 #endif

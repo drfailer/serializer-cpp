@@ -27,12 +27,12 @@ class WithContainer {
     const std::array<int, 10> &getArr() const { return arr; }
 
   private:
-    std::vector<int> emptyVec;
-    std::vector<int> vec;
-    std::list<double> lst;
-    std::vector<Simple> classVec;
-    std::vector<std::vector<int>> vec2D;
-    std::array<int, 10> arr;
+    std::vector<int> emptyVec = {};
+    std::vector<int> vec = {};
+    std::list<double> lst = {};
+    std::vector<Simple> classVec = {};
+    std::vector<std::vector<int>> vec2D = {};
+    std::array<int, 10> arr = {};
 };
 
 #endif

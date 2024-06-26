@@ -6,8 +6,10 @@
 #include "serializer/exceptions.hpp"
 #include "utils.hpp"
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -17,8 +19,8 @@
 
 /* I'm sorry for this :,(
  *
- * We want the user to be able to define it's own convertor to implement missing
- * convertion functions. The ideal solution would use inheritance but this
+ * We want the user to be able to define its own convertor to implement missing
+ * conversion functions. The ideal solution would use inheritance but this
  * cannot work as the Convertor member functions cannot call the functions of
  * the derived class. So the first time the custom convertor calls one of the
  * functions in the default one, we cannot use custom functions anymore as they
@@ -26,31 +28,32 @@
  *
  * We could find a way for the default convertor and the custom one to know each
  * other and allow function calls between theme. However, the solution would be
- * even more complex and it would be really difficult to make it easy to use.
+ * even more complex, and it would be really difficult to make it easy to use.
  *
- * This macro looks terrible and it makes the library annoying to maintain but
+ * This macro looks terrible, and it makes the library annoying to maintain but
  * this is the best solution I have for know.
  */
 #define CONVERTOR                                                              \
     /* deserialize ********************************************************/   \
                                                                                \
     template <serializer::concepts::Deserializable T>                          \
-    static std::remove_reference_t<T> deserialize(const std::string &str) {    \
+    static std::remove_reference_t<T> deserialize(std::string_view &str) {     \
         std::remove_reference_t<T> t;                                          \
         t.deserialize(str);                                                    \
         return t;                                                              \
     }                                                                          \
                                                                                \
     template <serializer::concepts::Fundamental T>                             \
-    static T deserialize(const std::string &str) {                             \
-        T t;                                                                   \
-        std::istringstream(str) >> t;                                          \
+    static T deserialize(std::string_view &str) {                              \
+        T t = *reinterpret_cast<const T *>(str.data());                        \
+        str = str.substr(sizeof(T));                                           \
         return t;                                                              \
     }                                                                          \
                                                                                \
     template <serializer::concepts::ConcretePtr T>                             \
-    static std::remove_reference_t<T> deserialize(const std::string &str) {    \
-        if (str == "nullptr") {                                                \
+    static std::remove_reference_t<T> deserialize(std::string_view &str) {     \
+        if (str.starts_with("nullptr")) {                                      \
+            str = str.substr(7);                                               \
             return nullptr;                                                    \
         }                                                                      \
         using Type =                                                           \
@@ -66,8 +69,9 @@
     }                                                                          \
                                                                                \
     template <serializer::concepts::SmartPtr SP>                               \
-    static SP deserialize(const std::string &str) {                            \
-        if (str == "nullptr") {                                                \
+    static SP deserialize(std::string_view &str) {                             \
+        if (str.starts_with("nullptr")) {                                      \
+            str = str.substr(7);                                               \
             return nullptr;                                                    \
         }                                                                      \
         SP t;                                                                  \
@@ -87,15 +91,14 @@
     }                                                                          \
                                                                                \
     template <class T, size_t... Idx>                                          \
-    static T deserializeTuple(const std::string &str,                          \
+    static T deserializeTuple(std::string_view &str,                           \
                               std::index_sequence<Idx...>) {                   \
         T tuple;                                                               \
-        std::pair<std::string, std::string> content = std::make_pair("", str); \
         (                                                                      \
             [&] {                                                              \
-                content = serializer::parser::parseTuple(content.second);      \
                 std::get<Idx>(tuple) =                                         \
-                    deserialize<std::tuple_element_t<Idx, T>>(content.first);  \
+                    deserialize<typename std::tuple_element<Idx, T>::type>(    \
+                        str);                                                  \
             }(),                                                               \
             ...);                                                              \
         return tuple;                                                          \
@@ -103,45 +106,44 @@
                                                                                \
     template <serializer::concepts::TupleLike T>                               \
         requires(!serializer::concepts::Array<T>)                              \
-    static T deserialize(const std::string &str) {                             \
+    static T deserialize(std::string_view &str) {                              \
         return deserializeTuple<serializer::mtf::remove_const_tuple_t<T>>(     \
             str, std::make_index_sequence<std::tuple_size_v<T>>());            \
     }                                                                          \
                                                                                \
     template <serializer::concepts::Enum T>                                    \
-    static T deserialize(const std::string &str) {                             \
-        std::istringstream iss(str);                                           \
-        std::underlying_type_t<T> out;                                         \
-        iss >> out;                                                            \
+    static T deserialize(std::string_view &str) {                              \
+        using Type = std::underlying_type_t<T>;                                \
+        Type out = *reinterpret_cast<const Type *>(str.data());                \
+        str = str.substr(sizeof(Type));                                        \
         return (T)out;                                                         \
     }                                                                          \
                                                                                \
     template <serializer::concepts::String T>                                  \
-    static std::string deserialize(const std::string &str) {                   \
-        std::string t =                                                        \
-            serializer::parser::unescapeStr(str.substr(1, str.size() - 2));    \
+    static std::string deserialize(std::string_view &str) {                    \
+        using size_type = typename T::size_type;                               \
+        size_type size = deserialize<size_type>(str) - 1;                      \
+        std::string t = std::string(str.substr(0, size));                      \
+        str = str.substr(size);                                                \
         return t;                                                              \
     }                                                                          \
                                                                                \
     template <serializer::concepts::NonStringIterable T>                       \
-    static T deserialize(const std::string &str) {                             \
+    static T deserialize(std::string_view &str) {                              \
+        using size_type = decltype(std::size(std::declval<T>()));              \
+        using ValueType = serializer::mtf::iter_value_t<T>;                    \
         T result;                                                              \
-        std::size_t valueStart = 2;                                            \
-        std::size_t valueEnd;                                                  \
         size_t idx = 0;                                                        \
-        using valueType = serializer::mtf::iter_value_t<T>;                    \
+        size_type size = deserialize<size_type>(str) - 1;                      \
                                                                                \
-        while (valueStart < str.size()) {                                      \
-            valueEnd = serializer::parser::findEndValueIndex(str, valueStart); \
-            auto value = deserialize<valueType>(                               \
-                str.substr(valueStart, valueEnd - valueStart));                \
-            if constexpr (serializer::concepts::Insertable<T, valueType> ||    \
-                          serializer::concepts::PushBackable<T, valueType>) {  \
+        for (size_t i = 0; i < size; ++i) {                                    \
+            ValueType value = deserialize<ValueType>(str);                     \
+            if constexpr (serializer::concepts::Insertable<T, ValueType> ||    \
+                          serializer::concepts::PushBackable<T, ValueType>) {  \
                 serializer::utility::insert(result, value);                    \
             } else {                                                           \
                 serializer::utility::insert(result, value, idx++);             \
             }                                                                  \
-            valueStart = valueEnd + 2; /* value1, value2 */                    \
         }                                                                      \
                                                                                \
         return result;                                                         \
@@ -157,7 +159,7 @@
                                                                                \
     template <serializer::concepts::Fundamental T>                             \
     static std::string serialize(T &elt, std::string &str) {                   \
-        return str.append(reinterpret_cast<char *>(&elt), sizeof(T));          \
+        return str.append(reinterpret_cast<const char *>(&elt), sizeof(T));    \
     }                                                                          \
                                                                                \
     template <serializer::concepts::Pointer T>                                 \
@@ -171,7 +173,7 @@
                 return serialize<std::remove_pointer_t<T>>(*elt, str);         \
             }                                                                  \
         } else {                                                               \
-            return str.append("\0");                                           \
+            return str.append("nullptr");                                      \
         }                                                                      \
     }                                                                          \
                                                                                \
@@ -185,7 +187,7 @@
                 return serialize<typename SP::element_type>(*elt, str);        \
             }                                                                  \
         } else {                                                               \
-            return str.append("\0");                                           \
+            return str.append("nullptr");                                      \
         }                                                                      \
     }                                                                          \
                                                                                \
@@ -206,21 +208,23 @@
     template <serializer::concepts::Enum T>                                    \
     static std::string serialize(const T &elt, std::string &str) {             \
         std::underlying_type_t<T> value = (std::underlying_type_t<T>)elt;      \
-        return str.append(reinterpret_cast<char *>(&value), sizeof(value));    \
+        return str.append(reinterpret_cast<const char *>(&value),              \
+                          sizeof(value));                                      \
     }                                                                          \
                                                                                \
     static std::string serialize(const std::string &elt, std::string &str) {   \
-        str.append(reinterpret_cast<char *>(elt.size()), sizeof(elt.size()));  \
+        auto size = elt.size() + 1;                                            \
+        str.append(reinterpret_cast<const char *>(&size), sizeof(size));       \
         return str.append(elt);                                                \
     }                                                                          \
                                                                                \
     template <serializer::concepts::NonStringIterable T>                       \
     static std::string serialize(const T &elts, std::string &str) {            \
-        str.append(reinterpret_cast<char *>(std::size(elts)),                  \
-                   sizeof(std::size(elts)));                                   \
+        auto size = std::size(elts) + 1;                                       \
+        str.append(reinterpret_cast<const char *>(&size), sizeof(size));       \
                                                                                \
         for (auto elt : elts) {                                                \
-            str.append(serialize(elt, str));                                   \
+            serialize(elt, str);                                               \
         }                                                                      \
         return str;                                                            \
     }
@@ -238,7 +242,7 @@ struct Convertor {
     }
 
     template <serializer::concepts::NonDeserializable T>
-    static T deserialize(const std::string &) {
+    static T deserialize(std::string_view &) {
         throw serializer::exceptions::UnsupportedTypeError<T>();
     }
 
