@@ -32,17 +32,14 @@ inline bool operator==(const Unknown& lhs, const Unknown& rhs) {
 
 struct TestConvertor {
     serialize_custom_type(const Unknown &u) {
-        std::ostringstream oss;
-        oss << u.getX();
-//        int i = u.getX();
-//        str.append(reinterpret_cast<char*>(&i), sizeof(i));
-        return oss.str();
+        int i = u.getX();
+        str.append(reinterpret_cast<char*>(&i), sizeof(i));
+        return str;
     }
 
     deserialize_custom_type(Unknown, str) {
-        std::istringstream iss((std::string(str)));
-        int x;
-        iss >> x;
+        int x = *reinterpret_cast<const int*>(str.data());
+        str = str.substr(sizeof(x));
         return Unknown(x);
     }
 

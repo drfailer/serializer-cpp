@@ -53,7 +53,8 @@ template <typename Conv, typename... Types> class Serializer {
     }
 
     void deserialize(std::string_view &str) {
-        auto size = *reinterpret_cast<const decltype(className.size())*>(str.data());
+        using size_type = typename std::string::size_type;
+        auto size = *reinterpret_cast<const size_type*>(str.data());
         str = str.substr(size + sizeof(size));
         container.deserialize(str);
     }

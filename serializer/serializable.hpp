@@ -32,8 +32,8 @@
     }
 
 /*
- * Generates implementation for polymophic classes with virtual methods.
- * (note: this classes are not deserializable by default)
+ * Generates implementation for polymorphic classes with virtual methods.
+ * (note: these classes are not deserializable by default)
  */
 #define POLYMORPHIC_FN_IMPL                                                    \
     virtual std::string serialize() const {                                    \
@@ -65,12 +65,12 @@
         file << serialize() << std::endl;                                      \
     }                                                                          \
     void deserialize(const std::string &str) override {                        \
-        Super::deserialize(serializer::parser::getSuperValue(str));            \
-        __serializer__.deserialize(serializer::parser::getThisValue(str));     \
+        std::string_view strv = str;                                           \
+        deserialize(strv);                                                     \
     }                                                                          \
     void deserialize(std::string_view &str) override {                         \
-        Super::deserialize(str);                                               \
         __serializer__.deserialize(str);                                       \
+        Super::deserialize(str);                                               \
     }                                                                          \
     void deserializeFile(const std::string &fn) override {                     \
         std::ifstream file(fn);                                                \

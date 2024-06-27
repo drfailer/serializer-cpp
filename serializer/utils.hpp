@@ -54,7 +54,7 @@ void insert(Container &container, const T &element, size_t idx) {
     static Type deserialize(std::string_view &input)
 
 #define serialize_custom_type(input)                                           \
-    static std::string serialize(input, std::string const &)
+    static std::string serialize(input, std::string &str)
 
 #define class_name(Type) typeid(Type).name()
 
@@ -68,7 +68,7 @@ void insert(Container &container, const T &element, size_t idx) {
  * capable of handling polymorphic types.
  *
  * Here we juste have to use the macro DESERIALIZE_POLYMORPHIC. It takes as
- * arguemnts the super class and the list of classes that inherits from this
+ * arguments the super class and the list of classes that inherits from this
  * super class. The resulting function will return a heap allocated pointer of
  * type Super class that is created using the right constructor.
  */
@@ -83,8 +83,7 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
     static_assert(!std::is_abstract_v<T>, "The type shouldn't be abstract.");
     if (className == class_name(T)) {
         T *elt = new T();
-        //  todo: optimize this
-        elt->deserialize(std::string(str));
+        elt->deserialize(str);
         return elt;
     }
     return type_switch_fn<RT, Types...>(className, str);
@@ -99,12 +98,12 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
     template <typename T>                                                      \
         requires std::is_same_v<serializer::mtf::base_t<T>, GenericType *>     \
     static GenericType *deserialize(std::string_view &str) {                   \
-        size_t size = *reinterpret_cast<const size_t *>(str.data());           \
-        std::string_view className = str.substr(size);                         \
-        std::string_view strv = str.substr(sizeof(size) + size);               \
+        using size_type = typename std::string::size_type;                     \
+        size_type size = *reinterpret_cast<const size_type *>(str.data());     \
+        std::string_view className = str.substr(sizeof(size), size);           \
         return serializer::utility::type_switch_fn<GenericType *,              \
                                                    __VA_ARGS__>(className,     \
-                                                                strv);         \
+                                                                str);          \
     }
 
 #endif
