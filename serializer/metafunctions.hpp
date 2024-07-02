@@ -23,6 +23,19 @@ template <typename T, size_t N> struct iter_value<std::array<T, N>> {
 
 template <typename T> using iter_value_t = iter_value<T>::type;
 
+template <typename T, typename ...Types> struct contains;
+
+template <typename T> struct contains<T> {
+    static constexpr bool value = false;
+};
+
+template <typename T, typename H, typename ...Tail> struct contains<T, H, Tail...> {
+    static constexpr bool value = std::is_same_v<T, H> || contains<T, Tail...>::value;
+};
+
+template <typename T, typename ...Types>
+constexpr bool contains_v = contains<T, Types...>::value;
+
 /******************************************************************************/
 /*                                  pointers                                  */
 /******************************************************************************/

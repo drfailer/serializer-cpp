@@ -31,7 +31,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
 
     template <serializer::concepts::NonSerializable T>
     std::string &serialize(T const &elt, std::string str) const {
-        if constexpr (sizeof...(AdditionalTypes) > 0) {
+        if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
             return this->serialize_(elt, str);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<T>();
@@ -40,7 +40,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
 
     template <serializer::concepts::NonDeserializable T>
     T deserialize(std::string_view &str, T &elt) {
-        if constexpr (sizeof...(AdditionalTypes) > 0) {
+        if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
             return this->deserialize_(str, elt);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<T>();
