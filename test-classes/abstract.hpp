@@ -87,9 +87,8 @@ class Concrete2 : public SuperAbstract {
 /******************************************************************************/
 
 /* we use a custom convertor for handling generics */
-struct AbstractCollectionConvertor {
-    DESERIALIZE_POLYMORPHIC(SuperAbstract, Concrete1, Concrete2);
-    CONVERTOR;
+struct Test : public serializer::Convertor<SuperAbstract*> {
+    HANDLE_POLYMORPHIC(SuperAbstract, Concrete1, Concrete2)
 };
 
 /******************************************************************************/
@@ -97,8 +96,7 @@ struct AbstractCollectionConvertor {
 /******************************************************************************/
 
 class AbstractCollection {
-    SERIALIZABLE_WITH_CONVERTOR(AbstractCollectionConvertor,
-                                std::vector<SuperAbstract *>);
+    SERIALIZABLE_WITH_CONVERTOR(Test, std::vector<SuperAbstract *>);
 
   public:
     AbstractCollection() : SERIALIZER(elements) {}

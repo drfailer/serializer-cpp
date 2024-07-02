@@ -41,21 +41,6 @@ void insert(Container &container, const T &element, size_t idx) {
 /*                               helper macros                                */
 /******************************************************************************/
 
-/* facilitate the creation of a custom deserialize function for a specific type.
- *
- * Example:
- * serialize_custom_type(MyType, const std::string str) {
- *     ...
- * }
- */
-#define deserialize_custom_type(Type, input)                                   \
-    template <typename T>                                                      \
-        requires std::is_same_v<serializer::mtf::base_t<T>, Type>              \
-    static Type deserialize(std::string_view &input)
-
-#define serialize_custom_type(input)                                           \
-    static std::string serialize(input, std::string &str)
-
 #define class_name(Type) typeid(Type).name()
 
 /******************************************************************************/
@@ -94,16 +79,19 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
 /*
  * Generates a deserialize function for the polymorphic type GenericType.
  */
-#define DESERIALIZE_POLYMORPHIC(GenericType, ...)                              \
-    template <typename T>                                                      \
-        requires std::is_same_v<serializer::mtf::base_t<T>, GenericType *>     \
-    static GenericType *deserialize(std::string_view &str) {                   \
+#define HANDLE_POLYMORPHIC(GenericType, ...)                                   \
+    GenericType *deserialize_(std::string_view &str, GenericType *&)           \
+        override {                                                             \
         using size_type = typename std::string::size_type;                     \
         size_type size = *reinterpret_cast<const size_type *>(str.data());     \
         std::string_view className = str.substr(sizeof(size), size);           \
         return serializer::utility::type_switch_fn<GenericType *,              \
                                                    __VA_ARGS__>(className,     \
                                                                 str);          \
+    }                                                                          \
+    std::string &serialize_(GenericType *const &elt, std::string &str)         \
+        const override {                                                       \
+        return Convertor::serialize(elt, str);                             \
     }
 
 #endif

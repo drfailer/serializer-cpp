@@ -96,10 +96,8 @@ class Class2 : public SuperClass {
 /*                                 convertor                                  */
 /******************************************************************************/
 
-/* we use a custom convertor for handling generics */
-struct SuperConvertor {
-    DESERIALIZE_POLYMORPHIC(SuperClass, Class1, Class2);
-    CONVERTOR;
+struct SuperConvertor : public serializer::Convertor<SuperClass*> {
+    HANDLE_POLYMORPHIC(SuperClass, Class1, Class2);
 };
 
 /******************************************************************************/

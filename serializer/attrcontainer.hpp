@@ -32,11 +32,12 @@ struct AttrContainer<Conv, H, Types...> {
     /* attributes *************************************************************/
     H &reference;
     std::string name;
+    Conv convertor;
     AttrContainer<Conv, Types...> next;
 
     /* serialize **************************************************************/
     std::string serialize(std::string &str) const {
-        Conv::serialize(reference, str);
+        convertor.serialize(reference, str);
         if constexpr (sizeof...(Types) > 0) {
             next.serialize(str);
         }
@@ -51,7 +52,7 @@ struct AttrContainer<Conv, H, Types...> {
                 reference = nullptr;
             }
         }
-        reference = Conv::template deserialize<H>(str);
+        reference = convertor.deserialize(str, reference);
         next.deserialize(str);
     }
 

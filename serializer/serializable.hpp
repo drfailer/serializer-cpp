@@ -1,5 +1,7 @@
 #ifndef SERIALIZABLE_HPP
 #define SERIALIZABLE_HPP
+#include "serializer.hpp"
+#include "convertor.hpp"
 
 /******************************************************************************/
 /*                                   macros                                   */
@@ -10,7 +12,7 @@
     __serializer__(__VA_ARGS__, #__VA_ARGS__, typeid(*this).name())
 
 /* Used to create a serializable class with the default convertor. */
-#define DEFAULT_CONVERTOR serializer::Convertor
+#define DEFAULT_CONVERTOR serializer::Convertor<>
 
 /*
  * Generates de the default implementation for serialization / deserialization

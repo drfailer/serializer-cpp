@@ -9,7 +9,13 @@ template <typename T>
 concept Serializable = requires(T obj) { obj.serialize(); };
 
 template <typename T>
+concept SerializablePtr = requires(T obj) { obj->serialize(); };
+
+template <typename T>
 concept Deserializable = requires(T obj) { obj.deserialize(""); };
+
+template <typename T>
+concept DeserializablePtr = requires(T obj) { obj->deserialize(""); };
 
 template <typename T>
 concept SmartPtr = mtf::is_smart_ptr_v<T>;
@@ -45,18 +51,23 @@ concept TupleLike = requires(T obj) {
 template <typename T>
 concept Array = mtf::is_std_array_v<T>;
 
-/* unsuported types */
+/* unsupported types */
 
 template <typename T>
-concept Unsuported =
-    !SmartPtr<T> && !ConcretePtr<T> && !Pointer<T> && !Fundamental<T> &&
+concept AutoSerializationSupported =
+    !SmartPtr<T> && !Pointer<T> && !Fundamental<T> &&
     !Enum<T> && !String<T> && !Iterable<T> && !TupleLike<T>;
 
 template <typename T>
-concept NonSerializable = !Serializable<T> && Unsuported<T>;
+concept AutoDeserializationSupported =
+!SmartPtr<T> && !ConcretePtr<T> && !Fundamental<T> &&
+!Enum<T> && !String<T> && !Iterable<T> && !TupleLike<T>;
 
 template <typename T>
-concept NonDeserializable = !Deserializable<T> && Unsuported<T>;
+concept NonSerializable = !Serializable<T> && AutoSerializationSupported<T>;
+
+template <typename T>
+concept NonDeserializable = !Deserializable<T> && AutoDeserializationSupported<T>;
 
 /* for insert helper function */
 

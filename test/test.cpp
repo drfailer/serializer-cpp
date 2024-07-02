@@ -20,7 +20,7 @@
 /*                         tests with a simple class                          */
 /******************************************************************************/
 
-TEST_CASE("serialization/deserialisation on a SIMPLE CLASS") {
+TEST_CASE("serialization/deserialization on a SIMPLE CLASS") {
     Simple original(10, 20, "hello \"world!\\");
     Simple other(0, 0);
     std::string result;
@@ -32,7 +32,7 @@ TEST_CASE("serialization/deserialisation on a SIMPLE CLASS") {
     result = original.serialize();
     other.deserialize(result);
 
-    // the serialisation and deserialisation work
+    // the serialization and deserialization work
     REQUIRE(original.getX() == other.getX());
     REQUIRE(original.getY() == other.getY());
 
@@ -61,7 +61,7 @@ TEST_CASE("serialization/deserialisation on a SIMPLE CLASS") {
 /*          tests with a class composed of a serializable subclass            */
 /******************************************************************************/
 
-TEST_CASE("serialization/deserialisation on a COMPOSED CLASS") {
+TEST_CASE("serialization/deserialization on a COMPOSED CLASS") {
     Composed original(Simple(10, 20), 3, 3.14);
     Composed other(Simple(0, 0), 0, 0);
     std::string result;
@@ -100,7 +100,7 @@ TEST_CASE("serialization/deserialisation on a COMPOSED CLASS") {
 /*                             string seriasation                             */
 /******************************************************************************/
 
-TEST_CASE("serialization/deserialisation with STRING ATTRIBUTE") {
+TEST_CASE("serialization/deserialization with STRING ATTRIBUTE") {
     WithString original(2, "hello");
     WithString originalEmptyString(3, "");
     WithString other(0, "world");
@@ -139,7 +139,7 @@ TEST_CASE("serialization/deserialisation with STRING ATTRIBUTE") {
 /******************************************************************************/
 
 /* IMPORTANT: this test should be ran with valgrind. */
-TEST_CASE("serialization/deserialisation with POINTERS ATTRIBUTE") {
+TEST_CASE("serialization/deserialization with POINTERS ATTRIBUTE") {
     WithPointers original(new Simple(1, 2));
     WithPointers other(new Simple(0, 0));
     std::string result;
@@ -189,7 +189,7 @@ TEST_CASE("serialization/deserialisation with POINTERS ATTRIBUTE") {
 /*
  * NOTE: there is a probleme with precission for doubles.
  */
-TEST_CASE("serialization/deserialisation with ITERABLES ATTRIBUTE") {
+TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
     WithContainer original;
     WithContainer other;
     std::string result;
@@ -302,7 +302,7 @@ TEST_CASE("serialize super class") {
 /*                                using files                                 */
 /******************************************************************************/
 
-TEST_CASE("serialization/deserialisation in a FILE") {
+TEST_CASE("serialization/deserialization in a FILE") {
     Simple original(10, 20);
     Simple other(0, 0);
 
@@ -312,7 +312,7 @@ TEST_CASE("serialization/deserialisation in a FILE") {
     original.serializeFile("test_serialize.txt");
     other.deserializeFile("test_serialize.txt");
 
-    // the serialisation and deserialisation work
+    // the serialization and deserialization work
     REQUIRE(original.getX() == other.getX());
     REQUIRE(original.getY() == other.getY());
 
@@ -554,6 +554,7 @@ TEST_CASE("serialize unknown type") {
     REQUIRE(other.getInts().size() == 0);
     REQUIRE(other.getUnknowns().size() == 0);
 
+    std::cout << "----" << std::endl;
     result = original.serialize();
     other.deserialize(result);
 
