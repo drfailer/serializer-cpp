@@ -1,8 +1,8 @@
 #ifndef POLYMORPHIC_HPP
 #define POLYMORPHIC_HPP
-#include "serializer/convertor.hpp"
-#include "serializer/parser.hpp"
+#include "serializer/convertor/convertor.hpp"
 #include "serializer/serializer.hpp"
+#include "serializer/tools/parser.hpp"
 #include <vector>
 
 /******************************************************************************/

@@ -1,6 +1,6 @@
 #ifndef MULTIPLE_INHERITANCE_HPP
 #define MULTIPLE_INHERITANCE_HPP
-#include "serializer/convertor.hpp"
+#include "serializer/convertor/convertor.hpp"
 #include "serializer/serializable.hpp"
 #include "serializer/serializer.hpp"
 #include <string>

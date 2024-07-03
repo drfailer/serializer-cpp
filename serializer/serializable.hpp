@@ -1,23 +1,22 @@
 #ifndef SERIALIZABLE_HPP
 #define SERIALIZABLE_HPP
 #include "serializer.hpp"
-#include "convertor.hpp"
+#include "serializer/convertor/convertor.hpp"
 
 /******************************************************************************/
 /*                                   macros                                   */
 /******************************************************************************/
 
-/* Inits the serializer attribute in the serialized class constructor */
+/// @brief Inits the serializer attribute in the serialized class constructor.
+/// @param ... Attributes to serialize (must be valid references).
 #define SERIALIZER(...)                                                        \
     __serializer__(__VA_ARGS__, #__VA_ARGS__, typeid(*this).name())
 
-/* Used to create a serializable class with the default convertor. */
+/// @brief Used to create a serializable class with the default convertor.
 #define DEFAULT_CONVERTOR serializer::Convertor<>
 
-/*
- * Generates de the default implementation for serialization / deserialization
- * functions.
- */
+/// @brief Generates de the default implementation for serialization /
+///        deserialization functions.
 #define DEFAULT_FN_IMPL                                                        \
     std::string serialize() const { return __serializer__.serialize(); }       \
     void serializeFile(const std::string &fn) const {                          \
@@ -33,10 +32,8 @@
         __serializer__.deserializeFile(fn);                                    \
     }
 
-/*
- * Generates implementation for polymorphic classes with virtual methods.
- * (note: these classes are not deserializable by default)
- */
+/// @brief Generates implementation for polymorphic classes with virtual
+///        methods. (note: these classes are not deserializable by default)
 #define POLYMORPHIC_FN_IMPL                                                    \
     virtual std::string serialize() const {                                    \
         return __serializer__.serialize();                                     \
@@ -54,10 +51,8 @@
         __serializer__.deserializeFile(fn);                                    \
     }
 
-/*
- * Generates de the implementation for serialization / deserialization functions
- * where the super class has to be serialized too.
- */
+/// @brief Generates de the implementation for serialization / deserialization
+///        functions where the super class has to be serialized too.
 #define SUPER_FN_IMPL(Super)                                                   \
     std::string serialize() const override {                                   \
         return __serializer__.serialize() + Super::serialize();                \
@@ -81,11 +76,9 @@
         deserialize(oss.str());                                                \
     }
 
-/*
- * Generates the code in the serialized class. It adds a serializer attribute
- * and serialization / deserialization functions (the implementation is
- * configurable);
- */
+/// @brief Generates the code in the serialized class. It adds a serializer
+///        attribute and serialization / deserialization functions (the
+///        implementation is configurable)
 #define __SERIALIZABLE__(CONV, IMPL, ...)                                      \
   private:                                                                     \
     serializer::Serializer<CONV, __VA_ARGS__> __serializer__;                  \
@@ -95,10 +88,8 @@
                                                                                \
   private:
 
-/*
- * Generates an empty serilizer (we may wan't an abstract class without any
- * attribute to be serilizable).
- */
+/// @brief Generates an empty serializer (we may want an abstract class without
+///        any attribute to be serializable).
 #define SERIALIZABLE_EMPTY()                                                   \
   private:                                                                     \
     serializer::Serializer<DEFAULT_CONVERTOR> __serializer__;                  \
@@ -112,33 +103,29 @@
 /*                                 shorthands                                 */
 /******************************************************************************/
 
-/* Generates the code for the default serializable class. */
+/// @brief Generates the code for the default serializable class.
 #define SERIALIZABLE(...)                                                      \
     __SERIALIZABLE__(DEFAULT_CONVERTOR, DEFAULT_FN_IMPL, __VA_ARGS__)
 
-/* Generates the code for the default serializable polymophic class. */
+/// @brief Generates the code for the default serializable polymorphic class.
 #define SERIALIZABLE_POLYMORPHIC(...)                                          \
     __SERIALIZABLE__(DEFAULT_CONVERTOR, POLYMORPHIC_FN_IMPL, __VA_ARGS__)
 
-/* Generates the code for the serializable with a custom convertor. */
+/// @brief Generates the code for the serializable with a custom convertor.
 #define SERIALIZABLE_WITH_CONVERTOR(Convertor, ...)                            \
     __SERIALIZABLE__(Convertor, DEFAULT_FN_IMPL, __VA_ARGS__)
 
-/* Generates the code for the serializable with a custom implementation. */
+/// @brief Generates the code for the serializable with a custom implementation.
 #define SERIALIZABLE_WITH_IMPL(IMPL, ...)                                      \
     __SERIALIZABLE__(DEFAULT_CONVERTOR, IMPL, __VA_ARGS__)
 
-/*
- * Generates the code for the serializable with the default convertor and use
- * the implementation for serializing the super class.
- */
+/// @brief Generates the code for the serializable with the default convertor
+///        and use the implementation for serializing the super class.
 #define SERIALIZABLE_SUPER(Super, ...)                                         \
     __SERIALIZABLE__(DEFAULT_CONVERTOR, SUPER_FN_IMPL(Super), __VA_ARGS__)
 
-/*
- * Generates the code for the serializable with a custom convertor and use
- * the implementation for serializing the super class.
- */
+/// @brief Generates the code for the serializable with a custom convertor and
+///        use the implementation for serializing the super class.
 #define SERIALIZABLE_CUSTOM(Convertor, Super, ...)                             \
     __SERIALIZABLE__(Convertor, SUPER_FN_IMPL(Super), __VA_ARGS__)
 

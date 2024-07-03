@@ -1879,7 +1879,7 @@ namespace Catch {
 
 // Separate std::pair specialization
 #if defined(CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER)
-#include <utility>
+#include <tools>
 namespace Catch {
     template<typename T1, typename T2>
     struct StringMaker<std::pair<T1, T2> > {
@@ -6543,7 +6543,7 @@ namespace Catch {
 
 
 #include <type_traits>
-#include <utility>
+#include <tools>
 
 namespace Catch {
     namespace Benchmark {
@@ -6686,7 +6686,7 @@ namespace Catch {
 
 #include <cassert>
 #include <type_traits>
-#include <utility>
+#include <tools>
 #include <memory>
 
 namespace Catch {
@@ -6778,7 +6778,7 @@ namespace Catch {
 
 
 #include <type_traits>
-#include <utility>
+#include <tools>
 
 namespace Catch {
     namespace Benchmark {
@@ -6833,7 +6833,7 @@ namespace Catch {
 } // namespace Catch
 
 // end catch_timing.hpp
-#include <utility>
+#include <tools>
 
 namespace Catch {
     namespace Benchmark {
@@ -6851,7 +6851,7 @@ namespace Catch {
 } // namespace Catch
 
 // end catch_measure.hpp
-#include <utility>
+#include <tools>
 #include <type_traits>
 
 namespace Catch {
@@ -6952,7 +6952,7 @@ namespace Catch {
 #include <numeric>
 #include <tuple>
 #include <cmath>
-#include <utility>
+#include <tools>
 #include <cstddef>
 #include <random>
 
