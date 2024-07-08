@@ -9,7 +9,7 @@
 namespace serializer {
 
 /******************************************************************************/
-/*                            attribute container                             */
+/*                                member list                                 */
 /******************************************************************************/
 
 /// @brief Data structure that acts like a map with multiple types (one type per
@@ -17,7 +17,7 @@ namespace serializer {
 ///        attributes of the serialized class.
 /// @param Conv Convertor used to serialize / deserialize the attribute.
 /// @param Types Types of the attributes.
-template <typename Conv, typename... Types> struct AttrContainer {
+template <typename Conv, typename... Types> struct MemberList {
     /// @brief Empty serialize function (see specialization for non empty
     ///        parameter list for the non empty version).
     std::string serialize(std::string &str) const { return str; }
@@ -29,23 +29,23 @@ template <typename Conv, typename... Types> struct AttrContainer {
     /// @brief We only use a default constructor here as we are in the case
     ///        where Types is empty (see the specialization for non empty
     ///        parameter list).
-    AttrContainer() = default;
+    MemberList() = default;
 
     /// @brief Used to end the recursion during the construction of the
-    ///        AttrContainer with non empty parameter list.
+    ///        MemberList with non empty parameter list.
     /// @param (str) Emtpy string
-    AttrContainer(std::string const &) {}
+    MemberList(std::string const &) {}
 };
 
-/// @brief Specialization of the AttrContainer. Handle the case when there is at
+/// @brief Specialization of the MemberList. Handle the case when there is at
 ///        least one type.
 template <typename Conv, typename H, typename... Types>
-struct AttrContainer<Conv, H, Types...> {
+struct MemberList<Conv, H, Types...> {
     /* attributes *************************************************************/
     H &reference; ///< reference to an attribute to serialize
     std::string name; ///< identifier of the attribute
     Conv convertor; ///< instance of a convertor used to serialize the object
-    AttrContainer<Conv, Types...> next; ///< next node of the list
+    MemberList<Conv, Types...> next; ///< next node of the list
 
     /* serialize **************************************************************/
 
@@ -88,7 +88,7 @@ struct AttrContainer<Conv, H, Types...> {
     /// @param types List of references to the other attributes (they will be
     ///              managed by other nodes).
     /// @param idsStr String that contains the identifiers of the attributes.
-    AttrContainer(H &head, Types &...types, const std::string &idsStr)
+    MemberList(H &head, Types &...types, const std::string &idsStr)
         : reference(head), name(idsStr.substr(0, idsStr.find(','))),
           next(types..., idsStr.substr(parser::nextId(idsStr))) {}
 };

@@ -1,6 +1,6 @@
 #ifndef STRINGIFIER_HPP
 #define STRINGIFIER_HPP
-#include "attrcontainer.hpp"
+#include "member_list.hpp"
 #include "serializer/convertor/convertor.hpp"
 #include <fstream>
 #include <sstream>
@@ -95,7 +95,7 @@ template <typename Conv, typename... Types> class Serializer {
     }
 
   private:
-    AttrContainer<Conv, Types...> container;
+    MemberList<Conv, Types...> container;
     std::string className;
 };
 
