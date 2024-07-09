@@ -19,6 +19,9 @@
 ///        deserialization functions.
 #define DEFAULT_FN_IMPL                                                        \
     std::string serialize() const { return __serializer__.serialize(); }       \
+    std::string serialize(std::string &str) const {                            \
+        return __serializer__.serialize(str);                                  \
+    }                                                                          \
     void serializeFile(const std::string &fn) const {                          \
         return __serializer__.serializeFile(fn);                               \
     }                                                                          \
@@ -38,6 +41,9 @@
     virtual std::string serialize() const {                                    \
         return __serializer__.serialize();                                     \
     }                                                                          \
+    virtual std::string serialize(std::string &str) const {                    \
+        return __serializer__.serialize(str);                                  \
+    }                                                                          \
     virtual void serializeFile(const std::string &fn) const {                  \
         return __serializer__.serializeFile(fn);                               \
     }                                                                          \
@@ -56,6 +62,9 @@
 #define SUPER_FN_IMPL(Super)                                                   \
     std::string serialize() const override {                                   \
         return __serializer__.serialize() + Super::serialize();                \
+    }                                                                          \
+    std::string serialize(std::string &str) const override {                   \
+        return Super::serialize(__serializer__.serialize(str));                \
     }                                                                          \
     void serializeFile(const std::string &fn) const override {                 \
         std::ofstream file(fn);                                                \

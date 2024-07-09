@@ -12,22 +12,26 @@ add_compile_options(-Wall -Wextra -g)
 ################################################################################
 
 set(serializer_files
-    ${CMAKE_SOURCE_DIR}/serializer/parser.hpp
-    ${CMAKE_SOURCE_DIR}/serializer/serializer.hpp
-    ${CMAKE_SOURCE_DIR}/serializer/attrcontainer.hpp
-    ${CMAKE_SOURCE_DIR}/serializer/convertor/convertor.hpp
-    ${CMAKE_SOURCE_DIR}/serializer/convertor/convert.hpp
-    )
+        ${CMAKE_SOURCE_DIR}/serializer/serializer.hpp
+        ${CMAKE_SOURCE_DIR}/serializer/member_list.hpp
+        ${CMAKE_SOURCE_DIR}/serializer/convertor/convertor.hpp
+        ${CMAKE_SOURCE_DIR}/serializer/convertor/convert.hpp
+        ${CMAKE_SOURCE_DIR}/serializer/tools/parser.hpp
+        ${CMAKE_SOURCE_DIR}/serializer/tools/tools.hpp
+        ${CMAKE_SOURCE_DIR}/serializer/tools/exceptions.hpp
+        ${CMAKE_SOURCE_DIR}/serializer/tools/metafunctions.hpp
+        ${CMAKE_SOURCE_DIR}/serializer/tools/concepts.hpp
+)
 
 set(serializer_test_files
-    ${CMAKE_SOURCE_DIR}/test/catch.cpp
-    ${CMAKE_SOURCE_DIR}/test/test.cpp
+        ${CMAKE_SOURCE_DIR}/test/catch.cpp
+        ${CMAKE_SOURCE_DIR}/test/test.cpp
 )
 
 set(parser_test_files
-    ${CMAKE_SOURCE_DIR}/test/catch.cpp
-    ${CMAKE_SOURCE_DIR}/test/test_parser.cpp
-    )
+        ${CMAKE_SOURCE_DIR}/test/catch.cpp
+        ${CMAKE_SOURCE_DIR}/test/test_parser.cpp
+)
 
 include_directories(${CMAKE_SOURCE_DIR})
 

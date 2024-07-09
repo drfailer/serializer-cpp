@@ -1,12 +1,12 @@
 #include "catch.hpp"
 #include "test-classes/abstract.hpp"
 #include "test-classes/composed.hpp"
+#include "test-classes/cstruct.h"
 #include "test-classes/multipleinheritance.hpp"
 #include "test-classes/polymorphic.hpp"
 #include "test-classes/simple.hpp"
 #include "test-classes/withMap.hpp"
 #include "test-classes/withPair.hpp"
-#include "test-classes/withtuple.hpp"
 #include "test-classes/withSmartPtr.hpp"
 #include "test-classes/withcontainer.hpp"
 #include "test-classes/withconvertor.hpp"
@@ -14,6 +14,8 @@
 #include "test-classes/withpointers.hpp"
 #include "test-classes/withset.hpp"
 #include "test-classes/withstring.hpp"
+#include "test-classes/withtuple.hpp"
+#include <chrono>
 #include <string>
 
 /******************************************************************************/
@@ -199,8 +201,8 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
         original.addInt(i);
         original.addDouble(double(i));
         original.addSimple(Simple(i, 2 * i));
-        original.addVec(std::vector<int>{1*i, 2*i, 3*i, 4*i, 5*i});
-        original.addArr(i, i*2);
+        original.addVec(std::vector<int>{1 * i, 2 * i, 3 * i, 4 * i, 5 * i});
+        original.addArr(i, i * 2);
     }
 
     REQUIRE(original.getEmptyVec().size() == 0);
@@ -224,7 +226,8 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
         REQUIRE(original.getClassVec()[i] == other.getClassVec()[i]);
         REQUIRE(original.getArr()[i] == other.getArr()[i]);
         for (int j = 0; j < 5; ++j) {
-            REQUIRE(original.getVec2D().at(i).at(j) == original.getVec2D().at(i).at(j));
+            REQUIRE(original.getVec2D().at(i).at(j) ==
+                    original.getVec2D().at(i).at(j));
         }
     }
 
@@ -277,7 +280,8 @@ TEST_CASE("serialize super class") {
     c11.deserialize(result);
     REQUIRE(c11.serialize() == c1->serialize());
 
-    result = c2->serialize();
+    result.clear();
+    c2->serialize(result); // test the second method (faster)
     Class2 c22;
     c22.deserialize(result);
     REQUIRE(c22.serialize() == c2->serialize());
@@ -427,8 +431,8 @@ TEST_CASE("enums") {
 /******************************************************************************/
 
 TEST_CASE("pairs") {
-    std::vector<int> v = { 1, 2 ,3 ,4 };
-    std::set<std::string> s = { "hello", "world" };
+    std::vector<int> v = {1, 2, 3, 4};
+    std::set<std::string> s = {"hello", "world"};
     WithPair original(1, 2, "hello", "world", Simple(10, 20),
                       Composed(Simple(10, 20), 3, 3.14), v, s);
     WithPair other;
@@ -440,8 +444,10 @@ TEST_CASE("pairs") {
     REQUIRE(original.getStringPair().first != other.getStringPair().first);
     REQUIRE(original.getObjPair().second != other.getObjPair().second);
     REQUIRE(original.getObjPair().second != other.getObjPair().second);
-    REQUIRE(original.getContainerPair().first.size() != other.getContainerPair().first.size());
-    REQUIRE(original.getContainerPair().second.size() != other.getContainerPair().second.size());
+    REQUIRE(original.getContainerPair().first.size() !=
+            other.getContainerPair().first.size());
+    REQUIRE(original.getContainerPair().second.size() !=
+            other.getContainerPair().second.size());
 
     result = original.serialize();
     other.deserialize(result);
@@ -452,8 +458,10 @@ TEST_CASE("pairs") {
     REQUIRE(original.getStringPair().second == other.getStringPair().second);
     REQUIRE(original.getObjPair().second == other.getObjPair().second);
     REQUIRE(original.getObjPair().second == other.getObjPair().second);
-    REQUIRE(original.getContainerPair().first.size() == other.getContainerPair().first.size());
-    REQUIRE(original.getContainerPair().second.size() == other.getContainerPair().second.size());
+    REQUIRE(original.getContainerPair().first.size() ==
+            other.getContainerPair().first.size());
+    REQUIRE(original.getContainerPair().second.size() ==
+            other.getContainerPair().second.size());
 
     auto originalFirstIt = original.getContainerPair().first.begin();
     auto otherFirstIt = other.getContainerPair().first.begin();
@@ -473,46 +481,69 @@ TEST_CASE("pairs") {
 /******************************************************************************/
 
 TEST_CASE("tuples") {
-    std::vector<int> v = { 1, 2 ,3 ,4 };
-    std::set<std::string> s = { "hello", "world" };
-    std::map<std::string, std::string> m = { {"foo", "barr"}, {"hello", "wolrd"} };
+    std::vector<int> v = {1, 2, 3, 4};
+    std::set<std::string> s = {"hello", "world"};
+    std::map<std::string, std::string> m = {{"foo", "barr"},
+                                            {"hello", "wolrd"}};
     WithTuple original(1, 2, 1.618, "hello", "world", "!", Simple(10, 20),
-                      Composed(Simple(10, 20), 3, 3.14), v, s, m);
+                       Composed(Simple(10, 20), 3, 3.14), v, s, m);
     WithTuple other;
     std::string result;
 
-    REQUIRE(std::get<0>(original.getNumberTuple()) != std::get<0>(other.getNumberTuple()));
-    REQUIRE(std::get<1>(original.getNumberTuple()) != std::get<1>(other.getNumberTuple()));
-    REQUIRE(std::get<2>(original.getNumberTuple()) != std::get<2>(other.getNumberTuple()));
+    REQUIRE(std::get<0>(original.getNumberTuple()) !=
+            std::get<0>(other.getNumberTuple()));
+    REQUIRE(std::get<1>(original.getNumberTuple()) !=
+            std::get<1>(other.getNumberTuple()));
+    REQUIRE(std::get<2>(original.getNumberTuple()) !=
+            std::get<2>(other.getNumberTuple()));
 
-    REQUIRE(std::get<0>(original.getStringTuple()) != std::get<0>(other.getStringTuple()));
-    REQUIRE(std::get<1>(original.getStringTuple()) != std::get<1>(other.getStringTuple()));
-    REQUIRE(std::get<2>(original.getStringTuple()) != std::get<2>(other.getStringTuple()));
+    REQUIRE(std::get<0>(original.getStringTuple()) !=
+            std::get<0>(other.getStringTuple()));
+    REQUIRE(std::get<1>(original.getStringTuple()) !=
+            std::get<1>(other.getStringTuple()));
+    REQUIRE(std::get<2>(original.getStringTuple()) !=
+            std::get<2>(other.getStringTuple()));
 
-    REQUIRE(std::get<0>(original.getObjTuple()) != std::get<0>(other.getObjTuple()));
-    REQUIRE(std::get<1>(original.getObjTuple()) != std::get<1>(other.getObjTuple()));
+    REQUIRE(std::get<0>(original.getObjTuple()) !=
+            std::get<0>(other.getObjTuple()));
+    REQUIRE(std::get<1>(original.getObjTuple()) !=
+            std::get<1>(other.getObjTuple()));
 
-    REQUIRE(std::get<0>(original.getContainerTuple()).size() != std::get<0>(other.getContainerTuple()).size());
-    REQUIRE(std::get<1>(original.getContainerTuple()).size() != std::get<1>(other.getContainerTuple()).size());
-    REQUIRE(std::get<2>(original.getContainerTuple()).size() != std::get<2>(other.getContainerTuple()).size());
+    REQUIRE(std::get<0>(original.getContainerTuple()).size() !=
+            std::get<0>(other.getContainerTuple()).size());
+    REQUIRE(std::get<1>(original.getContainerTuple()).size() !=
+            std::get<1>(other.getContainerTuple()).size());
+    REQUIRE(std::get<2>(original.getContainerTuple()).size() !=
+            std::get<2>(other.getContainerTuple()).size());
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(std::get<0>(original.getNumberTuple()) == std::get<0>(other.getNumberTuple()));
-    REQUIRE(std::get<1>(original.getNumberTuple()) == std::get<1>(other.getNumberTuple()));
-    REQUIRE(std::get<2>(original.getNumberTuple()) == std::get<2>(other.getNumberTuple()));
+    REQUIRE(std::get<0>(original.getNumberTuple()) ==
+            std::get<0>(other.getNumberTuple()));
+    REQUIRE(std::get<1>(original.getNumberTuple()) ==
+            std::get<1>(other.getNumberTuple()));
+    REQUIRE(std::get<2>(original.getNumberTuple()) ==
+            std::get<2>(other.getNumberTuple()));
 
-    REQUIRE(std::get<0>(original.getStringTuple()) == std::get<0>(other.getStringTuple()));
-    REQUIRE(std::get<1>(original.getStringTuple()) == std::get<1>(other.getStringTuple()));
-    REQUIRE(std::get<2>(original.getStringTuple()) == std::get<2>(other.getStringTuple()));
+    REQUIRE(std::get<0>(original.getStringTuple()) ==
+            std::get<0>(other.getStringTuple()));
+    REQUIRE(std::get<1>(original.getStringTuple()) ==
+            std::get<1>(other.getStringTuple()));
+    REQUIRE(std::get<2>(original.getStringTuple()) ==
+            std::get<2>(other.getStringTuple()));
 
-    REQUIRE(std::get<0>(original.getObjTuple()) == std::get<0>(other.getObjTuple()));
-    REQUIRE(std::get<1>(original.getObjTuple()) == std::get<1>(other.getObjTuple()));
+    REQUIRE(std::get<0>(original.getObjTuple()) ==
+            std::get<0>(other.getObjTuple()));
+    REQUIRE(std::get<1>(original.getObjTuple()) ==
+            std::get<1>(other.getObjTuple()));
 
-    REQUIRE(std::get<0>(original.getContainerTuple()).size() == std::get<0>(other.getContainerTuple()).size());
-    REQUIRE(std::get<1>(original.getContainerTuple()).size() == std::get<1>(other.getContainerTuple()).size());
-    REQUIRE(std::get<2>(original.getContainerTuple()).size() == std::get<2>(other.getContainerTuple()).size());
+    REQUIRE(std::get<0>(original.getContainerTuple()).size() ==
+            std::get<0>(other.getContainerTuple()).size());
+    REQUIRE(std::get<1>(original.getContainerTuple()).size() ==
+            std::get<1>(other.getContainerTuple()).size());
+    REQUIRE(std::get<2>(original.getContainerTuple()).size() ==
+            std::get<2>(other.getContainerTuple()).size());
 
     auto originalFirstIt = std::get<0>(original.getContainerTuple()).begin();
     auto otherFirstIt = std::get<0>(other.getContainerTuple()).begin();
@@ -522,7 +553,8 @@ TEST_CASE("tuples") {
 
     auto originalSecondIt = std::get<1>(original.getContainerTuple()).begin();
     auto otherSecondIt = std::get<1>(other.getContainerTuple()).begin();
-    while (originalSecondIt != std::get<1>(original.getContainerTuple()).end()) {
+    while (originalSecondIt !=
+           std::get<1>(original.getContainerTuple()).end()) {
         REQUIRE(*originalSecondIt++ == *otherSecondIt++);
     }
 
@@ -622,4 +654,71 @@ TEST_CASE("set") {
         REQUIRE(*other_it == *original_it);
         original_it++;
     }
+}
+
+/******************************************************************************/
+/*                                  cstruct                                   */
+/******************************************************************************/
+
+TEST_CASE("cstruct") {
+    CStruct cs = {.c = 'c', .i = 4, .l = 12347890, .f = 3.14, .d = 1.618};
+    CStruct otherCS = {};
+    CStructSerializable css('c', 4, 12347890, 3.14, 1.618);
+    CStructSerializable otherCSS;
+    char *result;
+    std::string resultSerializable;
+
+    // c like serialization
+    auto begin = std::chrono::system_clock::now();
+    result = reinterpret_cast<char *>(&cs);
+    auto end = std::chrono::system_clock::now();
+    std::cout << "c serialization time: "
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
+                                                                      begin)
+                     .count()
+              << "ns" << std::endl;
+
+    // serializer serialization
+    begin = std::chrono::system_clock::now();
+    css.serialize(resultSerializable);
+    end = std::chrono::system_clock::now();
+    std::cout << "serializer serialization time: "
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
+                                                                      begin)
+                     .count()
+              << "ns" << std::endl;
+
+    // c like deserialization
+    begin = std::chrono::system_clock::now();
+    otherCS = *reinterpret_cast<CStruct *>(result);
+    end = std::chrono::system_clock::now();
+    std::cout << "c deserialization time: "
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
+                                                                      begin)
+                     .count()
+              << "ns" << std::endl;
+
+    // serializer deserialization
+    begin = std::chrono::system_clock::now();
+    otherCSS.deserialize(resultSerializable);
+    end = std::chrono::system_clock::now();
+    std::cout << "serializer deserialization time: "
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
+                                                                      begin)
+                     .count()
+              << "ns" << std::endl;
+
+    // test cs deserialization
+    REQUIRE(otherCS.c == cs.c);
+    REQUIRE(otherCS.i == cs.i);
+    REQUIRE(otherCS.l == cs.l);
+    REQUIRE(otherCS.f == cs.f);
+    REQUIRE(otherCS.d == cs.d);
+
+    // test css deserialization
+    REQUIRE(otherCSS.c == css.c);
+    REQUIRE(otherCSS.i == css.i);
+    REQUIRE(otherCSS.l == css.l);
+    REQUIRE(otherCSS.f == css.f);
+    REQUIRE(otherCSS.d == css.d);
 }
