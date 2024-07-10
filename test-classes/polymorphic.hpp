@@ -2,7 +2,6 @@
 #define POLYMORPHIC_HPP
 #include "serializer/convertor/convertor.hpp"
 #include "serializer/serializer.hpp"
-#include "serializer/tools/parser.hpp"
 #include <vector>
 
 /******************************************************************************/

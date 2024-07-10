@@ -4,7 +4,6 @@
 #include "serializer/tools/concepts.hpp"
 #include "serializer/tools/exceptions.hpp"
 #include "serializer/tools/metafunctions.hpp"
-#include "serializer/tools/parser.hpp"
 #include "serializer/tools/tools.hpp"
 #include <algorithm>
 #include <iostream>

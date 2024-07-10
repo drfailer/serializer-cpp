@@ -1,7 +1,6 @@
 #ifndef ATTRCONTAINER_HPP
 #define ATTRCONTAINER_HPP
 #include "serializer/convertor/convertor.hpp"
-#include "serializer/tools/parser.hpp"
 #include <map>
 #include <string>
 #include <type_traits>
