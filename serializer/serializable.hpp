@@ -9,8 +9,7 @@
 
 /// @brief Inits the serializer attribute in the serialized class constructor.
 /// @param ... Attributes to serialize (must be valid references).
-#define SERIALIZER(...)                                                        \
-    __serializer__(__VA_ARGS__, typeid(*this).name())
+#define SERIALIZER(...) __serializer__(__VA_ARGS__, typeid(*this).name())
 
 /// @brief Used to create a serializable class with the default convertor.
 #define DEFAULT_CONVERTOR serializer::Convertor<>
@@ -19,20 +18,20 @@
 ///        deserialization functions.
 #define DEFAULT_FN_IMPL                                                        \
     std::string serialize() const { return __serializer__.serialize(); }       \
-    std::string serialize(std::string &str) const {                            \
-        return __serializer__.serialize(str);                                  \
+    std::string serialize(std::string &__str__) const {                        \
+        return __serializer__.serialize(__str__);                              \
     }                                                                          \
-    void serializeFile(const std::string &fn) const {                          \
-        return __serializer__.serializeFile(fn);                               \
+    void serializeFile(const std::string &__fn__) const {                      \
+        return __serializer__.serializeFile(__fn__);                           \
     }                                                                          \
-    void deserialize(const std::string &str) {                                 \
-        __serializer__.deserialize(str);                                       \
+    void deserialize(const std::string &__str__) {                             \
+        __serializer__.deserialize(__str__);                                   \
     }                                                                          \
-    void deserialize(std::string_view &str) {                                  \
-        __serializer__.deserialize(str);                                       \
+    void deserialize(std::string_view &__str__) {                              \
+        __serializer__.deserialize(__str__);                                   \
     }                                                                          \
-    void deserializeFile(const std::string &fn) {                              \
-        __serializer__.deserializeFile(fn);                                    \
+    void deserializeFile(const std::string &__fn__) {                          \
+        __serializer__.deserializeFile(__fn__);                                \
     }
 
 /// @brief Generates implementation for polymorphic classes with virtual
@@ -41,20 +40,20 @@
     virtual std::string serialize() const {                                    \
         return __serializer__.serialize();                                     \
     }                                                                          \
-    virtual std::string serialize(std::string &str) const {                    \
-        return __serializer__.serialize(str);                                  \
+    virtual std::string serialize(std::string &__str__) const {                \
+        return __serializer__.serialize(__str__);                              \
     }                                                                          \
-    virtual void serializeFile(const std::string &fn) const {                  \
-        return __serializer__.serializeFile(fn);                               \
+    virtual void serializeFile(const std::string &__fn__) const {              \
+        return __serializer__.serializeFile(__fn__);                           \
     }                                                                          \
-    virtual void deserialize(const std::string &str) {                         \
-        __serializer__.deserialize(str);                                       \
+    virtual void deserialize(const std::string &__str__) {                     \
+        __serializer__.deserialize(__str__);                                   \
     }                                                                          \
-    virtual void deserialize(std::string_view &str) {                          \
-        __serializer__.deserialize(str);                                       \
+    virtual void deserialize(std::string_view &__str__) {                      \
+        __serializer__.deserialize(__str__);                                   \
     }                                                                          \
-    virtual void deserializeFile(const std::string &fn) {                      \
-        __serializer__.deserializeFile(fn);                                    \
+    virtual void deserializeFile(const std::string &__fn__) {                  \
+        __serializer__.deserializeFile(__fn__);                                \
     }
 
 /// @brief Generates de the implementation for serialization / deserialization
@@ -63,23 +62,23 @@
     std::string serialize() const override {                                   \
         return __serializer__.serialize() + Super::serialize();                \
     }                                                                          \
-    std::string serialize(std::string &str) const override {                   \
-        return Super::serialize(__serializer__.serialize(str));                \
+    std::string serialize(std::string &__str__) const override {               \
+        return Super::serialize(__serializer__.serialize(__str__));            \
     }                                                                          \
-    void serializeFile(const std::string &fn) const override {                 \
-        std::ofstream file(fn);                                                \
+    void serializeFile(const std::string &__fn__) const override {             \
+        std::ofstream file(__fn__);                                            \
         file << serialize() << std::endl;                                      \
     }                                                                          \
-    void deserialize(const std::string &str) override {                        \
-        std::string_view strv = str;                                           \
+    void deserialize(const std::string &__str__) override {                    \
+        std::string_view strv = __str__;                                       \
         deserialize(strv);                                                     \
     }                                                                          \
-    void deserialize(std::string_view &str) override {                         \
-        __serializer__.deserialize(str);                                       \
-        Super::deserialize(str);                                               \
+    void deserialize(std::string_view &__str__) override {                     \
+        __serializer__.deserialize(__str__);                                   \
+        Super::deserialize(__str__);                                           \
     }                                                                          \
-    void deserializeFile(const std::string &fn) override {                     \
-        std::ifstream file(fn);                                                \
+    void deserializeFile(const std::string &__fn__) override {                 \
+        std::ifstream file(__fn__);                                            \
         std::ostringstream oss;                                                \
         oss << file.rdbuf();                                                   \
         deserialize(oss.str());                                                \
