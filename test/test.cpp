@@ -665,12 +665,18 @@ TEST_CASE("cstruct") {
     CStruct otherCS = {};
     CStructSerializable css('c', 4, 12347890, 3.14, 1.618);
     CStructSerializable otherCSS;
-    char *result;
+    std::string result;
     std::string resultSerializable;
+    std::string name;
+    size_t size;
 
     // c like serialization
     auto begin = std::chrono::system_clock::now();
-    result = reinterpret_cast<char *>(&cs);
+    name = typeid(cs).name();
+    size = name.size();
+    result.append(reinterpret_cast<char*>(&size), sizeof(size));
+    result.append(name);
+    result.append(reinterpret_cast<char *>(&cs), sizeof(cs));
     auto end = std::chrono::system_clock::now();
     std::cout << "c serialization time: "
               << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
@@ -690,7 +696,8 @@ TEST_CASE("cstruct") {
 
     // c like deserialization
     begin = std::chrono::system_clock::now();
-    otherCS = *reinterpret_cast<CStruct *>(result);
+    size = *reinterpret_cast<size_t*>(result.data());
+    otherCS = *reinterpret_cast<CStruct *>(result.data() + sizeof(size) + size);
     end = std::chrono::system_clock::now();
     std::cout << "c deserialization time: "
               << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
