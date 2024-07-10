@@ -30,11 +30,6 @@ template <typename Conv, typename... Types> struct MemberList {
     ///        where Types is empty (see the specialization for non empty
     ///        parameter list).
     MemberList() = default;
-
-    /// @brief Used to end the recursion during the construction of the
-    ///        MemberList with non empty parameter list.
-    /// @param (str) Emtpy string
-    MemberList(std::string const &) {}
 };
 
 /// @brief Specialization of the MemberList. Handle the case when there is at
@@ -43,7 +38,6 @@ template <typename Conv, typename H, typename... Types>
 struct MemberList<Conv, H, Types...> {
     /* attributes *************************************************************/
     H &reference; ///< reference to an attribute to serialize
-    std::string name; ///< identifier of the attribute
     Conv convertor; ///< instance of a convertor used to serialize the object
     MemberList<Conv, Types...> next; ///< next node of the list
 
@@ -88,9 +82,8 @@ struct MemberList<Conv, H, Types...> {
     /// @param types List of references to the other attributes (they will be
     ///              managed by other nodes).
     /// @param idsStr String that contains the identifiers of the attributes.
-    MemberList(H &head, Types &...types, const std::string &idsStr)
-        : reference(head), name(idsStr.substr(0, idsStr.find(','))),
-          next(types..., idsStr.substr(parser::nextId(idsStr))) {}
+    MemberList(H &head, Types &...types)
+        : reference(head), next(types...) {}
 };
 
 } // namespace serializer

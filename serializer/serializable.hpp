@@ -10,7 +10,7 @@
 /// @brief Inits the serializer attribute in the serialized class constructor.
 /// @param ... Attributes to serialize (must be valid references).
 #define SERIALIZER(...)                                                        \
-    __serializer__(__VA_ARGS__, #__VA_ARGS__, typeid(*this).name())
+    __serializer__(__VA_ARGS__, typeid(*this).name())
 
 /// @brief Used to create a serializable class with the default convertor.
 #define DEFAULT_CONVERTOR serializer::Convertor<>
