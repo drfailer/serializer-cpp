@@ -92,7 +92,7 @@ class Daughter2 : public Daughter1 {
 /*                                 convertor                                  */
 /******************************************************************************/
 
-struct MIConvertor : public serializer::Convertor<Mother *> {
+struct MIConvertor : public serializer::Convertor<POLYMORPHIC_TYPE(Mother)> {
     HANDLE_POLYMORPHIC(Mother, Daughter1, Daughter2)
 };
 

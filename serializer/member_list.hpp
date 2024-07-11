@@ -68,7 +68,7 @@ struct MemberList<Conv, H, Types...> {
                 reference = nullptr;
             }
         }
-        reference = convertor.deserialize_(str, reference);
+        reference = std::move(convertor.deserialize_(str, reference));
         next.deserialize(str);
     }
 

@@ -18,7 +18,7 @@
 ///        deserialization functions.
 #define DEFAULT_FN_IMPL                                                        \
     std::string serialize() const { return __serializer__.serialize(); }       \
-    std::string serialize(std::string &__str__) const {                        \
+    std::string &serialize(std::string &__str__) const {                       \
         return __serializer__.serialize(__str__);                              \
     }                                                                          \
     void serializeFile(const std::string &__fn__) const {                      \
@@ -40,7 +40,7 @@
     virtual std::string serialize() const {                                    \
         return __serializer__.serialize();                                     \
     }                                                                          \
-    virtual std::string serialize(std::string &__str__) const {                \
+    virtual std::string &serialize(std::string &__str__) const {               \
         return __serializer__.serialize(__str__);                              \
     }                                                                          \
     virtual void serializeFile(const std::string &__fn__) const {              \
@@ -62,7 +62,7 @@
     std::string serialize() const override {                                   \
         return __serializer__.serialize() + Super::serialize();                \
     }                                                                          \
-    std::string serialize(std::string &__str__) const override {               \
+    std::string &serialize(std::string &__str__) const override {              \
         return Super::serialize(__serializer__.serialize(__str__));            \
     }                                                                          \
     void serializeFile(const std::string &__fn__) const override {             \

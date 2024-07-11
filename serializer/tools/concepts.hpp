@@ -2,6 +2,7 @@
 #define CONCEPTS_HPP
 #include "metafunctions.hpp"
 #include <type_traits>
+#include <memory>
 
 namespace serializer::concepts {
 
@@ -16,6 +17,11 @@ concept Deserializable = requires(T obj) { obj.deserialize(""); };
 /// @brief Smart pointers.
 template <typename T>
 concept SmartPtr = mtf::is_smart_ptr_v<T>;
+
+/// @brief Smart pointers.
+template <typename T>
+concept ConcreteSmartPtr =
+    SmartPtr<T> && !std::is_abstract_v<typename T::element_type>;
 
 /// @brief Concreate pointer.
 template <typename T>
@@ -58,21 +64,27 @@ concept TupleLike = requires(T obj) {
 template <typename T>
 concept Array = mtf::is_std_array_v<T>;
 
+/// @brief Match types on which we can use std::forward
+template <typename T>
+concept Forwardable = requires(T &&obj) {
+    std::forward<T>(obj);
+};
+
 /* unsupported types */
 
 /// @brief Used to detect the types for which we do not have an automatic
 ///        serialization function.
 template <typename T>
 concept AutoSerializationSupported =
-    !SmartPtr<T> && !Pointer<T> && !Fundamental<T> &&
-    !Enum<T> && !String<T> && !Iterable<T> && !TupleLike<T>;
+    !SmartPtr<T> && !Pointer<T> && !Fundamental<T> && !Enum<T> && !String<T> &&
+    !Iterable<T> && !TupleLike<T>;
 
 /// @brief Used to detect the types for which we do not have an automatic
 ///        deserialization function.
 template <typename T>
 concept AutoDeserializationSupported =
-!SmartPtr<T> && !ConcretePtr<T> && !Fundamental<T> &&
-!Enum<T> && !String<T> && !Iterable<T> && !TupleLike<T>;
+    !ConcreteSmartPtr<T> && !ConcretePtr<T> && !Fundamental<T> && !Enum<T> &&
+    !String<T> && !Iterable<T> && !TupleLike<T>;
 
 /// @brief Detect if a type is serializable.
 template <typename T>
@@ -80,21 +92,19 @@ concept NonSerializable = !Serializable<T> && AutoSerializationSupported<T>;
 
 /// @brief Detect if a type is deserializable.
 template <typename T>
-concept NonDeserializable = !Deserializable<T> && AutoDeserializationSupported<T>;
+concept NonDeserializable =
+    !Deserializable<T> && AutoDeserializationSupported<T>;
 
 /* for insert helper function */
 
 /// @brief Used to detect whether a members_ uses insert or not.
 template <typename Container, typename T>
-concept Insertable = requires (Container obj) {
-    obj.insert(std::declval<T>());
-};
+concept Insertable = requires(Container obj) { obj.insert(std::declval<T>()); };
 
 /// @brief Used to detect whether a members_ uses add or not.
 template <typename Container, typename T>
-concept PushBackable = requires (Container obj) {
-    obj.push_back(std::declval<T>());
-};
+concept PushBackable =
+    requires(Container obj) { obj.push_back(std::declval<T>()); };
 
 }; // namespace serializer::concepts
 

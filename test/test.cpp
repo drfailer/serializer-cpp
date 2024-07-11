@@ -149,7 +149,7 @@ TEST_CASE("serialization/deserialization with POINTERS ATTRIBUTE") {
     REQUIRE(original.classPointer()->x() != other.classPointer()->x());
     REQUIRE(original.classPointer()->y() != other.classPointer()->y());
     REQUIRE(*original.fundamentalPointer() ==
-            *other.fundamentalPointer()); // this one doesn's move here
+            *other.fundamentalPointer()); // this one doesn't move here
 
     result = original.serialize();
     other.deserialize(result);
@@ -238,16 +238,37 @@ TEST_CASE("implementing a convertor (polymorphic class serialization)") {
     original.push_back(new Concrete1(1, 2.9));
     original.push_back(new Concrete2("hello \"test\" world"));
 
-    REQUIRE(original.getElements().size() == 2);
-    REQUIRE(other.getElements().empty());
+    original.push_back(std::make_shared<Concrete1>(2, 3.9));
+    original.push_back(std::make_shared<Concrete2>("pif \"paf\" pouf"));
+
+    original.add_unique(std::make_unique<Concrete1>(4, 5.9));
+    original.add_unique(std::make_unique<Concrete2>("a \"b\" c"));
+
+    REQUIRE(original.elements().size() == 2);
+    REQUIRE(other.elements().empty());
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(other.getElements().size() == original.getElements().size());
-    auto it = other.getElements().begin();
-    for (SuperAbstract *sa : original.getElements()) {
-        REQUIRE(*sa == *it++);
+    // pointer vector
+    REQUIRE(other.elements().size() == original.elements().size());
+    auto itPtr = other.elements().begin();
+    for (auto *sa : original.elements()) {
+        REQUIRE(*sa == *itPtr++);
+    }
+
+    // shared pointer vector
+    REQUIRE(other.elementsShared().size() == original.elementsShared().size());
+    auto itShared = other.elementsShared().begin();
+    for (auto &sa : original.elementsShared()) {
+        REQUIRE(*sa == *itShared++);
+    }
+
+    // unique pointer vector
+    REQUIRE(other.elementsUnique().size() == original.elementsUnique().size());
+    auto itUnique = other.elementsUnique().begin();
+    for (auto const &sa : original.elementsUnique()) {
+        REQUIRE(*sa == *itUnique++);
     }
 }
 

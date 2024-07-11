@@ -39,7 +39,8 @@ class Class1 : public SuperClass {
     SERIALIZABLE_SUPER(SuperClass, int, double);
 
   public:
-    explicit Class1(std::string const &name = "", int age = 0, int x = 0, double y = 0)
+    explicit Class1(std::string const &name = "", int age = 0, int x = 0,
+                    double y = 0)
         : SuperClass(name, age), SERIALIZER(x_, y_), x_(x), y_(y) {}
 
     /* accessors **************************************************************/
@@ -93,7 +94,8 @@ class Class2 : public SuperClass {
 /*                                 convertor                                  */
 /******************************************************************************/
 
-struct SuperConvertor : public serializer::Convertor<SuperClass *> {
+struct SuperConvertor
+    : public serializer::Convertor<POLYMORPHIC_TYPE(SuperClass)> {
     HANDLE_POLYMORPHIC(SuperClass, Class1, Class2);
 };
 

@@ -14,6 +14,7 @@
 class Unknown {
   public:
     explicit Unknown(int x) : x_(x) {}
+    Unknown() = default;
     ~Unknown() = default;
 
     /* accessors **************************************************************/
@@ -39,9 +40,10 @@ struct UnknownConvertor : public serializer::Convertor<Unknown> {
         return str;
     }
 
-    Unknown deserialize(std::string_view &str, Unknown &) override {
+    Unknown deserialize(std::string_view &str, Unknown &elt) override {
         int x = Convertor::deserialize_(str, x);
-        return Unknown(x);
+        elt = Unknown(x);
+        return elt;
     }
 };
 
