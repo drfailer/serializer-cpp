@@ -47,7 +47,7 @@ struct MemberList<Conv, H, Types...> {
     ///            manage an array of bytes that is modified by side effect.
     ///            This way, only one string is created.
     std::string serialize(std::string &str) const {
-        convertor.serialize(reference, str);
+        convertor.serialize_(reference, str);
         if constexpr (sizeof...(Types) > 0) {
             next.serialize(str);
         }
@@ -68,7 +68,7 @@ struct MemberList<Conv, H, Types...> {
                 reference = nullptr;
             }
         }
-        reference = convertor.deserialize(str, reference);
+        reference = convertor.deserialize_(str, reference);
         next.deserialize(str);
     }
 

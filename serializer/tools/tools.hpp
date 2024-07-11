@@ -81,17 +81,16 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
 ///        GenericType. It is outside of the tools namespace to avoid errors
 ///        when using it.
 #define HANDLE_POLYMORPHIC(GenericType, ...)                                   \
-    GenericType *deserialize_(std::string_view &str, GenericType *&)           \
-        override {                                                             \
+    GenericType *deserialize(std::string_view &str, GenericType *&) override { \
         using size_type = typename std::string::size_type;                     \
         size_type size = *reinterpret_cast<const size_type *>(str.data());     \
         std::string_view className = str.substr(sizeof(size), size);           \
         return serializer::tools::type_switch_fn<GenericType *, __VA_ARGS__>(  \
             className, str);                                                   \
     }                                                                          \
-    std::string &serialize_(GenericType *const &elt, std::string &str)         \
+    std::string &serialize(GenericType *const &elt, std::string &str)          \
         const override {                                                       \
-        return Convertor::serialize(elt, str);                                 \
+        return Convertor::serialize_(elt, str);                                \
     }
 
 #endif

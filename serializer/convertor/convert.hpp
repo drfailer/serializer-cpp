@@ -8,8 +8,8 @@ namespace serializer {
 ///        external types.
 /// @param T Type for which we want to add the convert behavior for.
 template <typename T> struct Convert {
-    virtual std::string &serialize_(T const &, std::string &) const = 0;
-    virtual T deserialize_(std::string_view &, T &) = 0;
+    virtual std::string &serialize(T const &, std::string &) const = 0;
+    virtual T deserialize(std::string_view &, T &) = 0;
 };
 
 }

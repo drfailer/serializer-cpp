@@ -33,14 +33,14 @@ inline bool operator==(const Unknown &lhs, const Unknown &rhs) {
 /******************************************************************************/
 
 struct UnknownConvertor : public serializer::Convertor<Unknown> {
-    std::string &serialize_(const Unknown &u, std::string &str) const override {
+    std::string &serialize(const Unknown &u, std::string &str) const override {
         int i = u.x();
         str = str.append(reinterpret_cast<char *>(&i), sizeof(i));
         return str;
     }
 
-    Unknown deserialize_(std::string_view &str, Unknown &) override {
-        int x = Convertor::deserialize(str, x);
+    Unknown deserialize(std::string_view &str, Unknown &) override {
+        int x = Convertor::deserialize_(str, x);
         return Unknown(x);
     }
 };
