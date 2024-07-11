@@ -1,5 +1,5 @@
-#ifndef WITHSET_HPP
-#define WITHSET_HPP
+#ifndef WITH_SET_HPP
+#define WITH_SET_HPP
 #include "test-classes/simple.hpp"
 #include <set>
 #include <string>
@@ -8,16 +8,16 @@ class WithSet {
     SERIALIZABLE(std::set<std::string>);
 
   public:
-    WithSet() : SERIALIZER(set) {}
+    WithSet() : SERIALIZER(set_) {}
     ~WithSet() = default;
 
     /* accessors **************************************************************/
-    void insert(const std::string &elt) { set.insert(elt); }
+    void insert(const std::string &elt) { set_.insert(elt); }
 
-    const std::set<std::string> &getSet() const { return set; }
+    [[nodiscard]] const std::set<std::string> &set() const { return set_; }
 
   private:
-    std::set<std::string> set;
+    std::set<std::string> set_;
 };
 
 #endif

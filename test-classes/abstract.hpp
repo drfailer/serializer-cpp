@@ -12,8 +12,8 @@
 class SuperAbstract {
     SERIALIZABLE_EMPTY();
   public:
-    SuperAbstract() {}
-    virtual ~SuperAbstract() {}
+    SuperAbstract() = default;
+    virtual ~SuperAbstract() = default;
 
     virtual void method() = 0;
     virtual bool operator==(const SuperAbstract *) const = 0;
@@ -27,29 +27,28 @@ class Concrete1 : public SuperAbstract {
     SERIALIZABLE_SUPER(SuperAbstract, int, double);
 
   public:
-    Concrete1(int _x = 0, double _y = 0) : SERIALIZER(x, y), x(_x), y(_y) {}
-    ~Concrete1() = default;
+    explicit Concrete1(int x = 0, double y = 0) : SERIALIZER(x_, y_), x_(x), y_(y) {}
 
     /* accessors **************************************************************/
-    void setX(int x) { this->x = x; }
-    void setY(double y) { this->y = y; }
-    int getX() const { return x; }
-    double getY() const { return y; }
+    void x(int x) { this->x_ = x; }
+    void y(double y) { this->y_ = y; }
+    [[nodiscard]] int x() const { return x_; }
+    [[nodiscard]] double y() const { return y_; }
 
     /* method *****************************************************************/
     void method() override { std::cout << "Concrete1" << std::endl; }
 
     /* operator== *************************************************************/
     bool operator==(const SuperAbstract *other) const override {
-        if (const Concrete1 *c = dynamic_cast<const Concrete1 *>(other)) {
-            return x == c->x && y == c->y;
+        if (const auto *c = dynamic_cast<const Concrete1 *>(other)) {
+            return x_ == c->x_ && y_ == c->y_;
         }
         return false;
     }
 
   private:
-    int x;
-    double y;
+    int x_;
+    double y_;
 };
 
 /******************************************************************************/
@@ -60,26 +59,25 @@ class Concrete2 : public SuperAbstract {
     SERIALIZABLE_SUPER(SuperAbstract, std::string);
 
   public:
-    Concrete2(const std::string &_str = "") : SERIALIZER(str), str(_str) {}
-    ~Concrete2() = default;
+    explicit Concrete2(std::string str = "") : SERIALIZER(str_), str_(std::move(str)) {}
 
     /* accessors **************************************************************/
-    void setStr(std::string str) { this->str = str; }
-    std::string getStr() const { return str; }
+    void str(std::string str) { this->str_ = std::move(str); }
+    [[nodiscard]] std::string str() const { return str_; }
 
     /* method *****************************************************************/
     void method() override { std::cout << "Concrete2" << std::endl; }
 
     /* operator== *************************************************************/
     bool operator==(const SuperAbstract *other) const override {
-        if (const Concrete2 *c = dynamic_cast<const Concrete2 *>(other)) {
-            return str == c->str;
+        if (const auto *c = dynamic_cast<const Concrete2 *>(other)) {
+            return str_ == c->str_;
         }
         return false;
     }
 
   private:
-    std::string str;
+    std::string str_;
 };
 
 /******************************************************************************/

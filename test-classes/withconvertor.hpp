@@ -13,17 +13,19 @@
 
 class Unknown {
   public:
-    void setX(int x) { this->x = x; }
-    int getX() const { return x; }
-    Unknown(int x) : x(x) {}
+    explicit Unknown(int x) : x_(x) {}
     ~Unknown() = default;
 
+    /* accessors **************************************************************/
+    void x(int x) { this->x_ = x; }
+    [[nodiscard]] int x() const { return x_; }
+
   private:
-    int x;
+    int x_;
 };
 
-inline bool operator==(const Unknown& lhs, const Unknown& rhs) {
-    return lhs.getX() == rhs.getX();
+inline bool operator==(const Unknown &lhs, const Unknown &rhs) {
+    return lhs.x() == rhs.x();
 }
 
 /******************************************************************************/
@@ -32,8 +34,8 @@ inline bool operator==(const Unknown& lhs, const Unknown& rhs) {
 
 struct UnknownConvertor : public serializer::Convertor<Unknown> {
     std::string &serialize_(const Unknown &u, std::string &str) const override {
-        int i = u.getX();
-        str = str.append(reinterpret_cast<char*>(&i), sizeof(i));
+        int i = u.x();
+        str = str.append(reinterpret_cast<char *>(&i), sizeof(i));
         return str;
     }
 
@@ -48,14 +50,20 @@ struct UnknownConvertor : public serializer::Convertor<Unknown> {
 /******************************************************************************/
 
 class WithConvertor {
-    SERIALIZABLE_WITH_CONVERTOR(UnknownConvertor, std::vector<int>, std::vector<Unknown>);
+    SERIALIZABLE_WITH_CONVERTOR(UnknownConvertor, std::vector<int>,
+                                std::vector<Unknown>);
+
   public:
-    const std::vector<Unknown>& getUnknowns() const { return unknowns; }
-    const std::vector<int>& getInts() const { return ints; }
-    void addInt(int i) { ints.push_back(i); }
-    void addUnknown(const Unknown& u) { unknowns.push_back(u); }
     WithConvertor() : SERIALIZER(ints, unknowns) {}
     ~WithConvertor() = default;
+
+    /* accessors **************************************************************/
+    [[nodiscard]] const std::vector<Unknown> &getUnknowns() const {
+        return unknowns;
+    }
+    [[nodiscard]] const std::vector<int> &getInts() const { return ints; }
+    void addInt(int i) { ints.push_back(i); }
+    void addUnknown(const Unknown &u) { unknowns.push_back(u); }
 
   private:
     std::vector<int> ints;

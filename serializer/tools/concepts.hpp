@@ -84,13 +84,13 @@ concept NonDeserializable = !Deserializable<T> && AutoDeserializationSupported<T
 
 /* for insert helper function */
 
-/// @brief Used to detect whether a container uses insert or not.
+/// @brief Used to detect whether a members_ uses insert or not.
 template <typename Container, typename T>
 concept Insertable = requires (Container obj) {
     obj.insert(std::declval<T>());
 };
 
-/// @brief Used to detect whether a container uses push_back or not.
+/// @brief Used to detect whether a members_ uses add or not.
 template <typename Container, typename T>
 concept PushBackable = requires (Container obj) {
     obj.push_back(std::declval<T>());

@@ -1,5 +1,5 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#ifndef TOOLS_HPP
+#define TOOLS_HPP
 #include "concepts.hpp"
 
 namespace serializer::tools {
@@ -24,7 +24,7 @@ void insert(Container &container, const T &element) {
     container.insert(element);
 }
 
-/// @brief Insert an element into an iterable using the push_back member
+/// @brief Insert an element into an iterable using the add member
 ///        function.
 template <typename Container, typename T>
     requires serializer::concepts::PushBackable<Container, T>
@@ -42,7 +42,7 @@ void insert(Container &container, const T &element, size_t idx) {
 /*                               helper macros                                */
 /******************************************************************************/
 
-/// @brief Macro that allow to get the name of a type using the RTTI.
+/// @brief Macro that allow to get the name_ of a type using the RTTI.
 #define class_name(Type) typeid(Type).name()
 
 /******************************************************************************/

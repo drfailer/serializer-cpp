@@ -1,5 +1,5 @@
-#ifndef STRINGIFIER_HPP
-#define STRINGIFIER_HPP
+#ifndef SERIALIZER_HPP
+#define SERIALIZER_HPP
 #include "member_list.hpp"
 #include "serializer/convertor/convertor.hpp"
 #include <fstream>
@@ -15,7 +15,7 @@ namespace serializer {
 /******************************************************************************/
 
 /// @brief Serializer class that is used to define the serializer attribute in
-///        the serializable classes. Contains an attribute container that holds
+///        the serializable classes. Contains an attribute members_ that holds
 ///        references to the attributes of the serialized class.
 /// @param Conv Convertor type (Convertor<> by default, but can be changed if a
 ///        custom convertor is used).
@@ -24,19 +24,19 @@ template <typename Conv, typename... Types> class Serializer {
   public:
     /* constructor & destructor ***********************************************/
 
-    /// @brief Constructor that is used to initialize the attribute container
+    /// @brief Constructor that is used to initialize the attribute members_
     ///        with the reference to the serialized attributes.
     /// @param args References to the attributes to serialize.
     /// @param idsStr String containing the list of the attributes identifiers
-    ///               ("x, y, z, angle"). It should be generated automatically
+    ///               ("x_, y_, z, angle"). It should be generated automatically
     ///               when the SERIALIZER macro is used.
     /// @param className Name of the serialized class (required for handeling
     ///                  polymorphic classes). It is obtained using the RTTI.
-    Serializer(Types &...args, std::string className)
-        : container(args...), className(std::move(className)) {}
+    explicit Serializer(Types &...args, std::string className)
+        : members_(args...), className_(std::move(className)) {}
 
     /// @brief Default constructor to create an empty serialzer.
-    Serializer() : container() {}
+    Serializer() : members_() {}
 
     /// @brief Default destructor (no memory allocation in this class).
     ~Serializer() = default;
@@ -53,10 +53,10 @@ template <typename Conv, typename... Types> class Serializer {
     ///        default version for optimization during the serialization (only
     ///        one string is created for serializing an object).
     std::string &serialize(std::string &str) const {
-        auto size = className.size();
+        auto size = className_.size();
         str.append(reinterpret_cast<char*>(&size), sizeof(size));
-        str.append(className);
-        container.serialize(str);
+        str.append(className_);
+        members_.serialize(str);
         return str;
     }
 
@@ -82,7 +82,7 @@ template <typename Conv, typename... Types> class Serializer {
         using size_type = typename std::string::size_type;
         auto size = *reinterpret_cast<const size_type*>(str.data());
         str = str.substr(size + sizeof(size));
-        container.deserialize(str);
+        members_.deserialize(str);
     }
 
     /// @brief Deserialize function that reads the input from a file.
@@ -95,8 +95,8 @@ template <typename Conv, typename... Types> class Serializer {
     }
 
   private:
-    MemberList<Conv, Types...> container;
-    std::string className;
+    MemberList<Conv, Types...> members_; ///< allow access to the members
+    std::string className_; ///< used for deserializing polymorphic objects
 };
 
 };

@@ -14,9 +14,9 @@ namespace serializer::mtf {
 template <typename T>
 using base_t = typename std::remove_const_t<std::remove_reference_t<T>>;
 
-/// @brief Allow easy access to the type of the elements in a container.
+/// @brief Allow easy access to the type of the elements_ in a members_.
 ///        We don't use value_type directly in case of a not well implemented
-///        container. Though, we assume that the iterator respects the standard.
+///        members_. Though, we assume that the iterator respects the standard.
 template <typename T> struct iter_value {
     using type = typename base_t<T>::iterator::value_type;
 };
@@ -77,9 +77,7 @@ template <typename SP> struct is_shared : std::false_type {};
 
 template <typename T> struct is_shared<std::shared_ptr<T>> : std::true_type {};
 
-template <typename SP>
-constexpr bool is_shared_v =
-    std::is_same_v<typename is_shared<SP>::type, std::true_type>;
+template <typename SP> constexpr bool is_shared_v = is_shared<SP>::value;
 
 /* unique pointers ************************************************************/
 
@@ -88,26 +86,19 @@ template <typename SP> struct is_unique : std::false_type {};
 
 template <typename T> struct is_unique<std::unique_ptr<T>> : std::true_type {};
 
-template <typename SP>
-constexpr bool is_unique_v =
-    std::is_same_v<typename is_unique<SP>::type, std::true_type>;
+template <typename SP> constexpr bool is_unique_v = is_unique<SP>::value;
 
 /* smart pointers *************************************************************/
 
 /// @brief Checks if a type is a shared or a unique_ptr
-/// TODO: rewrite this with concepts
-template <typename SP> struct is_smart : std::false_type {};
-template <typename T> struct is_smart<std::shared_ptr<T>> : std::true_type {};
-template <typename T> struct is_smart<std::unique_ptr<T>> : std::true_type {};
-template <typename SP> using is_smart_t = typename is_smart<SP>::type;
 template <typename SP>
-constexpr bool is_smart_ptr_v = std::is_same_v<is_smart_t<SP>, std::true_type>;
+constexpr bool is_smart_ptr_v = is_shared_v<SP> || is_unique_v<SP>;
 
 /******************************************************************************/
 /*                                   tuples                                   */
 /******************************************************************************/
 
-/// @brief Put the type H at the begining of the tuple T
+/// @brief Put the type H at the beginning of the tuple T
 template <typename H, typename T> struct tuple_push_front;
 
 template <typename H, template <typename...> class T, typename... Types>

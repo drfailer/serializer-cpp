@@ -20,13 +20,13 @@ class Simple {
     SERIALIZABLE(int, int); // this class can be serialized
   public:
     // we have to call the SERIALIZER in the constructor parameters list
-    Simple(int _x = 0, int _y = 0) : SERIALIZER(x, y), x(_x), y(_y) {}
-    Simple(const Simple &other) : Simple(other.x, other.y) {}
+    Simple(int _x = 0, int _y = 0) : SERIALIZER(x_, y_), x_(_x), y_(_y) {}
+    Simple(const Simple &other) : Simple(other.x_, other.y_) {}
     ~Simple() = default;
 
   private:
-    int x;
-    int y;
+    int x_;
+    int y_;
 };
 
 void main(int argc, char** argv) {
@@ -34,13 +34,13 @@ void main(int argc, char** argv) {
     Simple s2;
     std::string result;
 
-    result = s.serialize();
+    result = s_.serialize();
     s2.deserialize(result);
 
     // s1 == s2
 
     // works with file too
-    s.serializeFile("./simple.txt");
+    s_.serializeFile("./simple.txt");
 }
 ```
 
@@ -67,7 +67,7 @@ be handled manually. There is a convenient macro for this.
 
 Containers are detected with iterators so the majority of the containers of the
 standard library are supported. External containers that are iterable will be
-supported too (`QList` from Qt for instance). However, the elements inside the
+supported too (`QList` from Qt for instance). However, the elements_ inside the
 containers must be serializable.
 
 **Static arrays are not supported.**

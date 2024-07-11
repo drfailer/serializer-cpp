@@ -315,7 +315,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     }
 
     /// @brief Deserialize function for containers. They must be iterable and
-    ///        insertable (implements insert, push_back methods or usable with
+    ///        insertable (implements insert, add methods or usable with
     ///        std::insert).
     /// @param str String view of the data.
     /// @param elt Reference to the element that we want to deserialize. It it

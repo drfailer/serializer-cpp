@@ -1,27 +1,30 @@
-#ifndef WITHSMARTPTR_HPP
-#define WITHSMARTPTR_HPP
-#include <memory>
-#include <string>
+#ifndef WITH_SMART_PTR_HPP
+#define WITH_SMART_PTR_HPP
 #include "serializer/serializable.hpp"
 #include "serializer/serializer.hpp"
+#include <memory>
+#include <string>
 
 class WithSmartPtr {
     SERIALIZABLE(std::shared_ptr<int>, std::unique_ptr<double>, std::string);
-public:
-    WithSmartPtr(int intVal = 0, double doubleVal = 0, const std::string& strVal = "") :
-        SERIALIZER(intPtr, doublePtr, otherType),
-        intPtr(std::make_shared<int>(intVal)),
-        doublePtr(std::make_unique<double>(doubleVal)), otherType(strVal) {}
+
+  public:
+    explicit WithSmartPtr(int intVal = 0, double doubleVal = 0,
+                          std::string strVal = "")
+        : SERIALIZER(intPtr_, doublePtr_, otherType_),
+          intPtr_(std::make_shared<int>(intVal)),
+          doublePtr_(std::make_unique<double>(doubleVal)),
+          otherType_(std::move(strVal)) {}
     ~WithSmartPtr() = default;
 
-    std::string getOtherType() const { return otherType; }
-    double getDoublePtr() const { return *doublePtr; }
-    int getIntPtr() const { return *intPtr; }
+    [[nodiscard]] std::string otherType() const { return otherType_; }
+    [[nodiscard]] double doublePtr() const { return *doublePtr_; }
+    [[nodiscard]] int intPtr() const { return *intPtr_; }
 
-private:
-    std::shared_ptr<int> intPtr;
-    std::unique_ptr<double> doublePtr;
-    std::string otherType;
+  private:
+    std::shared_ptr<int> intPtr_;
+    std::unique_ptr<double> doublePtr_;
+    std::string otherType_;
 };
 
 #endif

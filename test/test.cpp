@@ -27,36 +27,36 @@ TEST_CASE("serialization/deserialization on a SIMPLE CLASS") {
     Simple other(0, 0);
     std::string result;
 
-    REQUIRE(original.getX() != other.getX());
-    REQUIRE(original.getY() != other.getY());
-    REQUIRE(original.getStr() != other.getStr());
+    REQUIRE(original.x() != other.x());
+    REQUIRE(original.y() != other.y());
+    REQUIRE(original.str() != other.str());
 
     result = original.serialize();
     other.deserialize(result);
 
     // the serialization and deserialization work
-    REQUIRE(original.getX() == other.getX());
-    REQUIRE(original.getY() == other.getY());
+    REQUIRE(original.x() == other.x());
+    REQUIRE(original.y() == other.y());
 
-    original.setX(3); // modify an attribute
+    original.x(3); // modify an attribute
 
-    REQUIRE(original.getX() != other.getX());
+    REQUIRE(original.x() != other.x());
 
     result = original.serialize();
     other.deserialize(result);
 
     // the modification is taken in count by the serializer (references)
-    REQUIRE(original.getX() == other.getX());
+    REQUIRE(original.x() == other.x());
 
-    original.setX(28);
-    original.setY(32);
+    original.x(28);
+    original.y(32);
     Simple copied = original;
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(original.getX() == other.getX());
-    REQUIRE(original.getY() == other.getY());
+    REQUIRE(original.x() == other.x());
+    REQUIRE(original.y() == other.y());
 }
 
 /******************************************************************************/
@@ -68,38 +68,38 @@ TEST_CASE("serialization/deserialization on a COMPOSED CLASS") {
     Composed other(Simple(0, 0), 0, 0);
     std::string result;
 
-    REQUIRE(original.getS().getX() != other.getS().getX());
-    REQUIRE(original.getS().getY() != other.getS().getY());
-    REQUIRE(original.getZ() != other.getZ());
-    REQUIRE(original.getW() != other.getW());
+    REQUIRE(original.s().x() != other.s().x());
+    REQUIRE(original.s().y() != other.s().y());
+    REQUIRE(original.z() != other.z());
+    REQUIRE(original.w() != other.w());
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(original.getS().getX() == other.getS().getX());
-    REQUIRE(original.getS().getY() == other.getS().getY());
-    REQUIRE(original.getZ() == other.getZ());
-    REQUIRE(original.getW() == other.getW());
+    REQUIRE(original.s().x() == other.s().x());
+    REQUIRE(original.s().y() == other.s().y());
+    REQUIRE(original.z() == other.z());
+    REQUIRE(original.w() == other.w());
 
-    original.setW(1.618);
-    original.setT(Simple(2, 2));
+    original.w(1.618);
+    original.s(Simple(2, 2));
 
-    REQUIRE(original.getS().getX() != other.getS().getX());
-    REQUIRE(original.getS().getY() != other.getS().getY());
-    REQUIRE(original.getW() != other.getW());
+    REQUIRE(original.s().x() != other.s().x());
+    REQUIRE(original.s().y() != other.s().y());
+    REQUIRE(original.w() != other.w());
 
     result = original.serialize();
     other.deserialize(result);
 
     // again, we check if the references allow tracking of modifications
-    REQUIRE(original.getS().getX() == other.getS().getX());
-    REQUIRE(original.getS().getY() == other.getS().getY());
-    REQUIRE(original.getZ() == other.getZ());
-    REQUIRE(original.getW() == other.getW());
+    REQUIRE(original.s().x() == other.s().x());
+    REQUIRE(original.s().y() == other.s().y());
+    REQUIRE(original.z() == other.z());
+    REQUIRE(original.w() == other.w());
 }
 
 /******************************************************************************/
-/*                             string seriasation                             */
+/*                            string serialization                            */
 /******************************************************************************/
 
 TEST_CASE("serialization/deserialization with STRING ATTRIBUTE") {
@@ -108,95 +108,84 @@ TEST_CASE("serialization/deserialization with STRING ATTRIBUTE") {
     WithString other(0, "world");
     std::string result;
 
-    REQUIRE(original.getX() != other.getX());
-    REQUIRE(original.getStr() != other.getStr());
-    REQUIRE(originalEmptyString.getX() != other.getX());
-    REQUIRE(originalEmptyString.getStr() != other.getStr());
+    REQUIRE(original.x() != other.x());
+    REQUIRE(original.str() != other.str());
+    REQUIRE(originalEmptyString.x() != other.x());
+    REQUIRE(originalEmptyString.str() != other.str());
 
-    // with non empty string
+    // with non-empty string
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(original.getX() == other.getX());
-    REQUIRE(original.getStr() == other.getStr());
+    REQUIRE(original.x() == other.x());
+    REQUIRE(original.str() == other.str());
 
     // with empty string
     result = originalEmptyString.serialize();
     other.deserialize(result);
 
-    REQUIRE(originalEmptyString.getX() == other.getX());
-    REQUIRE(originalEmptyString.getStr() == other.getStr());
+    REQUIRE(originalEmptyString.x() == other.x());
+    REQUIRE(originalEmptyString.str() == other.str());
 
-    originalEmptyString.setStr("world");
+    originalEmptyString.str("world");
 
     result = originalEmptyString.serialize();
     other.deserialize(result);
 
-    REQUIRE(originalEmptyString.getX() == other.getX());
-    REQUIRE(originalEmptyString.getStr() == other.getStr());
+    REQUIRE(originalEmptyString.x() == other.x());
+    REQUIRE(originalEmptyString.str() == other.str());
 }
 
 /******************************************************************************/
 /*                           pointer serialization                            */
 /******************************************************************************/
 
-/* IMPORTANT: this test should be ran with valgrind. */
+/* IMPORTANT: this test should be run with valgrind. */
 TEST_CASE("serialization/deserialization with POINTERS ATTRIBUTE") {
     WithPointers original(new Simple(1, 2));
     WithPointers other(new Simple(0, 0));
     std::string result;
 
-    REQUIRE(original.getClassPointer()->getX() !=
-            other.getClassPointer()->getX());
-    REQUIRE(original.getClassPointer()->getY() !=
-            other.getClassPointer()->getY());
-    REQUIRE(*original.getFundamentalPointer() ==
-            *other.getFundamentalPointer()); // this one doesn't move here
+    REQUIRE(original.classPointer()->x() != other.classPointer()->x());
+    REQUIRE(original.classPointer()->y() != other.classPointer()->y());
+    REQUIRE(*original.fundamentalPointer() ==
+            *other.fundamentalPointer()); // this one doesn's move here
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(original.getClassPointer()->getX() ==
-            other.getClassPointer()->getX());
-    REQUIRE(original.getClassPointer()->getY() ==
-            other.getClassPointer()->getY());
-    REQUIRE(*original.getFundamentalPointer() ==
-            *other.getFundamentalPointer());
+    REQUIRE(original.classPointer()->x() == other.classPointer()->x());
+    REQUIRE(original.classPointer()->y() == other.classPointer()->y());
+    REQUIRE(*original.fundamentalPointer() == *other.fundamentalPointer());
 
-    original.setClassPointer(new Simple(20, 30));
-    original.setFundamentalPointer(new double(3.14));
+    original.classPointer(new Simple(20, 30));
+    original.fundamentalPointer(new double(3.14));
 
-    REQUIRE(original.getClassPointer()->getX() !=
-            other.getClassPointer()->getX());
-    REQUIRE(original.getClassPointer()->getY() !=
-            other.getClassPointer()->getY());
-    REQUIRE(*original.getFundamentalPointer() !=
-            *other.getFundamentalPointer());
+    REQUIRE(original.classPointer()->x() != other.classPointer()->x());
+    REQUIRE(original.classPointer()->y() != other.classPointer()->y());
+    REQUIRE(*original.fundamentalPointer() != *other.fundamentalPointer());
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(original.getClassPointer()->getX() ==
-            other.getClassPointer()->getX());
-    REQUIRE(original.getClassPointer()->getY() ==
-            other.getClassPointer()->getY());
-    REQUIRE(*original.getFundamentalPointer() ==
-            *other.getFundamentalPointer());
+    REQUIRE(original.classPointer()->x() == other.classPointer()->x());
+    REQUIRE(original.classPointer()->y() == other.classPointer()->y());
+    REQUIRE(*original.fundamentalPointer() == *other.fundamentalPointer());
 }
 
 /******************************************************************************/
-/*                  serialization with a container attribute                  */
+/*                  serialization with a members_ attribute                  */
 /******************************************************************************/
 
 /*
- * NOTE: there is a probleme with precission for doubles.
+ * NOTE: there is a problem with precision for doubles.
  */
 TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
     WithContainer original;
     WithContainer other;
     std::string result;
 
-    // adding elements in containers
+    // adding elements_ in containers
     for (int i = 0; i < 10; ++i) {
         original.addInt(i);
         original.addDouble(double(i));
@@ -205,22 +194,22 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
         original.addArr(i, i * 2);
     }
 
-    REQUIRE(original.getEmptyVec().size() == 0);
-    REQUIRE(other.getEmptyVec().size() == 0);
+    REQUIRE(original.getEmptyVec().empty());
+    REQUIRE(other.getEmptyVec().empty());
     REQUIRE(original.getVec().size() == 10);
     REQUIRE(original.getLst().size() == 10);
     REQUIRE(original.getClassVec().size() == 10);
     REQUIRE(original.getArr().size() == 10);
-    REQUIRE(other.getVec().size() == 0);
-    REQUIRE(other.getLst().size() == 0);
-    REQUIRE(other.getClassVec().size() == 0);
-    REQUIRE(other.getVec2D().size() == 0);
+    REQUIRE(other.getVec().empty());
+    REQUIRE(other.getLst().empty());
+    REQUIRE(other.getClassVec().empty());
+    REQUIRE(other.getVec2D().empty());
     REQUIRE(other.getArr().size() == 10);
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(other.getEmptyVec().size() == 0);
+    REQUIRE(other.getEmptyVec().empty());
     for (int i = 0; i < 10; ++i) {
         REQUIRE(original.getVec()[i] == other.getVec()[i]);
         REQUIRE(original.getClassVec()[i] == other.getClassVec()[i]);
@@ -250,7 +239,7 @@ TEST_CASE("implementing a convertor (polymorphic class serialization)") {
     original.push_back(new Concrete2("hello \"test\" world"));
 
     REQUIRE(original.getElements().size() == 2);
-    REQUIRE(other.getElements().size() == 0);
+    REQUIRE(other.getElements().empty());
 
     result = original.serialize();
     other.deserialize(result);
@@ -270,8 +259,8 @@ TEST_CASE("serialize super class") {
     SuperCollection original;
     SuperCollection other;
     std::string result;
-    Class1 *c1 = new Class1("John", 20, 1, 2.9);
-    Class2 *c2 = new Class2("David", 30, "hello world");
+    auto *c1 = new Class1("John", 20, 1, 2.9);
+    auto *c2 = new Class2("David", 30, "hello world");
 
     // test with super class serialization:
 
@@ -290,7 +279,7 @@ TEST_CASE("serialize super class") {
     original.push_back(c2);
 
     REQUIRE(original.getElements().size() == 2);
-    REQUIRE(other.getElements().size() == 0);
+    REQUIRE(other.getElements().empty());
 
     result = original.serialize();
     other.deserialize(result);
@@ -310,35 +299,35 @@ TEST_CASE("serialization/deserialization in a FILE") {
     Simple original(10, 20);
     Simple other(0, 0);
 
-    REQUIRE(original.getX() != other.getX());
-    REQUIRE(original.getY() != other.getY());
+    REQUIRE(original.x() != other.x());
+    REQUIRE(original.y() != other.y());
 
     original.serializeFile("test_serialize.txt");
     other.deserializeFile("test_serialize.txt");
 
     // the serialization and deserialization work
-    REQUIRE(original.getX() == other.getX());
-    REQUIRE(original.getY() == other.getY());
+    REQUIRE(original.x() == other.x());
+    REQUIRE(original.y() == other.y());
 
-    original.setX(3); // modify an attribute
+    original.x(3); // modify an attribute
 
-    REQUIRE(original.getX() != other.getX());
+    REQUIRE(original.x() != other.x());
 
     original.serializeFile("test_serialize.txt");
     other.deserializeFile("test_serialize.txt");
 
     // the modification is taken in count by the serializer (references)
-    REQUIRE(original.getX() == other.getX());
+    REQUIRE(original.x() == other.x());
 
-    original.setX(28);
-    original.setY(32);
+    original.x(28);
+    original.y(32);
     Simple copied = original;
 
     original.serializeFile("test_serialize.txt");
     other.deserializeFile("test_serialize.txt");
 
-    REQUIRE(original.getX() == other.getX());
-    REQUIRE(original.getY() == other.getY());
+    REQUIRE(original.x() == other.x());
+    REQUIRE(original.y() == other.y());
 }
 
 /******************************************************************************/
@@ -349,9 +338,9 @@ TEST_CASE("multiple inheritance") {
     mi::Collection original;
     mi::Collection other;
     std::string result;
-    mi::Daughter1 *c1 = new mi::Daughter1(10, "test1", 2.2);
-    mi::Daughter2 *c2 = new mi::Daughter2(10, "test2", 2.2, "job");
-    mi::Daughter2 *c3 = new mi::Daughter2(10, "test3", 2.2, "other job");
+    auto *c1 = new mi::Daughter1(10, "test1", 2.2);
+    auto *c2 = new mi::Daughter2(10, "test2", 2.2, "job");
+    auto *c3 = new mi::Daughter2(10, "test3", 2.2, "other job");
 
     // test with super class serialization:
 
@@ -369,21 +358,21 @@ TEST_CASE("multiple inheritance") {
     original.push_back(c2);
     original.push_back(c3);
 
-    REQUIRE(original.getElements().size() == 3);
-    REQUIRE(other.getElements().size() == 0);
+    REQUIRE(original.elements().size() == 3);
+    REQUIRE(other.elements().empty());
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(other.getElements().size() == original.getElements().size());
-    auto it = other.getElements().begin();
-    for (mi::Mother *m : original.getElements()) {
+    REQUIRE(other.elements().size() == original.elements().size());
+    auto it = other.elements().begin();
+    for (mi::Mother *m : original.elements()) {
         REQUIRE(*m == *it++);
     }
 }
 
 /******************************************************************************/
-/*                               smart poiters                                */
+/*                               smart pointers                               */
 /******************************************************************************/
 
 TEST_CASE("smart pointers") {
@@ -391,16 +380,16 @@ TEST_CASE("smart pointers") {
     WithSmartPtr other;
     std::string result;
 
-    REQUIRE(original.getIntPtr() != other.getIntPtr());
-    REQUIRE(original.getDoublePtr() != other.getDoublePtr());
-    REQUIRE(original.getOtherType() != other.getOtherType());
+    REQUIRE(original.intPtr() != other.intPtr());
+    REQUIRE(original.doublePtr() != other.doublePtr());
+    REQUIRE(original.otherType() != other.otherType());
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(original.getIntPtr() == other.getIntPtr());
-    REQUIRE(original.getDoublePtr() == other.getDoublePtr());
-    REQUIRE(original.getOtherType() == other.getOtherType());
+    REQUIRE(original.intPtr() == other.intPtr());
+    REQUIRE(original.doublePtr() == other.doublePtr());
+    REQUIRE(original.otherType() == other.otherType());
 }
 
 /******************************************************************************/
@@ -408,7 +397,7 @@ TEST_CASE("smart pointers") {
 /******************************************************************************/
 
 TEST_CASE("enums") {
-    WithEnums original("str", SUNDAY, VISUAL, DndClasses::ROGUE);
+    WithEnums original("str_", SUNDAY, VISUAL, DndClasses::ROGUE);
     WithEnums other;
     std::string result;
 
@@ -438,12 +427,12 @@ TEST_CASE("pairs") {
     WithPair other;
     std::string result;
 
-    REQUIRE(original.getIntPair().first != other.getIntPair().first);
-    REQUIRE(original.getIntPair().second != other.getIntPair().second);
-    REQUIRE(original.getStringPair().first != other.getStringPair().first);
-    REQUIRE(original.getStringPair().first != other.getStringPair().first);
-    REQUIRE(original.getObjPair().second != other.getObjPair().second);
-    REQUIRE(original.getObjPair().second != other.getObjPair().second);
+    REQUIRE(original.intPair().first != other.intPair().first);
+    REQUIRE(original.intPair().second != other.intPair().second);
+    REQUIRE(original.stringPair().first != other.stringPair().first);
+    REQUIRE(original.stringPair().first != other.stringPair().first);
+    REQUIRE(original.objPair().second != other.objPair().second);
+    REQUIRE(original.objPair().second != other.objPair().second);
     REQUIRE(original.getContainerPair().first.size() !=
             other.getContainerPair().first.size());
     REQUIRE(original.getContainerPair().second.size() !=
@@ -452,12 +441,12 @@ TEST_CASE("pairs") {
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(original.getIntPair().first == other.getIntPair().first);
-    REQUIRE(original.getIntPair().second == other.getIntPair().second);
-    REQUIRE(original.getStringPair().first == other.getStringPair().first);
-    REQUIRE(original.getStringPair().second == other.getStringPair().second);
-    REQUIRE(original.getObjPair().second == other.getObjPair().second);
-    REQUIRE(original.getObjPair().second == other.getObjPair().second);
+    REQUIRE(original.intPair().first == other.intPair().first);
+    REQUIRE(original.intPair().second == other.intPair().second);
+    REQUIRE(original.stringPair().first == other.stringPair().first);
+    REQUIRE(original.stringPair().second == other.stringPair().second);
+    REQUIRE(original.objPair().second == other.objPair().second);
+    REQUIRE(original.objPair().second == other.objPair().second);
     REQUIRE(original.getContainerPair().first.size() ==
             other.getContainerPair().first.size());
     REQUIRE(original.getContainerPair().second.size() ==
@@ -484,83 +473,78 @@ TEST_CASE("tuples") {
     std::vector<int> v = {1, 2, 3, 4};
     std::set<std::string> s = {"hello", "world"};
     std::map<std::string, std::string> m = {{"foo", "barr"},
-                                            {"hello", "wolrd"}};
+                                            {"hello", "world"}};
     WithTuple original(1, 2, 1.618, "hello", "world", "!", Simple(10, 20),
                        Composed(Simple(10, 20), 3, 3.14), v, s, m);
     WithTuple other;
     std::string result;
 
-    REQUIRE(std::get<0>(original.getNumberTuple()) !=
-            std::get<0>(other.getNumberTuple()));
-    REQUIRE(std::get<1>(original.getNumberTuple()) !=
-            std::get<1>(other.getNumberTuple()));
-    REQUIRE(std::get<2>(original.getNumberTuple()) !=
-            std::get<2>(other.getNumberTuple()));
+    REQUIRE(std::get<0>(original.numberTuple()) !=
+            std::get<0>(other.numberTuple()));
+    REQUIRE(std::get<1>(original.numberTuple()) !=
+            std::get<1>(other.numberTuple()));
+    REQUIRE(std::get<2>(original.numberTuple()) !=
+            std::get<2>(other.numberTuple()));
 
-    REQUIRE(std::get<0>(original.getStringTuple()) !=
-            std::get<0>(other.getStringTuple()));
-    REQUIRE(std::get<1>(original.getStringTuple()) !=
-            std::get<1>(other.getStringTuple()));
-    REQUIRE(std::get<2>(original.getStringTuple()) !=
-            std::get<2>(other.getStringTuple()));
+    REQUIRE(std::get<0>(original.stringTuple()) !=
+            std::get<0>(other.stringTuple()));
+    REQUIRE(std::get<1>(original.stringTuple()) !=
+            std::get<1>(other.stringTuple()));
+    REQUIRE(std::get<2>(original.stringTuple()) !=
+            std::get<2>(other.stringTuple()));
 
-    REQUIRE(std::get<0>(original.getObjTuple()) !=
-            std::get<0>(other.getObjTuple()));
-    REQUIRE(std::get<1>(original.getObjTuple()) !=
-            std::get<1>(other.getObjTuple()));
+    REQUIRE(std::get<0>(original.objTuple()) != std::get<0>(other.objTuple()));
+    REQUIRE(std::get<1>(original.objTuple()) != std::get<1>(other.objTuple()));
 
-    REQUIRE(std::get<0>(original.getContainerTuple()).size() !=
-            std::get<0>(other.getContainerTuple()).size());
-    REQUIRE(std::get<1>(original.getContainerTuple()).size() !=
-            std::get<1>(other.getContainerTuple()).size());
-    REQUIRE(std::get<2>(original.getContainerTuple()).size() !=
-            std::get<2>(other.getContainerTuple()).size());
+    REQUIRE(std::get<0>(original.containerTuple()).size() !=
+            std::get<0>(other.containerTuple()).size());
+    REQUIRE(std::get<1>(original.containerTuple()).size() !=
+            std::get<1>(other.containerTuple()).size());
+    REQUIRE(std::get<2>(original.containerTuple()).size() !=
+            std::get<2>(other.containerTuple()).size());
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(std::get<0>(original.getNumberTuple()) ==
-            std::get<0>(other.getNumberTuple()));
-    REQUIRE(std::get<1>(original.getNumberTuple()) ==
-            std::get<1>(other.getNumberTuple()));
-    REQUIRE(std::get<2>(original.getNumberTuple()) ==
-            std::get<2>(other.getNumberTuple()));
+    REQUIRE(std::get<0>(original.numberTuple()) ==
+            std::get<0>(other.numberTuple()));
+    REQUIRE(std::get<1>(original.numberTuple()) ==
+            std::get<1>(other.numberTuple()));
+    REQUIRE(std::get<2>(original.numberTuple()) ==
+            std::get<2>(other.numberTuple()));
 
-    REQUIRE(std::get<0>(original.getStringTuple()) ==
-            std::get<0>(other.getStringTuple()));
-    REQUIRE(std::get<1>(original.getStringTuple()) ==
-            std::get<1>(other.getStringTuple()));
-    REQUIRE(std::get<2>(original.getStringTuple()) ==
-            std::get<2>(other.getStringTuple()));
+    REQUIRE(std::get<0>(original.stringTuple()) ==
+            std::get<0>(other.stringTuple()));
+    REQUIRE(std::get<1>(original.stringTuple()) ==
+            std::get<1>(other.stringTuple()));
+    REQUIRE(std::get<2>(original.stringTuple()) ==
+            std::get<2>(other.stringTuple()));
 
-    REQUIRE(std::get<0>(original.getObjTuple()) ==
-            std::get<0>(other.getObjTuple()));
-    REQUIRE(std::get<1>(original.getObjTuple()) ==
-            std::get<1>(other.getObjTuple()));
+    REQUIRE(std::get<0>(original.objTuple()) == std::get<0>(other.objTuple()));
+    REQUIRE(std::get<1>(original.objTuple()) == std::get<1>(other.objTuple()));
 
-    REQUIRE(std::get<0>(original.getContainerTuple()).size() ==
-            std::get<0>(other.getContainerTuple()).size());
-    REQUIRE(std::get<1>(original.getContainerTuple()).size() ==
-            std::get<1>(other.getContainerTuple()).size());
-    REQUIRE(std::get<2>(original.getContainerTuple()).size() ==
-            std::get<2>(other.getContainerTuple()).size());
+    REQUIRE(std::get<0>(original.containerTuple()).size() ==
+            std::get<0>(other.containerTuple()).size());
+    REQUIRE(std::get<1>(original.containerTuple()).size() ==
+            std::get<1>(other.containerTuple()).size());
+    REQUIRE(std::get<2>(original.containerTuple()).size() ==
+            std::get<2>(other.containerTuple()).size());
 
-    auto originalFirstIt = std::get<0>(original.getContainerTuple()).begin();
-    auto otherFirstIt = std::get<0>(other.getContainerTuple()).begin();
-    while (originalFirstIt != std::get<0>(original.getContainerTuple()).end()) {
+    auto originalFirstIt = std::get<0>(original.containerTuple()).begin();
+    auto otherFirstIt = std::get<0>(other.containerTuple()).begin();
+    while (originalFirstIt != std::get<0>(original.containerTuple()).end()) {
         REQUIRE(*originalFirstIt++ == *otherFirstIt++);
     }
 
-    auto originalSecondIt = std::get<1>(original.getContainerTuple()).begin();
-    auto otherSecondIt = std::get<1>(other.getContainerTuple()).begin();
-    while (originalSecondIt !=
-           std::get<1>(original.getContainerTuple()).end()) {
+    auto originalSecondIt = std::get<1>(original.containerTuple()).begin();
+    auto otherSecondIt = std::get<1>(other.containerTuple()).begin();
+    while (originalSecondIt != std::get<1>(original.containerTuple()).end()) {
         REQUIRE(*originalSecondIt++ == *otherSecondIt++);
     }
 
-    auto originalThirdIt = std::get<2>(original.getContainerTuple()).begin();
-    auto otherThirdIt = std::get<2>(other.getContainerTuple()).begin();
-    while (originalThirdIt != std::get<2>(original.getContainerTuple()).end()) {
+    auto originalThirdIt = std::get<2>(original.containerTuple()).begin();
+    auto otherThirdIt = std::get<2>(other.containerTuple()).begin();
+    while (originalThirdIt != std::get<2>(original.containerTuple()).end()) {
         REQUIRE(*originalThirdIt++ == *otherThirdIt++);
     }
 }
@@ -581,12 +565,11 @@ TEST_CASE("serialize unknown type") {
     original.addUnknown(Unknown(2));
     original.addUnknown(Unknown(3));
 
-    REQUIRE(original.getInts().size() != 0);
-    REQUIRE(original.getUnknowns().size() != 0);
-    REQUIRE(other.getInts().size() == 0);
-    REQUIRE(other.getUnknowns().size() == 0);
+    REQUIRE(!original.getInts().empty());
+    REQUIRE(!original.getUnknowns().empty());
+    REQUIRE(other.getInts().empty());
+    REQUIRE(other.getUnknowns().empty());
 
-    std::cout << "----" << std::endl;
     result = original.serialize();
     other.deserialize(result);
 
@@ -611,20 +594,20 @@ TEST_CASE("map") {
     WithMap other;
     std::string result;
 
-    REQUIRE(original.getMap().size() == 0);
-    REQUIRE(other.getMap().size() == 0);
+    REQUIRE(original.map().empty());
+    REQUIRE(other.map().empty());
 
     original.insert("hello", "pouf");
     original.insert("world", "pouf");
 
-    REQUIRE(original.getMap().size() == 2);
+    REQUIRE(original.map().size() == 2);
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(other.getMap().size() == original.getMap().size());
-    REQUIRE(other.getMap().at("hello") == "pouf");
-    REQUIRE(other.getMap().at("world") == "pouf");
+    REQUIRE(other.map().size() == original.map().size());
+    REQUIRE(other.map().at("hello") == "pouf");
+    REQUIRE(other.map().at("world") == "pouf");
 }
 
 /******************************************************************************/
@@ -636,22 +619,21 @@ TEST_CASE("set") {
     WithSet other;
     std::string result;
 
-    REQUIRE(original.getSet().size() == 0);
-    REQUIRE(other.getSet().size() == 0);
+    REQUIRE(original.set().empty());
+    REQUIRE(other.set().empty());
 
     original.insert("hello");
     original.insert("world");
 
-    REQUIRE(original.getSet().size() == 2);
+    REQUIRE(original.set().size() == 2);
 
     result = original.serialize();
     other.deserialize(result);
 
-    REQUIRE(other.getSet().size() == original.getSet().size());
-    auto original_it = original.getSet().begin();
-    for (auto other_it = other.getSet().begin();
-         other_it != other.getSet().end(); other_it++) {
-        REQUIRE(*other_it == *original_it);
+    REQUIRE(other.set().size() == original.set().size());
+    auto original_it = original.set().begin();
+    for (const auto &other_it : other.set()) {
+        REQUIRE(other_it == *original_it);
         original_it++;
     }
 }
@@ -668,13 +650,14 @@ TEST_CASE("cstruct") {
     std::string result;
     std::string resultSerializable;
     std::string name;
+    std::string nameDeserialization;
     size_t size;
 
     // c like serialization
     auto begin = std::chrono::system_clock::now();
     name = typeid(cs).name();
     size = name.size();
-    result.append(reinterpret_cast<char*>(&size), sizeof(size));
+    result.append(reinterpret_cast<char *>(&size), sizeof(size));
     result.append(name);
     result.append(reinterpret_cast<char *>(&cs), sizeof(cs));
     auto end = std::chrono::system_clock::now();
@@ -696,7 +679,9 @@ TEST_CASE("cstruct") {
 
     // c like deserialization
     begin = std::chrono::system_clock::now();
-    size = *reinterpret_cast<size_t*>(result.data());
+    size = *reinterpret_cast<size_t *>(result.data());
+    nameDeserialization.append(
+        reinterpret_cast<char *>(result.data() + sizeof(size)), size);
     otherCS = *reinterpret_cast<CStruct *>(result.data() + sizeof(size) + size);
     end = std::chrono::system_clock::now();
     std::cout << "c deserialization time: "
@@ -721,6 +706,7 @@ TEST_CASE("cstruct") {
     REQUIRE(otherCS.l == cs.l);
     REQUIRE(otherCS.f == cs.f);
     REQUIRE(otherCS.d == cs.d);
+    REQUIRE(nameDeserialization == name);
 
     // test css deserialization
     REQUIRE(otherCSS.c == css.c);

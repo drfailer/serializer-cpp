@@ -1,5 +1,5 @@
-#ifndef ATTRCONTAINER_HPP
-#define ATTRCONTAINER_HPP
+#ifndef MEMBER_LIST_HPP
+#define MEMBER_LIST_HPP
 #include "serializer/convertor/convertor.hpp"
 #include <map>
 #include <string>
@@ -81,7 +81,7 @@ struct MemberList<Conv, H, Types...> {
     /// @param types List of references to the other attributes (they will be
     ///              managed by other nodes).
     /// @param idsStr String that contains the identifiers of the attributes.
-    MemberList(H &head, Types &...types)
+    explicit MemberList(H &head, Types &...types)
         : reference(head), next(types...) {}
 };
 

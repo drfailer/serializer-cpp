@@ -1,5 +1,5 @@
-#ifndef SERIALIZER_CSTRUCT_H
-#define SERIALIZER_CSTRUCT_H
+#ifndef CSTRUCT_H
+#define CSTRUCT_H
 #include <serializer/serializer.hpp>
 
 struct CStruct {

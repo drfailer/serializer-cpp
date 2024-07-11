@@ -7,24 +7,33 @@
 #include <vector>
 
 class WithContainer {
-        SERIALIZABLE(std::vector<int>, std::vector<int>, std::list<double>, std::vector<Simple>, std::vector<std::vector<int>>, std::array<int, 10>);
+    SERIALIZABLE(std::vector<int>, std::vector<int>, std::list<double>,
+                 std::vector<Simple>, std::vector<std::vector<int>>,
+                 std::array<int, 10>);
+
   public:
     WithContainer() : SERIALIZER(emptyVec, vec, lst, classVec, vec2D, arr) {}
     ~WithContainer() = default;
 
     /* accessors **************************************************************/
-    void addSimple(Simple simple) { classVec.push_back(simple); }
+    void addSimple(const Simple &simple) { classVec.push_back(simple); }
     void addDouble(double d) { lst.push_back(d); }
     void addInt(int i) { vec.push_back(i); }
-    void addVec(std::vector<int>&& vec) { vec2D.push_back(vec); }
+    void addVec(std::vector<int> &&vecInt) { vec2D.push_back(vecInt); }
     void addArr(int i, int n) { arr[i] = n; }
 
-    const std::vector<int> &getEmptyVec() const { return emptyVec; }
-    const std::vector<int> &getVec() const { return vec; }
-    const std::list<double> &getLst() const { return lst; }
-    const std::vector<Simple> &getClassVec() const { return classVec; }
-    const std::vector<std::vector<int>> &getVec2D() const { return vec2D; }
-    const std::array<int, 10> &getArr() const { return arr; }
+    [[nodiscard]] const std::vector<int> &getEmptyVec() const {
+        return emptyVec;
+    }
+    [[nodiscard]] const std::vector<int> &getVec() const { return vec; }
+    [[nodiscard]] const std::list<double> &getLst() const { return lst; }
+    [[nodiscard]] const std::vector<Simple> &getClassVec() const {
+        return classVec;
+    }
+    [[nodiscard]] const std::vector<std::vector<int>> &getVec2D() const {
+        return vec2D;
+    }
+    [[nodiscard]] const std::array<int, 10> &getArr() const { return arr; }
 
   private:
     std::vector<int> emptyVec = {};
