@@ -140,7 +140,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///            just used for creating an overload of the deserialize
     ///            function.
     template <serializer::concepts::ConcretePtr T>
-    T deserialize_(std::string_view &str, T &) {
+    T deserialize_(std::string_view &str, T &elt) {
         bool ptrValid = str[0] == 'v';
         str = str.substr(1);
 
@@ -150,13 +150,15 @@ struct Convertor : public Convert<AdditionalTypes>... {
         static_assert(std::is_default_constructible_v<std::remove_pointer_t<T>>,
                       "The pointer types should be default constructible.");
         using Type = typename std::remove_pointer_t<std::remove_reference_t<T>>;
-        Type *t = new Type();
-        if constexpr (std::is_fundamental_v<Type>) {
-            *t = deserialize_(str, *t);
-        } else {
-            t->deserialize(str);
+        if (elt == nullptr) {
+          elt = new Type();
         }
-        return t;
+        if constexpr (std::is_fundamental_v<Type>) {
+            *elt = deserialize_(str, *elt);
+        } else {
+            elt->deserialize(str);
+        }
+        return elt;
     }
 
     /* smart pointers *********************************************************/

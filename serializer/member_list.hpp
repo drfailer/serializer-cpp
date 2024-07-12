@@ -68,12 +68,6 @@ struct MemberList<Conv, H, Types...> {
     ///            deserialization. It is used like an iterator but it is more
     ///            flexible.
     void deserialize(std::string_view &str) {
-        if constexpr (std::is_pointer_v<H>) {
-            if (reference != nullptr) {
-                delete reference;
-                reference = nullptr;
-            }
-        }
         if constexpr (mtf::is_function_v<H>) {
             reference(Phases::Deserialization, str);
         } else if constexpr (std::is_array_v<H>) {
