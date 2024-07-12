@@ -356,6 +356,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
 
     /* static array ***********************************************************/
 
+    /// @brief Serialize function for static arrays.
+    /// @param elt Reference to the element that we want to serialize.
+    /// @param str String that contains the result.
     template <serializer::concepts::StaticArray T>
     std::string &serialize_(T const &elt, std::string &str) const {
         for (size_t i = 0; i < std::extent_v<T>; ++i) {
@@ -364,6 +367,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
         return str;
     }
 
+    /// @brief Deserialize function for static arrays.
+    /// @param str String view of the data.
+    /// @param elt Reference to the element that we want to deserialize.
     template <serializer::concepts::StaticArray T>
     void deserialize_(std::string_view &str, T &elt) {
         for (size_t i = 0; i < std::extent_v<T>; ++i) {
