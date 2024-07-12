@@ -2,7 +2,6 @@
 #define CONCEPTS_HPP
 #include "metafunctions.hpp"
 #include <type_traits>
-#include <memory>
 
 namespace serializer::concepts {
 

@@ -1,5 +1,6 @@
-#ifndef SERIALIZER_CONVERT_H
-#define SERIALIZER_CONVERT_H
+#ifndef SERIALIZER_CONVERT_HPP
+#define SERIALIZER_CONVERT_HPP
+#include <string>
 
 namespace serializer {
 

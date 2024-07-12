@@ -1,7 +1,6 @@
 #ifndef TOOLS_HPP
 #define TOOLS_HPP
 #include "concepts.hpp"
-#include <iostream>
 
 namespace serializer::tools {
 

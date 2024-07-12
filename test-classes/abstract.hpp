@@ -1,7 +1,7 @@
 #ifndef ABSTRACT_HPP
 #define ABSTRACT_HPP
 #include "serializer/convertor/convertor.hpp"
-#include "serializer/serializer.hpp"
+#include "serializer/serializable.hpp"
 #include <iostream>
 #include <vector>
 

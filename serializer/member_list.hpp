@@ -1,7 +1,5 @@
 #ifndef MEMBER_LIST_HPP
 #define MEMBER_LIST_HPP
-#include "serializer/convertor/convertor.hpp"
-#include <map>
 #include <string>
 #include <type_traits>
 

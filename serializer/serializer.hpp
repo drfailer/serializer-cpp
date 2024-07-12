@@ -1,12 +1,8 @@
 #ifndef SERIALIZER_HPP
 #define SERIALIZER_HPP
 #include "member_list.hpp"
-#include "serializer/convertor/convertor.hpp"
 #include <fstream>
 #include <sstream>
-
-/* WARN: don't move this */
-#include "serializable.hpp"
 
 namespace serializer {
 

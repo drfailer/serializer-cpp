@@ -1,6 +1,6 @@
 #ifndef SIMPLE_HPP
 #define SIMPLE_HPP
-#include "serializer/serializer.hpp"
+#include "serializer/serializable.hpp"
 
 class Simple {
     SERIALIZABLE(int, std::string, int);
