@@ -10,6 +10,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <functional>
 
 /******************************************************************************/
 /*                          default convertor class                           */

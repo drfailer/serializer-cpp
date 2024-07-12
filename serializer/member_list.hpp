@@ -1,5 +1,7 @@
 #ifndef MEMBER_LIST_HPP
 #define MEMBER_LIST_HPP
+#include "tools/metafunctions.hpp"
+#include <functional>
 #include <string>
 #include <type_traits>
 
@@ -21,7 +23,7 @@ template <typename Conv, typename... Types> struct MemberList {
 
     /// @brief Empty deserialize function (see specialization for non empty
     ///        parameter list for the non empty version).
-    void deserialize(std::string_view&) {}
+    void deserialize(std::string_view &) {}
 
     /// @brief We only use a default constructor here as we are in the case
     ///        where Types is empty (see the specialization for non empty
@@ -34,7 +36,8 @@ template <typename Conv, typename... Types> struct MemberList {
 template <typename Conv, typename H, typename... Types>
 struct MemberList<Conv, H, Types...> {
     /* attributes *************************************************************/
-    H &reference; ///< reference to an attribute to serialize
+    std::function<void(bool, std::string &)> func;
+    mtf::ml_arg_type_t<H> reference; ///< reference to an attribute to serialize
     Conv convertor; ///< instance of a convertor used to serialize the object
     MemberList<Conv, Types...> next; ///< next node of the list
 
@@ -45,7 +48,11 @@ struct MemberList<Conv, H, Types...> {
     ///            manage an array of bytes that is modified by side effect.
     ///            This way, only one string is created.
     std::string serialize(std::string &str) const {
-        convertor.serialize_(reference, str);
+        if constexpr (mtf::is_function_v<H>) {
+            reference(Phases::Serialization, str);
+        } else {
+            convertor.serialize_(reference, str);
+        }
         if constexpr (sizeof...(Types) > 0) {
             next.serialize(str);
         }
@@ -66,7 +73,11 @@ struct MemberList<Conv, H, Types...> {
                 reference = nullptr;
             }
         }
-        reference = std::move(convertor.deserialize_(str, reference));
+        if constexpr (mtf::is_function_v<H>) {
+            reference(Phases::Deserialization, str);
+        } else {
+            reference = std::move(convertor.deserialize_(str, reference));
+        }
         next.deserialize(str);
     }
 
@@ -79,7 +90,8 @@ struct MemberList<Conv, H, Types...> {
     /// @param types List of references to the other attributes (they will be
     ///              managed by other nodes).
     /// @param idsStr String that contains the identifiers of the attributes.
-    explicit MemberList(H &head, Types &...types)
+    explicit MemberList(mtf::ml_arg_type_t<H> head,
+                        mtf::ml_arg_type_t<Types>... types)
         : reference(head), next(types...) {}
 };
 

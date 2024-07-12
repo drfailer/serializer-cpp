@@ -11,6 +11,7 @@
 #include "test-classes/withcontainer.hpp"
 #include "test-classes/withconvertor.hpp"
 #include "test-classes/withenums.hpp"
+#include "test-classes/withfunctions.hpp"
 #include "test-classes/withpointers.hpp"
 #include "test-classes/withset.hpp"
 #include "test-classes/withstring.hpp"
@@ -735,4 +736,23 @@ TEST_CASE("cstruct") {
     REQUIRE(otherCSS.l == css.l);
     REQUIRE(otherCSS.f == css.f);
     REQUIRE(otherCSS.d == css.d);
+}
+
+/******************************************************************************/
+/*                                  function                                  */
+/******************************************************************************/
+
+TEST_CASE("functions") {
+    int originI = 4;
+    WithFunctions origin(originI);
+    WithFunctions other;
+    std::string result;
+
+    REQUIRE(origin.i() != other.i());
+
+    result = origin.serialize();
+    other.deserialize(result);
+
+    REQUIRE(origin.i() == originI * 2);
+    REQUIRE(other.i() == originI * originI);
 }
