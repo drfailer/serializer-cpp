@@ -26,9 +26,13 @@ concept ConcreteSmartPtr =
 template <typename T>
 concept ConcretePtr = mtf::is_concrete_ptr_v<T>;
 
-/// @brief Pointer
+/// @brief Pointers
 template <typename T>
 concept Pointer = std::is_pointer_v<T>;
+
+/// @brief Static arrays
+template <typename T>
+concept StaticArray = std::is_array_v<T>;
 
 /// @brief Fundamental types
 template <typename T>
@@ -75,24 +79,24 @@ concept Forwardable = requires(T &&obj) {
 ///        serialization function.
 template <typename T>
 concept AutoSerializationSupported =
-    !SmartPtr<T> && !Pointer<T> && !Fundamental<T> && !Enum<T> && !String<T> &&
-    !Iterable<T> && !TupleLike<T>;
+    SmartPtr<T> || Pointer<T> || Fundamental<T> || Enum<T> || String<T> ||
+    Iterable<T> || TupleLike<T> || StaticArray<T>;
 
 /// @brief Used to detect the types for which we do not have an automatic
 ///        deserialization function.
 template <typename T>
 concept AutoDeserializationSupported =
-    !ConcreteSmartPtr<T> && !ConcretePtr<T> && !Fundamental<T> && !Enum<T> &&
-    !String<T> && !Iterable<T> && !TupleLike<T>;
+    ConcreteSmartPtr<T> || ConcretePtr<T> || Fundamental<T> || Enum<T> ||
+    String<T> || Iterable<T> || TupleLike<T> || StaticArray<T>;
 
 /// @brief Detect if a type is serializable.
 template <typename T>
-concept NonSerializable = !Serializable<T> && AutoSerializationSupported<T>;
+concept NonSerializable = !Serializable<T> && !AutoSerializationSupported<T>;
 
 /// @brief Detect if a type is deserializable.
 template <typename T>
 concept NonDeserializable =
-    !Deserializable<T> && AutoDeserializationSupported<T>;
+    !Deserializable<T> && !AutoDeserializationSupported<T>;
 
 /* for insert helper function */
 

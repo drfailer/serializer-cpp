@@ -14,6 +14,7 @@
 #include "test-classes/withfunctions.hpp"
 #include "test-classes/withpointers.hpp"
 #include "test-classes/withset.hpp"
+#include "test-classes/withstaticarrays.hpp"
 #include "test-classes/withstring.hpp"
 #include "test-classes/withtuple.hpp"
 #include <chrono>
@@ -755,4 +756,52 @@ TEST_CASE("functions") {
 
     REQUIRE(origin.i() == originI * 2);
     REQUIRE(other.i() == originI * originI);
+}
+
+/******************************************************************************/
+/*                               static arrays                                */
+/******************************************************************************/
+
+TEST_CASE("static arrays") {
+  WithStaticArrays origin;
+  WithStaticArrays other;
+  std::string result;
+
+  // filling the arrays
+  for (size_t i = 0; i < 10; ++i) {
+    origin.arr(i) = i;
+    for (size_t j = 0; j < 10; ++j) {
+      origin.grid(i, j) = i + j;
+      for (size_t k = 0; k < 2; ++k) {
+        origin.tensor(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  for (size_t i = 0; i < 2; ++i) {
+    origin.arrSimple(i) = Simple(i, i, "hello");
+    for (size_t j = 0; j < 2; ++j) {
+      origin.gridSimple(i, j) = Simple(i, j, "world");
+    }
+  }
+
+  result = origin.serialize();
+  other.deserialize(result);
+
+  for (size_t i = 0; i < 10; ++i) {
+    REQUIRE(origin.arr(i) == other.arr(i));
+    for (size_t j = 0; j < 10; ++j) {
+      REQUIRE(origin.grid(i, j) == other.grid(i, j));
+      for (size_t k = 0; k < 2; ++k) {
+        REQUIRE(origin.tensor(i, j, k) == other.tensor(i, j, k));
+      }
+    }
+  }
+
+  for (size_t i = 0; i < 2; ++i) {
+    REQUIRE(origin.arrSimple(i) == other.arrSimple(i));
+    for (size_t j = 0; j < 2; ++j) {
+      REQUIRE(origin.gridSimple(i, j) == other.gridSimple(i, j));
+    }
+  }
 }

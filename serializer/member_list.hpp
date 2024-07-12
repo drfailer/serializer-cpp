@@ -4,6 +4,7 @@
 #include <functional>
 #include <string>
 #include <type_traits>
+#include <iostream>
 
 namespace serializer {
 
@@ -75,6 +76,9 @@ struct MemberList<Conv, H, Types...> {
         }
         if constexpr (mtf::is_function_v<H>) {
             reference(Phases::Deserialization, str);
+        } else if constexpr (std::is_array_v<H>) {
+            // static arrays can't be assigned
+            convertor.deserialize_(str, reference);
         } else {
             reference = std::move(convertor.deserialize_(str, reference));
         }

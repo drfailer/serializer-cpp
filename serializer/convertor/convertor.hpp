@@ -6,11 +6,11 @@
 #include "serializer/tools/metafunctions.hpp"
 #include "serializer/tools/tools.hpp"
 #include <algorithm>
+#include <iostream>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <functional>
 
 /******************************************************************************/
 /*                          default convertor class                           */
@@ -228,7 +228,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::concepts::TupleLike T>
-    requires(!serializer::concepts::Array<T>)
+        requires(!serializer::concepts::Array<T>)
     std::string &serialize_(T const &tuple, std::string &str) const {
         return serializeTuple(tuple, str,
                               std::make_index_sequence<std::tuple_size_v<T>>());
@@ -241,7 +241,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
         T tuple;
         (
             [&] {
-              std::get<Idx>(tuple) = deserialize_(str, std::get<Idx>(tuple));
+                std::get<Idx>(tuple) = deserialize_(str, std::get<Idx>(tuple));
             }(),
             ...);
         return tuple;
@@ -253,7 +253,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///            just used for creating an overload of the deserialize
     ///            function.
     template <serializer::concepts::TupleLike T>
-    requires(!serializer::concepts::Array<T>)
+        requires(!serializer::concepts::Array<T>)
     T deserialize_(std::string_view &str, T &) {
         return deserializeTuple<serializer::mtf::remove_const_tuple_t<T>>(
             str, std::make_index_sequence<std::tuple_size_v<T>>());
@@ -350,6 +350,27 @@ struct Convertor : public Convert<AdditionalTypes>... {
             }
         }
         return result;
+    }
+
+    /* static array ***********************************************************/
+
+    template <serializer::concepts::StaticArray T>
+    std::string &serialize_(T const &elt, std::string &str) const {
+        for (size_t i = 0; i < std::extent_v<T>; ++i) {
+            serialize_(elt[i], str);
+        }
+        return str;
+    }
+
+    template <serializer::concepts::StaticArray T>
+    void deserialize_(std::string_view &str, T &elt) {
+        for (size_t i = 0; i < std::extent_v<T>; ++i) {
+            if constexpr (std::is_array_v<std::remove_extent_t<T>>) {
+                deserialize_(str, elt[i]);
+            } else {
+                elt[i] = deserialize_(str, elt[i]);
+            }
+        }
     }
 };
 
