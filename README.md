@@ -18,11 +18,11 @@ methods on the objects.
 #include <serializer/serializable.hpp>
 
 class Simple {
-    SERIALIZABLE(int, std::string, int); // making the class serializable
+    SERIALIZABLE(int, int, std::string); // making the class serializable
 
   public:
     explicit Simple(int x, int y, std::string str):
-        SERIALIZER(x_, str_, y_), // initializing the serializer
+        SERIALIZER(x_, y_, str_), // initializing the serializer
         x_(x), y_(y), str_(std::move(str)) {}
     /* ... */
 
