@@ -1,6 +1,6 @@
 #ifndef WITH_MAP_HPP
 #define WITH_MAP_HPP
-#include "test-classes/simple.hpp"
+#include <serializer/serializable.hpp>
 #include <map>
 #include <string>
 

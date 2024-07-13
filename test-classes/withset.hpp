@@ -1,6 +1,6 @@
 #ifndef WITH_SET_HPP
 #define WITH_SET_HPP
-#include "test-classes/simple.hpp"
+#include <serializer/serializable.hpp>
 #include <set>
 #include <string>
 
