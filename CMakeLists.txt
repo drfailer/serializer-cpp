@@ -5,8 +5,8 @@ project(serializer)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-# add_compile_options(-Wall -Wextra -g)
-add_compile_options(-Wall -Wextra -O3)
+add_compile_options(-Wall -Wextra -g)
+# add_compile_options(-Wall -Wextra -O3)
 
 ################################################################################
 # variables                                                                    #
@@ -18,7 +18,8 @@ set(serializer_files
         serializer/convertor/convertor.hpp
         serializer/convertor/convert.hpp
         serializer/tools/tools.hpp
-        serializer/tools/exceptions.hpp
+        serializer/exceptions/unknown_specialized_type.hpp
+        serializer/exceptions/unsupported_type.hpp
         serializer/tools/metafunctions.hpp
         serializer/tools/concepts.hpp
 )
