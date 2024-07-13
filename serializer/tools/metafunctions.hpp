@@ -5,7 +5,7 @@
 #include <type_traits>
 #include "../types.hpp"
 
-namespace serializer::mtf {
+namespace serializer::tools::mtf {
 
 /******************************************************************************/
 /*                              transform types                               */
@@ -51,6 +51,8 @@ constexpr bool contains_v = contains<T, Types...>::value;
 /*                                 functions                                  */
 /******************************************************************************/
 
+/// @brief True if T is a function_t (function that can be given to the
+///        serializer).
 template <typename T>
 constexpr bool is_function_v = std::is_same_v<T, function_t>;
 
@@ -151,6 +153,6 @@ struct is_std_array<std::array<T, N>> : std::true_type {};
 
 template <typename T> constexpr bool is_std_array_v = is_std_array<T>::value;
 
-} // namespace serializer::mtf
+} // namespace serializer::tools::mtf
 
 #endif

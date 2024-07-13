@@ -3,7 +3,7 @@
 #include "metafunctions.hpp"
 #include <type_traits>
 
-namespace serializer::concepts {
+namespace serializer::tools::concepts {
 
 /// @brief Objects that have a serialize member function.
 template <typename T>
@@ -109,6 +109,6 @@ template <typename Container, typename T>
 concept PushBackable =
     requires(Container obj) { obj.push_back(std::declval<T>()); };
 
-}; // namespace serializer::concepts
+}; // namespace serializer::tools::concepts
 
 #endif

@@ -4,7 +4,7 @@
 #include "dynamic_array.hpp"
 #include <type_traits>
 
-namespace serializer::mtf {
+namespace serializer::tools::mtf {
 
 template <typename T> struct ml_arg_type {
     using type = T &;
@@ -32,6 +32,6 @@ struct is_dynamic_array<
 template <typename T>
 constexpr bool is_dynamic_array_v = is_dynamic_array<T>::value;
 
-} // end namespace serializer::mtf
+} // end namespace serializer::tools::mtf
 
 #endif

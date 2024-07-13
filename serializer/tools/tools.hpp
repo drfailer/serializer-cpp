@@ -1,6 +1,7 @@
 #ifndef TOOLS_HPP
 #define TOOLS_HPP
 #include "concepts.hpp"
+#include "serializer/exceptions/unknown_specialized_type.hpp"
 
 namespace serializer::tools {
 
@@ -19,7 +20,7 @@ namespace serializer::tools {
 
 /// @brief Insert an element into an iterable using the insert member function.
 template <typename Container, typename T>
-    requires serializer::concepts::Insertable<Container, T>
+    requires serializer::tools::concepts::Insertable<Container, T>
 void insert(Container &container, T &&element) {
     if constexpr (concepts::Forwardable<T>) {
         container.insert(std::forward<T>(element));
@@ -31,7 +32,7 @@ void insert(Container &container, T &&element) {
 /// @brief Insert an element into an iterable using the add member
 ///        function.
 template <typename Container, typename T>
-    requires serializer::concepts::PushBackable<Container, T>
+    requires serializer::tools::concepts::PushBackable<Container, T>
 void insert(Container &container, T &&element) {
     if constexpr (concepts::Forwardable<T>) {
         container.push_back(std::forward<T>(element));
@@ -76,21 +77,24 @@ std::tuple<Types...> tuplePopFront(std::tuple<H, Types...> const &t) {
 /*                          deserialize polymorphic                           */
 /******************************************************************************/
 
-/// @brief This macro will generate a deserialize function for polymorphic
-///        types. The purpose is to help the user to easily create its own
-///        convertor that is capable of handling polymorphic types.
-///
-///        Here we juste have to use the macro DESERIALIZE_POLYMORPHIC. It takes
-///        as arguments the super class and the list of classes that inherits
-///        from this super class. The resulting function will return a heap
-///        allocated pointer of type Super class that is created using the right
-///        constructor.
 
+/// @brief Function that is used to deserialize polymorphic types. It iterates
+///        on the types (given threw template parameters) and create the right
+///        object. All the types should derive RT.
+///        This overload is used to end the template recursion. In this case, we
+///        don't know the type so we throw an exception.
+/// @param className Name of the class obtained using typeid.
+/// @param str View of the string to deserialize.
 template <typename RT>
-RT type_switch_fn(const std::string_view &, std::string_view &) {
-    return nullptr;
+RT type_switch_fn(const std::string_view &className, std::string_view &) {
+  throw serializer::exceptions::UknownSpecializedTypeError<RT>(className);
 }
 
+/// @brief Function that is used to deserialize polymorphic types. It iterates
+///        on the types (given threw template parameters) and create the right
+///        object. All the types should derive RT.
+/// @param className Name of the class obtained using typeid.
+/// @param str View of the string to deserialize.
 template <typename RT, typename T, typename... Types>
 RT type_switch_fn(const std::string_view &className, std::string_view &str) {
     static_assert(!std::is_abstract_v<T>, "The type shouldn't be abstract.");

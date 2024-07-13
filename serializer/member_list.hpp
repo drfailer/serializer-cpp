@@ -38,7 +38,8 @@ template <typename Conv, typename H, typename... Types>
 struct MemberList<Conv, H, Types...> {
     /* attributes *************************************************************/
     std::function<void(bool, std::string &)> func;
-    mtf::ml_arg_type_t<H> reference; ///< reference to an attribute to serialize
+    tools::mtf::ml_arg_type_t<H>
+        reference;  ///< reference to an attribute to serialize
     Conv convertor; ///< instance of a convertor used to serialize the object
     MemberList<Conv, Types...> next; ///< next node of the list
 
@@ -49,7 +50,7 @@ struct MemberList<Conv, H, Types...> {
     ///            manage an array of bytes that is modified by side effect.
     ///            This way, only one string is created.
     std::string serialize(std::string &str) const {
-        if constexpr (mtf::is_function_v<H>) {
+        if constexpr (tools::mtf::is_function_v<H>) {
             reference(Phases::Serialization, str);
         } else {
             convertor.serialize_(reference, str);
@@ -68,9 +69,10 @@ struct MemberList<Conv, H, Types...> {
     ///            deserialization. It is used like an iterator but it is more
     ///            flexible.
     void deserialize(std::string_view &str) {
-        if constexpr (mtf::is_function_v<H>) {
+        if constexpr (tools::mtf::is_function_v<H>) {
             reference(Phases::Deserialization, str);
-        } else if constexpr (std::is_array_v<H> || mtf::is_dynamic_array_v<H>) {
+        } else if constexpr (std::is_array_v<H> ||
+                             tools::mtf::is_dynamic_array_v<H>) {
             // static arrays can't be assigned
             convertor.deserialize_(str, reference);
         } else {
@@ -88,8 +90,8 @@ struct MemberList<Conv, H, Types...> {
     /// @param types List of references to the other attributes (they will be
     ///              managed by other nodes).
     /// @param idsStr String that contains the identifiers of the attributes.
-    explicit MemberList(mtf::ml_arg_type_t<H> head,
-                        mtf::ml_arg_type_t<Types>... types)
+    explicit MemberList(tools::mtf::ml_arg_type_t<H> head,
+                        tools::mtf::ml_arg_type_t<Types>... types)
         : reference(head), next(types...) {}
 };
 

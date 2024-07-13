@@ -28,7 +28,7 @@ template <typename Conv, typename... Types> class Serializer {
     ///               when the SERIALIZER macro is used.
     /// @param className Name of the serialized class (required for handeling
     ///                  polymorphic classes). It is obtained using the RTTI.
-    explicit Serializer(mtf::ml_arg_type_t<Types> ...args, std::string className)
+    explicit Serializer(tools::mtf::ml_arg_type_t<Types> ...args, std::string className)
         : members_(args...), className_(std::move(className)) {}
 
     /// @brief Default constructor to create an empty serialzer.
