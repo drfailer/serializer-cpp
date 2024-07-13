@@ -5,6 +5,7 @@
 #include "test-classes/multipleinheritance.hpp"
 #include "test-classes/polymorphic.hpp"
 #include "test-classes/simple.hpp"
+#include "test-classes/tree.hpp"
 #include "test-classes/withMap.hpp"
 #include "test-classes/withPair.hpp"
 #include "test-classes/withSmartPtr.hpp"
@@ -19,6 +20,7 @@
 #include "test-classes/withstring.hpp"
 #include "test-classes/withtuple.hpp"
 #include <chrono>
+#include <stack>
 #include <string>
 
 /******************************************************************************/
@@ -855,4 +857,51 @@ TEST_CASE("dynamic arrays") {
 
     delete[] external;
     delete[] other.borrowed();
+}
+
+/******************************************************************************/
+/*                                    tree                                    */
+/******************************************************************************/
+
+TEST_CASE("tree") {
+  Tree<int> origin;
+  Tree<int> other;
+  std::string result;
+
+  for (auto elt : {5, 4, 8, 6, 1, 3, 7, 2, 9}) {
+    origin.insert(elt);
+  }
+  result = origin.serialize();
+  other.deserialize(result);
+
+  Node<int> **currOrigin = &origin.root;
+  Node<int> **currOther = &other.root;
+  std::stack<Node<int>**> nodes;
+
+  while (*currOrigin && *currOther) {
+    // verify the value
+    REQUIRE((*currOther)->value == (*currOrigin)->value);
+    // verify the right son father & push
+    if ((*currOrigin)->right) {
+      REQUIRE((*currOther)->right);
+      REQUIRE((*currOther)->right->father == *currOther);
+      nodes.push(&(*currOrigin)->right);
+      nodes.push(&(*currOther)->right);
+    }
+    // verify the left son father
+    if ((*currOrigin)->left) {
+      REQUIRE((*currOther)->left);
+      REQUIRE((*currOther)->left->father == *currOther);
+    }
+    // move to the left
+    currOrigin = &(*currOrigin)->left;
+    currOther = &(*currOther)->left;
+    // pop the stack if leaf
+    if (!*currOrigin && !nodes.empty()) {
+      currOther = nodes.top();
+      nodes.pop();
+      currOrigin = nodes.top();
+      nodes.pop();
+    }
+  }
 }

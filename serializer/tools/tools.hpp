@@ -77,7 +77,6 @@ std::tuple<Types...> tuplePopFront(std::tuple<H, Types...> const &t) {
 /*                          deserialize polymorphic                           */
 /******************************************************************************/
 
-
 /// @brief Function that is used to deserialize polymorphic types. It iterates
 ///        on the types (given threw template parameters) and create the right
 ///        object. All the types should derive RT.
@@ -87,7 +86,7 @@ std::tuple<Types...> tuplePopFront(std::tuple<H, Types...> const &t) {
 /// @param str View of the string to deserialize.
 template <typename RT>
 RT type_switch_fn(const std::string_view &className, std::string_view &) {
-  throw serializer::exceptions::UknownSpecializedTypeError<RT>(className);
+    throw serializer::exceptions::UknownSpecializedTypeError<RT>(className);
 }
 
 /// @brief Function that is used to deserialize polymorphic types. It iterates
@@ -155,24 +154,32 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
     HANDLE_POLYMORPHIC_IMPL(std::shared_ptr<GenericType>, __VA_ARGS__)         \
     HANDLE_POLYMORPHIC_IMPL(std::unique_ptr<GenericType>, __VA_ARGS__)
 
-/// @brief Generates a function that link pointers (usefull for serializing some
-///        data struccture such as double linked list). One othe tricky thing of
-///        the serialization is the recursive pointer problem. The user should
-///        make sure to serialize only one of the pointer and use this link
-///        function for the other pointers.
-///        Note: this macro should appear after "src" in the SERIALIZER
-///        parameter list (the pointer src must be deserialized before we link).
-///        At the end target = src.
-/// @param target Target pointer that should be linked to src.
-/// @param src Source pointer that is deserialized.
-#define PTR_LINK(target, scr)                                                  \
-    [&](serializer::Phases phase, std::string_view &) {                        \
-        if (phase = serializer::Phases::Deserialization) {                     \
-            this->target = this->src;                                          \
+/// @brief Helper macro to create a lambdat that is executed during the
+///        serialization and the deserialization.
+/// @param code Code to execute.
+#define SER_FUN(code)                                                          \
+    [&](serializer::Phases phase,                                              \
+        [[maybe_unused]] std::string_view const &str) { code; }
+
+/// @brief Helper macro to create a lambdat that is executed during the
+///        serialization.
+/// @param code Code to execute.
+#define SER_SFUN(code)                                                         \
+    [&](serializer::Phases phase,                                              \
+        [[maybe_unused]] std::string_view const &str) {                        \
+        if (phase == serializer::Phases::Serialization) {                      \
+            code;                                                              \
         }                                                                      \
     }
 
-/// @brief Shorthand for declaring a function for linking pointers.
-#define PTR_LINK_T serializer::function_t
+/// @brief Helper macro to create a lambdat that is executed during the
+///        deserialization.
+/// @param code Code to execute.
+#define SER_DFUN(code)                                                         \
+    [&](serializer::Phases phase, [[maybe_unused]] std::string_view const &) { \
+        if (phase == serializer::Phases::Deserialization) {                    \
+            code;                                                              \
+        }                                                                      \
+    }
 
 #endif
