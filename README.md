@@ -59,17 +59,3 @@ create custom functions manually if required.
 
 The pointers are supported by the library, but they have to be initialized
 properly before the deserialization (either `nullptr` or a valid memory address).
-
-### Polymorphism
-
-Polymorphism is very problematic in this case so polymorphic types will have to
-be handled manually. There is a convenient macro for this.
-
-### Containers
-
-Containers are detected with iterators so the majority of the containers of the
-standard library are supported. External containers that are iterable will be
-supported too (`QList` from Qt for instance). However, the elements inside the
-containers must be serializable.
-
-**Static arrays are not supported.**
