@@ -1,12 +1,12 @@
 #ifndef HANDLERS_HPP
 #define HANDLERS_HPP
+#include "../tools/dynamic_array.hpp"
+#include "../tools/concepts.hpp"
+#include "../tools/exceptions.hpp"
+#include "../tools/metafunctions.hpp"
+#include "../tools/tools.hpp"
 #include "convert.hpp"
-#include "serializer/tools/concepts.hpp"
-#include "serializer/tools/exceptions.hpp"
-#include "serializer/tools/metafunctions.hpp"
-#include "serializer/tools/tools.hpp"
 #include <algorithm>
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -151,7 +151,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
                       "The pointer types should be default constructible.");
         using Type = typename std::remove_pointer_t<std::remove_reference_t<T>>;
         if (elt == nullptr) {
-          elt = new Type();
+            elt = new Type();
         }
         if constexpr (std::is_fundamental_v<Type>) {
             *elt = deserialize_(str, *elt);
@@ -377,6 +377,67 @@ struct Convertor : public Convert<AdditionalTypes>... {
                 deserialize_(str, elt[i]);
             } else {
                 elt[i] = deserialize_(str, elt[i]);
+            }
+        }
+    }
+
+    /* dynamic array **********************************************************/
+
+    /// @brief Serialize function for dynamic arrays (dynamic arrays should be
+    ///        wrap in the DynamicArray type).
+    /// @param elt Reference to the element that we want to serialize.
+    /// @param str String that contains the result.
+    template <typename Conv, concepts::Pointer T, typename DT, typename... DTs>
+    std::string &serialize_(tools::DynamicArray<Conv, T, DT, DTs...> const &elt,
+                            std::string &str) const {
+        using ST = std::remove_pointer_t<T>;
+        if (elt.mem == nullptr) {
+            return str.append("n");
+        }
+        str.append("v");
+
+        for (size_t i = 0; i < std::get<0>(elt.dimensions); ++i) {
+            if constexpr (std::is_pointer_v<ST>) {
+                str = serialize_(
+                    tools::DynamicArray<Conv, ST, DTs...>(
+                        elt.mem[i], tools::tuplePopFront(elt.dimensions)),
+                    str);
+            } else {
+                str = serialize_(elt.mem[i], str);
+            }
+        }
+        return str;
+    }
+
+    /// @brief Deserialize function for dynamic arrays (dynamic arrays should be
+    ///        wrap in the DynamicArray type).
+    ///        Note: memory is allocated if required. If the pointer is not set
+    ///        correctly, this function may segfault. To avoid pointer
+    ///        management, use the containers of the standard library instead.
+    /// @param str String view of the data.
+    /// @param elt Reference to the element that we want to deserialize.
+    template <typename Conv, concepts::Pointer T, typename DT, typename... DTs>
+    void deserialize_(std::string_view &str,
+                      tools::DynamicArray<Conv, T, DT, DTs...> &elt) {
+        using ST = std::remove_pointer_t<T>;
+        bool ptrValid = str[0] == 'v';
+        str = str.substr(1);
+
+        if (!ptrValid) {
+            elt.mem = nullptr;
+            return;
+        }
+        if (elt.mem == nullptr) {
+            elt.mem = new ST[std::get<0>(elt.dimensions)]();
+        }
+
+        for (size_t i = 0; i < std::get<0>(elt.dimensions); ++i) {
+            if constexpr (std::is_pointer_v<ST>) {
+                tools::DynamicArray<Conv, ST, DTs...> subArray(
+                    elt.mem[i], tools::tuplePopFront(elt.dimensions));
+                deserialize_(str, subArray);
+            } else {
+                elt.mem[i] = deserialize_(str, elt.mem[i]);
             }
         }
     }

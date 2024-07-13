@@ -10,6 +10,7 @@
 #include "test-classes/withSmartPtr.hpp"
 #include "test-classes/withcontainer.hpp"
 #include "test-classes/withconvertor.hpp"
+#include "test-classes/withdynamicarrays.hpp"
 #include "test-classes/withenums.hpp"
 #include "test-classes/withfunctions.hpp"
 #include "test-classes/withpointers.hpp"
@@ -763,45 +764,95 @@ TEST_CASE("functions") {
 /******************************************************************************/
 
 TEST_CASE("static arrays") {
-  WithStaticArrays origin;
-  WithStaticArrays other;
-  std::string result;
+    WithStaticArrays origin;
+    WithStaticArrays other;
+    std::string result;
 
-  // filling the arrays
-  for (size_t i = 0; i < 10; ++i) {
-    origin.arr(i) = i;
-    for (size_t j = 0; j < 10; ++j) {
-      origin.grid(i, j) = i + j;
-      for (size_t k = 0; k < 2; ++k) {
-        origin.tensor(i, j, k) = i + j + k;
-      }
+    // filling the arrays
+    for (size_t i = 0; i < 10; ++i) {
+        origin.arr(i) = i;
+        for (size_t j = 0; j < 10; ++j) {
+            origin.grid(i, j) = i + j;
+            for (size_t k = 0; k < 2; ++k) {
+                origin.tensor(i, j, k) = i + j + k;
+            }
+        }
     }
-  }
 
-  for (size_t i = 0; i < 2; ++i) {
-    origin.arrSimple(i) = Simple(i, i, "hello");
-    for (size_t j = 0; j < 2; ++j) {
-      origin.gridSimple(i, j) = Simple(i, j, "world");
+    for (size_t i = 0; i < 2; ++i) {
+        origin.arrSimple(i) = Simple(i, i, "hello");
+        for (size_t j = 0; j < 2; ++j) {
+            origin.gridSimple(i, j) = Simple(i, j, "world");
+        }
     }
-  }
 
-  result = origin.serialize();
-  other.deserialize(result);
+    result = origin.serialize();
+    other.deserialize(result);
 
-  for (size_t i = 0; i < 10; ++i) {
-    REQUIRE(origin.arr(i) == other.arr(i));
-    for (size_t j = 0; j < 10; ++j) {
-      REQUIRE(origin.grid(i, j) == other.grid(i, j));
-      for (size_t k = 0; k < 2; ++k) {
-        REQUIRE(origin.tensor(i, j, k) == other.tensor(i, j, k));
-      }
+    for (size_t i = 0; i < 10; ++i) {
+        REQUIRE(origin.arr(i) == other.arr(i));
+        for (size_t j = 0; j < 10; ++j) {
+            REQUIRE(origin.grid(i, j) == other.grid(i, j));
+            for (size_t k = 0; k < 2; ++k) {
+                REQUIRE(origin.tensor(i, j, k) == other.tensor(i, j, k));
+            }
+        }
     }
-  }
 
-  for (size_t i = 0; i < 2; ++i) {
-    REQUIRE(origin.arrSimple(i) == other.arrSimple(i));
-    for (size_t j = 0; j < 2; ++j) {
-      REQUIRE(origin.gridSimple(i, j) == other.gridSimple(i, j));
+    for (size_t i = 0; i < 2; ++i) {
+        REQUIRE(origin.arrSimple(i) == other.arrSimple(i));
+        for (size_t j = 0; j < 2; ++j) {
+            REQUIRE(origin.gridSimple(i, j) == other.gridSimple(i, j));
+        }
     }
-  }
+}
+
+/******************************************************************************/
+/*                               dynamic arrays                               */
+/******************************************************************************/
+
+TEST_CASE("dynamic arrays") {
+    WithDynamicArray origin(2);
+    WithDynamicArray other;
+    double *external = new double[10];
+    std::string result;
+
+    for (size_t i = 0; i < 10; ++i) {
+        external[i] = 3.0 * i;
+    }
+    origin.borrow(external, 10);
+
+    for (size_t i = 0; i < 5; ++i) {
+        origin.own()[i] = i;
+        origin.ownSimple()[i] = Simple(i, i, "simple");
+    }
+
+    for (size_t i = 0; i < 2; ++i) {
+        for (size_t j = 0; j < 2; ++j) {
+            origin.multipleDim()[i][j] = i + j;
+        }
+    }
+
+    result = origin.serialize();
+    other.deserialize(result);
+
+    for (size_t i = 0; i < 10; ++i) {
+        REQUIRE(external[i] == other.borrowed()[i]);
+    }
+
+    for (size_t i = 0; i < 5; ++i) {
+        REQUIRE(origin.own()[i] == other.own()[i]);
+        REQUIRE(origin.ownSimple()[i] == other.ownSimple()[i]);
+        REQUIRE(origin.null2()[i] == other.null2()[i]);
+    }
+    REQUIRE(origin.null() == other.null());
+
+    for (size_t i = 0; i < 2; ++i) {
+        for (size_t j = 0; j < 2; ++j) {
+            REQUIRE(origin.multipleDim()[i][j] == other.multipleDim()[i][j]);
+        }
+    }
+
+    delete[] external;
+    delete[] other.borrowed();
 }

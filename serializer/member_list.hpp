@@ -1,10 +1,10 @@
 #ifndef MEMBER_LIST_HPP
 #define MEMBER_LIST_HPP
 #include "tools/metafunctions.hpp"
+#include "tools/ml_arg_type.hpp"
 #include <functional>
 #include <string>
 #include <type_traits>
-#include <iostream>
 
 namespace serializer {
 
@@ -70,7 +70,7 @@ struct MemberList<Conv, H, Types...> {
     void deserialize(std::string_view &str) {
         if constexpr (mtf::is_function_v<H>) {
             reference(Phases::Deserialization, str);
-        } else if constexpr (std::is_array_v<H>) {
+        } else if constexpr (std::is_array_v<H> || mtf::is_dynamic_array_v<H>) {
             // static arrays can't be assigned
             convertor.deserialize_(str, reference);
         } else {

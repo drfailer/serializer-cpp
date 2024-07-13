@@ -54,19 +54,6 @@ constexpr bool contains_v = contains<T, Types...>::value;
 template <typename T>
 constexpr bool is_function_v = std::is_same_v<T, function_t>;
 
-template <typename T>
-struct ml_arg_type {
-    using type = T&;
-};
-
-template <>
-struct ml_arg_type<function_t> {
-  using type = function_t;
-};
-
-template <typename T>
-using ml_arg_type_t = typename ml_arg_type<T>::type;
-
 /******************************************************************************/
 /*                                  pointers                                  */
 /******************************************************************************/

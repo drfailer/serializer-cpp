@@ -1,5 +1,5 @@
-#ifndef WITHSTATICARRAYS_HPP
-#define WITHSTATICARRAYS_HPP
+#ifndef WITH_STATIC_ARRAYS_HPP
+#define WITH_STATIC_ARRAYS_HPP
 #include "test-classes/simple.hpp"
 #include <serializer/serializable.hpp>
 

@@ -51,6 +51,21 @@ void insert(Container &container, T &&element, size_t idx) {
 }
 
 /******************************************************************************/
+/*                             tuple manipulation                             */
+/******************************************************************************/
+
+template <typename H, typename... Types, size_t... Idx>
+std::tuple<Types...> tuplePopFront_(std::tuple<H, Types...> const &t,
+                                    std::index_sequence<Idx...>) {
+    return std::tuple<Types...>(std::get<Idx + 1>(t)...);
+}
+
+template <typename H, typename... Types>
+std::tuple<Types...> tuplePopFront(std::tuple<H, Types...> const &t) {
+    return tuplePopFront_(t, std::make_index_sequence<sizeof...(Types)>());
+}
+
+/******************************************************************************/
 /*                               helper macros                                */
 /******************************************************************************/
 
@@ -135,5 +150,25 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
     HANDLE_POLYMORPHIC_IMPL(GenericType *, __VA_ARGS__)                        \
     HANDLE_POLYMORPHIC_IMPL(std::shared_ptr<GenericType>, __VA_ARGS__)         \
     HANDLE_POLYMORPHIC_IMPL(std::unique_ptr<GenericType>, __VA_ARGS__)
+
+/// @brief Generates a function that link pointers (usefull for serializing some
+///        data struccture such as double linked list). One othe tricky thing of
+///        the serialization is the recursive pointer problem. The user should
+///        make sure to serialize only one of the pointer and use this link
+///        function for the other pointers.
+///        Note: this macro should appear after "src" in the SERIALIZER
+///        parameter list (the pointer src must be deserialized before we link).
+///        At the end target = src.
+/// @param target Target pointer that should be linked to src.
+/// @param src Source pointer that is deserialized.
+#define PTR_LINK(target, scr)                                                  \
+    [&](serializer::Phases phase, std::string_view &) {                        \
+        if (phase = serializer::Phases::Deserialization) {                     \
+            this->target = this->src;                                          \
+        }                                                                      \
+    }
+
+/// @brief Shorthand for declaring a function for linking pointers.
+#define PTR_LINK_T serializer::function_t
 
 #endif
