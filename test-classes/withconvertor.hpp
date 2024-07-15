@@ -1,9 +1,10 @@
 #ifndef WITHCONVERTOR_HPP
 #define WITHCONVERTOR_HPP
-#include "serializer/convertor.hpp"
+#include "serializer/convertor/convertor.hpp"
 #include "serializer/serializable.hpp"
 #include "serializer/serializer.hpp"
 #include <sstream>
+#include <string>
 #include <vector>
 
 /******************************************************************************/
@@ -12,38 +13,38 @@
 
 class Unknown {
   public:
-    void setX(int x) { this->x = x; }
-    int getX() const { return x; }
-    Unknown(int x) : x(x) {}
+    explicit Unknown(int x) : x_(x) {}
+    Unknown() = default;
     ~Unknown() = default;
 
+    /* accessors **************************************************************/
+    void x(int x) { this->x_ = x; }
+    [[nodiscard]] int x() const { return x_; }
+
   private:
-    int x;
+    int x_;
 };
 
-inline bool operator==(const Unknown& lhs, const Unknown& rhs) {
-    return lhs.getX() == rhs.getX();
+inline bool operator==(const Unknown &lhs, const Unknown &rhs) {
+    return lhs.x() == rhs.x();
 }
 
 /******************************************************************************/
 /*                                 convertor                                  */
 /******************************************************************************/
 
-struct TestConvertor {
-    serialize_custom_type(const Unknown &u) {
-        std::ostringstream oss;
-        oss << u.getX();
-        return oss.str();
+struct UnknownConvertor : public serializer::Convertor<Unknown> {
+    std::string &serialize(const Unknown &u, std::string &str) const override {
+        int i = u.x();
+        str = str.append(reinterpret_cast<char *>(&i), sizeof(i));
+        return str;
     }
 
-    deserialize_custom_type(Unknown, const std::string &str) {
-        std::istringstream iss(str);
-        int x;
-        iss >> x;
-        return Unknown(x);
+    Unknown deserialize(std::string_view &str, Unknown &elt) override {
+        int x = Convertor::deserialize_(str, x);
+        elt = Unknown(x);
+        return elt;
     }
-
-    CONVERTOR;
 };
 
 /******************************************************************************/
@@ -51,14 +52,20 @@ struct TestConvertor {
 /******************************************************************************/
 
 class WithConvertor {
-    SERIALIZABLE_WITH_CONVERTOR(TestConvertor, std::vector<int>, std::vector<Unknown>);
+    SERIALIZABLE_WITH_CONVERTOR(UnknownConvertor, std::vector<int>,
+                                std::vector<Unknown>);
+
   public:
-    const std::vector<Unknown>& getUnknowns() const { return unknowns; }
-    const std::vector<int>& getInts() const { return ints; }
-    void addInt(int i) { ints.push_back(i); }
-    void addUnknown(const Unknown& u) { unknowns.push_back(u); }
     WithConvertor() : SERIALIZER(ints, unknowns) {}
     ~WithConvertor() = default;
+
+    /* accessors **************************************************************/
+    [[nodiscard]] const std::vector<Unknown> &getUnknowns() const {
+        return unknowns;
+    }
+    [[nodiscard]] const std::vector<int> &getInts() const { return ints; }
+    void addInt(int i) { ints.push_back(i); }
+    void addUnknown(const Unknown &u) { unknowns.push_back(u); }
 
   private:
     std::vector<int> ints;

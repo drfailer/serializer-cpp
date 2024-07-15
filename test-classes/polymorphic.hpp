@@ -1,7 +1,6 @@
 #ifndef POLYMORPHIC_HPP
 #define POLYMORPHIC_HPP
-#include "serializer/convertor.hpp"
-#include "serializer/parser.hpp"
+#include "serializer/convertor/convertor.hpp"
 #include "serializer/serializer.hpp"
 #include <vector>
 
@@ -13,23 +12,23 @@ class SuperClass {
     SERIALIZABLE_POLYMORPHIC(std::string, int);
 
   public:
-    SuperClass(std::string _name = "", int _age = 0)
-        : SERIALIZER(name, age), name(_name), age(_age) {}
-    virtual ~SuperClass() {}
+    explicit SuperClass(std::string _name = "", int _age = 0)
+        : SERIALIZER(name_, age_), name_(std::move(_name)), age_(_age) {}
+    virtual ~SuperClass() = default;
 
     virtual bool operator==(const SuperClass *other) const {
-        return name == other->name && age == other->age;
+        return name_ == other->name_ && age_ == other->age_;
     }
 
     /* accessors **************************************************************/
-    void setAge(int age) { this->age = age; }
-    void setName(std::string name) { this->name = name; }
-    int getAge() const { return age; }
-    std::string getName() const { return name; }
+    void age(int age) { this->age_ = age; }
+    void name(std::string name) { this->name_ = std::move(name); }
+    [[nodiscard]] int age() const { return age_; }
+    [[nodiscard]] std::string const &name() const { return name_; }
 
   private:
-    std::string name;
-    int age;
+    std::string name_;
+    int age_;
 };
 
 /******************************************************************************/
@@ -40,27 +39,27 @@ class Class1 : public SuperClass {
     SERIALIZABLE_SUPER(SuperClass, int, double);
 
   public:
-    Class1(const std::string &name = "", int age = 0, int _x = 0, double _y = 0)
-        : SuperClass(name, age), SERIALIZER(x, y), x(_x), y(_y) {}
-    ~Class1() = default;
+    explicit Class1(std::string const &name = "", int age = 0, int x = 0,
+                    double y = 0)
+        : SuperClass(name, age), SERIALIZER(x_, y_), x_(x), y_(y) {}
 
     /* accessors **************************************************************/
-    void setX(int x) { this->x = x; }
-    void setY(double y) { this->y = y; }
-    int getX() const { return x; }
-    double getY() const { return y; }
+    void x(int x) { this->x_ = x; }
+    void y(double y) { this->y_ = y; }
+    [[nodiscard]] int x() const { return x_; }
+    [[nodiscard]] double y() const { return y_; }
 
     /* operator== *************************************************************/
     bool operator==(const SuperClass *other) const override {
-        if (const Class1 *c = dynamic_cast<const Class1 *>(other)) {
-            return x == c->x && y == c->y && SuperClass::operator==(other);
+        if (const auto *c = dynamic_cast<const Class1 *>(other)) {
+            return x_ == c->x_ && y_ == c->y_ && SuperClass::operator==(other);
         }
         return false;
     }
 
   private:
-    int x;
-    double y;
+    int x_;
+    double y_;
 };
 
 /******************************************************************************/
@@ -71,35 +70,33 @@ class Class2 : public SuperClass {
     SERIALIZABLE_SUPER(SuperClass, std::string);
 
   public:
-    Class2(const std::string &name = "", int age = 0,
-           const std::string &_str = "")
-        : SuperClass(name, age), SERIALIZER(str), str(_str) {}
-    ~Class2() = default;
+    explicit Class2(const std::string &name = "", int age = 0,
+                    std::string str = "")
+        : SuperClass(name, age), SERIALIZER(str_), str_(std::move(str)) {}
 
     /* accessors **************************************************************/
-    void setStr(std::string str) { this->str = str; }
-    std::string getStr() const { return str; }
+    void str(std::string str) { this->str_ = std::move(str); }
+    [[nodiscard]] std::string str() const { return str_; }
 
     /* operator== *************************************************************/
     bool operator==(const SuperClass *other) const override {
-        if (const Class2 *c = dynamic_cast<const Class2 *>(other)) {
-            return str == c->str && SuperClass::operator==(other);
+        if (const auto *c = dynamic_cast<const Class2 *>(other)) {
+            return str_ == c->str_ && SuperClass::operator==(other);
         }
         return false;
     }
 
   private:
-    std::string str;
+    std::string str_;
 };
 
 /******************************************************************************/
 /*                                 convertor                                  */
 /******************************************************************************/
 
-/* we use a custom convertor for handling generics */
-struct SuperConvertor {
-    DESERIALIZE_POLYMORPHIC(SuperClass, Class1, Class2);
-    CONVERTOR;
+struct SuperConvertor
+    : public serializer::Convertor<POLYMORPHIC_TYPE(SuperClass)> {
+    HANDLE_POLYMORPHIC(SuperClass, Class1, Class2);
 };
 
 /******************************************************************************/

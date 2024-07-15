@@ -1,82 +1,93 @@
 #ifndef SERIALIZABLE_HPP
 #define SERIALIZABLE_HPP
+#include "serializer.hpp"
+#include "serializer/convertor/convertor.hpp"
+#include "tools/dynamic_array.hpp"
 
 /******************************************************************************/
 /*                                   macros                                   */
 /******************************************************************************/
 
-/* Inits the serializer attribute in the serialized class constructor */
-#define SERIALIZER(...)                                                        \
-    __serializer__(__VA_ARGS__, #__VA_ARGS__, typeid(*this).name())
+/// @brief Inits the serializer attribute in the serialized class constructor.
+/// @param ... Attributes to serialize (must be valid references).
+#define SERIALIZER(...) __serializer__(__VA_ARGS__, typeid(*this).name())
 
-/* Used to create a serializable class with the default convertor. */
-#define DEFAULT_CONVERTOR serializer::Convertor
+/// @brief Used to create a serializable class with the default convertor.
+#define DEFAULT_CONVERTOR serializer::Convertor<>
 
-/*
- * Generates de the default implementation for serialization / deserialization
- * functions.
- */
+/// @brief Generates de the default implementation for serialization /
+///        deserialization functions.
 #define DEFAULT_FN_IMPL                                                        \
     std::string serialize() const { return __serializer__.serialize(); }       \
-    void serializeFile(const std::string &fn) const {                          \
-        return __serializer__.serializeFile(fn);                               \
+    std::string &serialize(std::string &__str__) const {                       \
+        return __serializer__.serialize(__str__);                              \
     }                                                                          \
-    void deserialize(const std::string &str) {                                 \
-        __serializer__.deserialize(str);                                       \
+    void serializeFile(const std::string &__fn__) const {                      \
+        return __serializer__.serializeFile(__fn__);                           \
     }                                                                          \
-    void deserializeFile(const std::string &fn) {                              \
-        __serializer__.deserializeFile(fn);                                    \
+    void deserialize(const std::string &__str__) {                             \
+        __serializer__.deserialize(__str__);                                   \
+    }                                                                          \
+    void deserialize(std::string_view &__str__) {                              \
+        __serializer__.deserialize(__str__);                                   \
+    }                                                                          \
+    void deserializeFile(const std::string &__fn__) {                          \
+        __serializer__.deserializeFile(__fn__);                                \
     }
 
-/*
- * Generates implementation for polymophic classes with virtual methods.
- * (note: this classes are not deserializable by default)
- */
+/// @brief Generates implementation for polymorphic classes with virtual
+///        methods. (note: these classes are not deserializable by default)
 #define POLYMORPHIC_FN_IMPL                                                    \
     virtual std::string serialize() const {                                    \
         return __serializer__.serialize();                                     \
     }                                                                          \
-    virtual void serializeFile(const std::string &fn) const {                  \
-        return __serializer__.serializeFile(fn);                               \
+    virtual std::string &serialize(std::string &__str__) const {               \
+        return __serializer__.serialize(__str__);                              \
     }                                                                          \
-    virtual void deserialize(const std::string &str) {                         \
-        __serializer__.deserialize(str);                                       \
+    virtual void serializeFile(const std::string &__fn__) const {              \
+        return __serializer__.serializeFile(__fn__);                           \
     }                                                                          \
-    virtual void deserializeFile(const std::string &fn) {                      \
-        __serializer__.deserializeFile(fn);                                    \
+    virtual void deserialize(const std::string &__str__) {                     \
+        __serializer__.deserialize(__str__);                                   \
+    }                                                                          \
+    virtual void deserialize(std::string_view &__str__) {                      \
+        __serializer__.deserialize(__str__);                                   \
+    }                                                                          \
+    virtual void deserializeFile(const std::string &__fn__) {                  \
+        __serializer__.deserializeFile(__fn__);                                \
     }
 
-/*
- * Generates de the implementation for serialization / deserialization functions
- * where the super class has to be serialized too.
- */
+/// @brief Generates de the implementation for serialization / deserialization
+///        functions where the super class has to be serialized too.
 #define SUPER_FN_IMPL(Super)                                                   \
     std::string serialize() const override {                                   \
-        std::ostringstream oss;                                                \
-        oss << "{ __THIS__: " << __serializer__.serialize() << ", "            \
-            << "__SUPER__: " << Super::serialize() << " }";                    \
-        return oss.str();                                                      \
+        return __serializer__.serialize() + Super::serialize();                \
     }                                                                          \
-    void serializeFile(const std::string &fn) const override {                 \
-        std::ofstream file(fn);                                                \
+    std::string &serialize(std::string &__str__) const override {              \
+        return Super::serialize(__serializer__.serialize(__str__));            \
+    }                                                                          \
+    void serializeFile(const std::string &__fn__) const override {             \
+        std::ofstream file(__fn__);                                            \
         file << serialize() << std::endl;                                      \
     }                                                                          \
-    void deserialize(const std::string &str) override {                        \
-        Super::deserialize(serializer::parser::getSuperValue(str));            \
-        __serializer__.deserialize(serializer::parser::getThisValue(str));     \
+    void deserialize(const std::string &__str__) override {                    \
+        std::string_view strv = __str__;                                       \
+        deserialize(strv);                                                     \
     }                                                                          \
-    void deserializeFile(const std::string &fn) override {                     \
-        std::ifstream file(fn);                                                \
+    void deserialize(std::string_view &__str__) override {                     \
+        __serializer__.deserialize(__str__);                                   \
+        Super::deserialize(__str__);                                           \
+    }                                                                          \
+    void deserializeFile(const std::string &__fn__) override {                 \
+        std::ifstream file(__fn__);                                            \
         std::ostringstream oss;                                                \
         oss << file.rdbuf();                                                   \
         deserialize(oss.str());                                                \
     }
 
-/*
- * Generates the code in the serialized class. It adds a serializer attribute
- * and serialization / deserialization functions (the implementation is
- * configurable);
- */
+/// @brief Generates the code in the serialized class. It adds a serializer
+///        attribute and serialization / deserialization functions (the
+///        implementation is configurable)
 #define __SERIALIZABLE__(CONV, IMPL, ...)                                      \
   private:                                                                     \
     serializer::Serializer<CONV, __VA_ARGS__> __serializer__;                  \
@@ -86,10 +97,8 @@
                                                                                \
   private:
 
-/*
- * Generates an empty serilizer (we may wan't an abstract class without any
- * attribute to be serilizable).
- */
+/// @brief Generates an empty serializer (we may want an abstract class without
+///        any attribute to be serializable).
 #define SERIALIZABLE_EMPTY()                                                   \
   private:                                                                     \
     serializer::Serializer<DEFAULT_CONVERTOR> __serializer__;                  \
@@ -103,33 +112,29 @@
 /*                                 shorthands                                 */
 /******************************************************************************/
 
-/* Generates the code for the default serializable class. */
+/// @brief Generates the code for the default serializable class.
 #define SERIALIZABLE(...)                                                      \
     __SERIALIZABLE__(DEFAULT_CONVERTOR, DEFAULT_FN_IMPL, __VA_ARGS__)
 
-/* Generates the code for the default serializable polymophic class. */
+/// @brief Generates the code for the default serializable polymorphic class.
 #define SERIALIZABLE_POLYMORPHIC(...)                                          \
     __SERIALIZABLE__(DEFAULT_CONVERTOR, POLYMORPHIC_FN_IMPL, __VA_ARGS__)
 
-/* Generates the code for the serializable with a custom convertor. */
+/// @brief Generates the code for the serializable with a custom convertor.
 #define SERIALIZABLE_WITH_CONVERTOR(Convertor, ...)                            \
     __SERIALIZABLE__(Convertor, DEFAULT_FN_IMPL, __VA_ARGS__)
 
-/* Generates the code for the serializable with a custom implementation. */
+/// @brief Generates the code for the serializable with a custom implementation.
 #define SERIALIZABLE_WITH_IMPL(IMPL, ...)                                      \
     __SERIALIZABLE__(DEFAULT_CONVERTOR, IMPL, __VA_ARGS__)
 
-/*
- * Generates the code for the serializable with the default convertor and use
- * the implementation for serializing the super class.
- */
+/// @brief Generates the code for the serializable with the default convertor
+///        and use the implementation for serializing the super class.
 #define SERIALIZABLE_SUPER(Super, ...)                                         \
     __SERIALIZABLE__(DEFAULT_CONVERTOR, SUPER_FN_IMPL(Super), __VA_ARGS__)
 
-/*
- * Generates the code for the serializable with a custom convertor and use
- * the implementation for serializing the super class.
- */
+/// @brief Generates the code for the serializable with a custom convertor and
+///        use the implementation for serializing the super class.
 #define SERIALIZABLE_CUSTOM(Convertor, Super, ...)                             \
     __SERIALIZABLE__(Convertor, SUPER_FN_IMPL(Super), __VA_ARGS__)
 

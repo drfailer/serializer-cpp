@@ -1,39 +1,39 @@
-#ifndef WITHPOINTERS_HPP
-#define WITHPOINTERS_HPP
+#ifndef WITH_POINTERS_HPP
+#define WITH_POINTERS_HPP
 #include "serializer/serializer.hpp"
 #include "test-classes/simple.hpp"
 
 class WithPointers {
     SERIALIZABLE(int *, double *, Simple *);
   public:
-    WithPointers(Simple *_classPointer)
-        : SERIALIZER(nullPointer, fundamentalPointer, classPointer),
-          classPointer(_classPointer) {
-        fundamentalPointer = new double;
-        *fundamentalPointer = 1.9;
+    explicit WithPointers(Simple *classPointer)
+        : SERIALIZER(nullPointer_, fundamentalPointer_, classPointer_),
+          classPointer_(classPointer) {
+        fundamentalPointer_ = new double;
+        *fundamentalPointer_ = 1.9;
     }
     ~WithPointers() {
-        delete fundamentalPointer;
-        delete classPointer;
+        delete fundamentalPointer_;
+        delete classPointer_;
     }
 
     /* accessors **************************************************************/
-    void setClassPointer(Simple *classPointer) {
-        delete this->classPointer;
-        this->classPointer = classPointer;
+    void classPointer(Simple *classPointer) {
+        delete this->classPointer_;
+        this->classPointer_ = classPointer;
     }
-    void setFundamentalPointer(double *fundamentalPointer) {
-        delete this->fundamentalPointer;
-        this->fundamentalPointer = fundamentalPointer;
+    void fundamentalPointer(double *fundamentalPointer) {
+        delete this->fundamentalPointer_;
+        this->fundamentalPointer_ = fundamentalPointer;
     }
-    Simple *getClassPointer() const { return classPointer; }
-    double *getFundamentalPointer() const { return fundamentalPointer; }
-    int *getNullPointer() const { return nullPointer; }
+    [[nodiscard]] Simple *classPointer() const { return classPointer_; }
+    [[nodiscard]] double *fundamentalPointer() const { return fundamentalPointer_; }
+    [[nodiscard]] int *nullPointer() const { return nullPointer_; }
 
   private:
-    int *nullPointer = nullptr;
-    double *fundamentalPointer = nullptr;
-    Simple *classPointer = nullptr;
+    int *nullPointer_ = nullptr;
+    double *fundamentalPointer_ = nullptr;
+    Simple *classPointer_ = nullptr;
 };
 
 #endif
