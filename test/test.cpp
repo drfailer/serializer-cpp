@@ -816,22 +816,26 @@ TEST_CASE("static arrays") {
 TEST_CASE("dynamic arrays") {
     WithDynamicArray origin(2);
     WithDynamicArray other;
-    double *external = new double[10];
+    auto *external = new double[10];
     std::string result;
 
     for (size_t i = 0; i < 10; ++i) {
-        external[i] = 3.0 * i;
+        external[i] = (double) i * 3.0;
     }
     origin.borrow(external, 10);
 
+    for (size_t i = 0; i < (4 * 4); ++i) {
+        origin.twoDOneD()[i] = (int) i * 2;
+    }
+
     for (size_t i = 0; i < 5; ++i) {
-        origin.own()[i] = i;
-        origin.ownSimple()[i] = Simple(i, i, "simple");
+        origin.own()[i] = (int) i;
+        origin.ownSimple()[i] = Simple((int) i, (int) i, "simple");
     }
 
     for (size_t i = 0; i < 2; ++i) {
         for (size_t j = 0; j < 2; ++j) {
-            origin.multipleDim()[i][j] = i + j;
+            origin.multipleDim()[i][j] = (int) (i + j);
         }
     }
 
@@ -840,6 +844,10 @@ TEST_CASE("dynamic arrays") {
 
     for (size_t i = 0; i < 10; ++i) {
         REQUIRE(external[i] == other.borrowed()[i]);
+    }
+
+    for (size_t i = 0; i < (4 * 4); ++i) {
+        REQUIRE(origin.twoDOneD()[i] == other.twoDOneD()[i]);
     }
 
     for (size_t i = 0; i < 5; ++i) {

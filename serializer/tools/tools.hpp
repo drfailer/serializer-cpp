@@ -66,6 +66,21 @@ std::tuple<Types...> tuplePopFront(std::tuple<H, Types...> const &t) {
     return tuplePopFront_(t, std::make_index_sequence<sizeof...(Types)>());
 }
 
+template <typename T, typename ...Types, size_t ...Idx>
+T tupleProd_(std::tuple<Types...> const &tuple, std::index_sequence<Idx...>) {
+    if constexpr (sizeof...(Types) == 0) {
+        return 0;
+    } else {
+        return (std::get<Idx>(tuple) * ...);
+    }
+}
+
+template <typename T, typename ...Types>
+T tupleProd(std::tuple<Types...> const &tuple) {
+    return tupleProd_<T>(tuple, std::make_index_sequence<sizeof...(Types)>());
+}
+
+
 /******************************************************************************/
 /*                               helper macros                                */
 /******************************************************************************/
