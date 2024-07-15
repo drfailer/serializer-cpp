@@ -21,10 +21,9 @@ template <> struct ml_arg_type<function_t> {
 };
 
 /// @brief Specialization for dynamic array wrapper.
-template <typename Conv, typename T, typename DT, typename... DTs>
-struct ml_arg_type<
-    serializer::tools::DynamicArray<Conv, T, DT, DTs...>> {
-    using type = serializer::tools::DynamicArray<Conv, T, DT, DTs...>;
+template <typename T, typename DT, typename... DTs>
+struct ml_arg_type<serializer::tools::DynamicArray<T, DT, DTs...>> {
+    using type = serializer::tools::DynamicArray<T, DT, DTs...>;
 };
 
 /// @brief Shorthand for ml_arg_type.
@@ -33,9 +32,8 @@ template <typename T> using ml_arg_type_t = typename ml_arg_type<T>::type;
 /// @brief True if the given type T is a dynamic array.
 template <typename T> struct is_dynamic_array : std::false_type {};
 
-template <typename Conv, typename T, typename DT, typename... DTs>
-struct is_dynamic_array<
-    serializer::tools::DynamicArray<Conv, T, DT, DTs...>>
+template <typename T, typename DT, typename... DTs>
+struct is_dynamic_array<serializer::tools::DynamicArray<T, DT, DTs...>>
     : std::true_type {};
 
 template <typename T>

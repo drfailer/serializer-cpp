@@ -10,7 +10,7 @@ namespace serializer::tools {
 
 /// @brief Wrapper object for dynamic arrays (can store references to the
 ///        variables that contains the array size).
-template <typename Conv, concepts::Pointer T, typename DT, typename... DTs>
+template <concepts::Pointer T, typename DT, typename... DTs>
 struct DynamicArray {
     /// @brief Constructor that should be used by the user.
     /// @param mem Reference to the pointer of the array that should be
@@ -44,7 +44,6 @@ struct DynamicArray {
 /// @param ... Types of the dimensions (ex: size_t if we want to pass it by
 ///            value or size_t& by reference)
 #define SER_DARR_T(ArrType, ...)                                               \
-    serializer::tools::DynamicArray<serializer::Convertor<>, ArrType,          \
-                                    __VA_ARGS__>
+    serializer::tools::DynamicArray<ArrType, __VA_ARGS__>
 
 #endif

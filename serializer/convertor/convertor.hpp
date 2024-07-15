@@ -390,9 +390,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///        wrap in the DynamicArray type).
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
-    template <typename Conv, tools::concepts::Pointer T, typename DT,
-              typename... DTs>
-    std::string &serialize_(tools::DynamicArray<Conv, T, DT, DTs...> const &elt,
+    template <tools::concepts::Pointer T, typename DT, typename... DTs>
+    std::string &serialize_(tools::DynamicArray<T, DT, DTs...> const &elt,
                             std::string &str) const {
         using ST = std::remove_pointer_t<T>;
         if (elt.mem == nullptr) {
@@ -403,13 +402,13 @@ struct Convertor : public Convert<AdditionalTypes>... {
         if constexpr (std::is_pointer_v<ST>) {
             for (size_t i = 0; i < std::get<0>(elt.dimensions); ++i) {
                 str = serialize_(
-                    tools::DynamicArray<Conv, ST, DTs...>(
+                    tools::DynamicArray<ST, DTs...>(
                         elt.mem[i], tools::tuplePopFront(elt.dimensions)),
                     str);
             }
         } else if constexpr (std::is_fundamental_v<ST>) {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
-            str.append(reinterpret_cast<char*>(elt.mem), size * sizeof(ST));
+            str.append(reinterpret_cast<char *>(elt.mem), size * sizeof(ST));
         } else {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
             for (size_t i = 0; i < size; ++i) {
@@ -426,10 +425,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///        management, use the containers of the standard library instead.
     /// @param str String view of the data.
     /// @param elt Reference to the element that we want to deserialize.
-    template <typename Conv, tools::concepts::Pointer T, typename DT,
-              typename... DTs>
+    template <tools::concepts::Pointer T, typename DT, typename... DTs>
     void deserialize_(std::string_view &str,
-                      tools::DynamicArray<Conv, T, DT, DTs...> &elt) {
+                      tools::DynamicArray<T, DT, DTs...> &elt) {
         using ST = std::remove_pointer_t<T>;
         bool ptrValid = str[0] == 'v';
         str = str.substr(1);
@@ -444,7 +442,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
 
         if constexpr (std::is_pointer_v<ST>) {
             for (size_t i = 0; i < std::get<0>(elt.dimensions); ++i) {
-                tools::DynamicArray<Conv, ST, DTs...> subArray(
+                tools::DynamicArray<ST, DTs...> subArray(
                     elt.mem[i], tools::tuplePopFront(elt.dimensions));
                 deserialize_(str, subArray);
             }
