@@ -6,7 +6,7 @@
 template <typename T> struct Node {
     SERIALIZABLE(T, Node<T> *, Node<T> *, serializer::function_t);
   public:
-    Node(T value = 0)
+    explicit Node(T value = 0)
         : SERIALIZER(this->value, left, right, SER_DFUN({
                          if (this->left)
                              this->left->father = this;
