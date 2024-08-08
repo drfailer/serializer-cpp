@@ -1,9 +1,10 @@
 #ifndef METAFUNCTIONS_HPP
 #define METAFUNCTIONS_HPP
+#include "../types.hpp"
+#include "serializer/tools/c_struct.hpp"
 #include <memory>
 #include <string>
 #include <type_traits>
-#include "../types.hpp"
 
 namespace serializer::tools::mtf {
 
@@ -152,6 +153,17 @@ template <typename T, size_t N>
 struct is_std_array<std::array<T, N>> : std::true_type {};
 
 template <typename T> constexpr bool is_std_array_v = is_std_array<T>::value;
+
+/******************************************************************************/
+/*                                  C-Struct                                  */
+/******************************************************************************/
+
+/// @brief CHesk if the type is a tools::CStruct
+template <typename T> struct is_c_struct : std::false_type {};
+
+template <typename T> struct is_c_struct<tools::CStruct<T>> : std::true_type {};
+
+template <typename T> constexpr bool is_c_struct_v = is_c_struct<T>::value;
 
 } // namespace serializer::tools::mtf
 

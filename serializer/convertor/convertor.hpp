@@ -5,6 +5,7 @@
 #include "../tools/dynamic_array.hpp"
 #include "../tools/metafunctions.hpp"
 #include "../tools/tools.hpp"
+#include "../tools/c_struct.hpp"
 #include "convert.hpp"
 #include <algorithm>
 #include <string>
@@ -37,6 +38,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::NonSerializable T>
+      requires (!tools::mtf::is_c_struct_v<T>)
     std::string &serialize_(T const &elt, std::string str) const {
         if constexpr (tools::mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
@@ -56,6 +58,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String view of the data.
     /// @param elt Reference to the element that we want to deserialize.
     template <serializer::tools::concepts::NonDeserializable T>
+      requires (!tools::mtf::is_c_struct_v<T>)
     T deserialize_(std::string_view &str, T &elt) {
         if constexpr (tools::mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
@@ -453,6 +456,21 @@ struct Convertor : public Convert<AdditionalTypes>... {
             }
         }
     }
+
+    /* C Structs **************************************************************/
+
+    template <typename T>
+    std::string &serialize_(tools::CStruct<T> const &elt, std::string &str) const {
+      str.append(reinterpret_cast<const char*>(&elt.element), sizeof(elt.element));
+      return str;
+    }
+
+    template <typename T>
+    void deserialize_(std::string_view &str, tools::CStruct<T> &elt) {
+      elt.element = *reinterpret_cast<const T*>(str.data());
+      str = str.substr(sizeof(elt.element));
+    }
+
 };
 
 } // namespace serializer

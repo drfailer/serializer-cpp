@@ -71,11 +71,11 @@ struct MemberList<Conv, H, Types...> {
     void deserialize(std::string_view &str) {
         if constexpr (tools::mtf::is_function_v<H>) {
             reference(Phases::Deserialization, str);
-        } else if constexpr (std::is_array_v<H> ||
-                             tools::mtf::is_dynamic_array_v<H>) {
-            // static arrays can't be assigned
+        } else if constexpr (tools::mtf::assigned_on_deserialization_v<H>) {
+            // for the types that can't be assigned
             convertor.deserialize_(str, reference);
         } else {
+            // for the types that have to be assigned
             reference = std::move(convertor.deserialize_(str, reference));
         }
         next.deserialize(str);

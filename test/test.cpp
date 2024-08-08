@@ -11,6 +11,7 @@
 #include "test-classes/withSmartPtr.hpp"
 #include "test-classes/withcontainer.hpp"
 #include "test-classes/withconvertor.hpp"
+#include "test-classes/withcstruct.hpp"
 #include "test-classes/withdynamicarrays.hpp"
 #include "test-classes/withenums.hpp"
 #include "test-classes/withfunctions.hpp"
@@ -820,22 +821,22 @@ TEST_CASE("dynamic arrays") {
     std::string result;
 
     for (size_t i = 0; i < 10; ++i) {
-        external[i] = (double) i * 3.0;
+        external[i] = (double)i * 3.0;
     }
     origin.borrow(external, 10);
 
     for (size_t i = 0; i < (4 * 4); ++i) {
-        origin.twoDOneD()[i] = (int) i * 2;
+        origin.twoDOneD()[i] = (int)i * 2;
     }
 
     for (size_t i = 0; i < 5; ++i) {
-        origin.own()[i] = (int) i;
-        origin.ownSimple()[i] = Simple((int) i, (int) i, "simple");
+        origin.own()[i] = (int)i;
+        origin.ownSimple()[i] = Simple((int)i, (int)i, "simple");
     }
 
     for (size_t i = 0; i < 2; ++i) {
         for (size_t j = 0; j < 2; ++j) {
-            origin.multipleDim()[i][j] = (int) (i + j);
+            origin.multipleDim()[i][j] = (int)(i + j);
         }
     }
 
@@ -872,44 +873,111 @@ TEST_CASE("dynamic arrays") {
 /******************************************************************************/
 
 TEST_CASE("tree") {
-  Tree<int> origin;
-  Tree<int> other;
-  std::string result;
+    Tree<int> origin;
+    Tree<int> other;
+    std::string result;
 
-  for (auto elt : {5, 4, 8, 6, 1, 3, 7, 2, 9}) {
-    origin.insert(elt);
-  }
-  result = origin.serialize();
-  other.deserialize(result);
+    for (auto elt : {5, 4, 8, 6, 1, 3, 7, 2, 9}) {
+        origin.insert(elt);
+    }
+    result = origin.serialize();
+    other.deserialize(result);
 
-  Node<int> **currOrigin = &origin.root;
-  Node<int> **currOther = &other.root;
-  std::stack<Node<int>**> nodes;
+    Node<int> **currOrigin = &origin.root;
+    Node<int> **currOther = &other.root;
+    std::stack<Node<int> **> nodes;
 
-  while (*currOrigin && *currOther) {
-    // verify the value
-    REQUIRE((*currOther)->value == (*currOrigin)->value);
-    // verify the right son father & push
-    if ((*currOrigin)->right) {
-      REQUIRE((*currOther)->right);
-      REQUIRE((*currOther)->right->father == *currOther);
-      nodes.push(&(*currOrigin)->right);
-      nodes.push(&(*currOther)->right);
+    while (*currOrigin && *currOther) {
+        // verify the value
+        REQUIRE((*currOther)->value == (*currOrigin)->value);
+        // verify the right son father & push
+        if ((*currOrigin)->right) {
+            REQUIRE((*currOther)->right);
+            REQUIRE((*currOther)->right->father == *currOther);
+            nodes.push(&(*currOrigin)->right);
+            nodes.push(&(*currOther)->right);
+        }
+        // verify the left son father
+        if ((*currOrigin)->left) {
+            REQUIRE((*currOther)->left);
+            REQUIRE((*currOther)->left->father == *currOther);
+        }
+        // move to the left
+        currOrigin = &(*currOrigin)->left;
+        currOther = &(*currOther)->left;
+        // pop the stack if leaf
+        if (!*currOrigin && !nodes.empty()) {
+            currOther = nodes.top();
+            nodes.pop();
+            currOrigin = nodes.top();
+            nodes.pop();
+        }
     }
-    // verify the left son father
-    if ((*currOrigin)->left) {
-      REQUIRE((*currOther)->left);
-      REQUIRE((*currOther)->left->father == *currOther);
+}
+
+/******************************************************************************/
+/*                                  C-Struct                                  */
+/******************************************************************************/
+
+TEST_CASE("CStruct") {
+    long t1, t2;
+    /* with c struct */ {
+        WithCStruct origin(1, 2.4, 'a', 5, 6, 7);
+        WithCStruct other;
+        std::string result;
+        size_t arrSize =
+            sizeof(origin.cstruct().arr) / sizeof(origin.cstruct().arr[0]);
+
+        REQUIRE(origin.i() != other.i());
+        REQUIRE(origin.cstruct().d != other.cstruct().d);
+        REQUIRE(origin.cstruct().c != other.cstruct().c);
+        for (size_t i = 0; i < arrSize; ++i) {
+            REQUIRE(origin.cstruct().arr[i] != other.cstruct().arr[i]);
+        }
+
+        auto begin = std::chrono::system_clock::now();
+        result = origin.serialize();
+        other.deserialize(result);
+        auto end = std::chrono::system_clock::now();
+        t1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin)
+                 .count();
+        std::cout << "time with cstruct: " << t1 << "ns" << std::endl;
+
+        REQUIRE(origin.i() == other.i());
+        REQUIRE(origin.cstruct().d == other.cstruct().d);
+        REQUIRE(origin.cstruct().c == other.cstruct().c);
+        for (size_t i = 0; i < arrSize; ++i) {
+            REQUIRE(origin.cstruct().arr[i] == other.cstruct().arr[i]);
+        }
     }
-    // move to the left
-    currOrigin = &(*currOrigin)->left;
-    currOther = &(*currOther)->left;
-    // pop the stack if leaf
-    if (!*currOrigin && !nodes.empty()) {
-      currOther = nodes.top();
-      nodes.pop();
-      currOrigin = nodes.top();
-      nodes.pop();
+    /* without c struct */ {
+        WithoutCStruct origin(1, 2.4, 'a', 5, 6, 7);
+        WithoutCStruct other;
+        std::string result;
+        size_t arrSize =
+            sizeof(origin.notcstruct().arr_) / sizeof(origin.notcstruct().arr_[0]);
+
+        REQUIRE(origin.i() != other.i());
+        REQUIRE(origin.notcstruct().d_ != other.notcstruct().d_);
+        REQUIRE(origin.notcstruct().c_ != other.notcstruct().c_);
+        for (size_t i = 0; i < arrSize; ++i) {
+            REQUIRE(origin.notcstruct().arr_[i] != other.notcstruct().arr_[i]);
+        }
+
+        auto begin = std::chrono::system_clock::now();
+        result = origin.serialize();
+        other.deserialize(result);
+        auto end = std::chrono::system_clock::now();
+        t2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin)
+                .count();
+        std::cout << "time without cstruct: " << t2 << "ns" << std::endl;
+
+        REQUIRE(origin.i() == other.i());
+        REQUIRE(origin.notcstruct().d_ == other.notcstruct().d_);
+        REQUIRE(origin.notcstruct().c_ == other.notcstruct().c_);
+        for (size_t i = 0; i < arrSize; ++i) {
+            REQUIRE(origin.notcstruct().arr_[i] == other.notcstruct().arr_[i]);
+        }
     }
-  }
+    REQUIRE(t1 < t2);
 }
