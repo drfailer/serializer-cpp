@@ -45,14 +45,14 @@ constexpr bool is_dynamic_array_v = is_dynamic_array<T>::value;
 
 /// @brief Used to know if the type has to be assigned during the
 ///        deserialization.
-template <typename T> struct assigned_on_deserialization {
+template <typename T> struct not_assigned_on_deserialization {
     static constexpr bool value =
         std::is_array_v<T> || is_dynamic_array_v<T> || is_c_struct_v<T>;
 };
 
 template <typename T>
-constexpr bool assigned_on_deserialization_v =
-    assigned_on_deserialization<T>::value;
+constexpr bool not_assigned_on_deserialization_v =
+    not_assigned_on_deserialization<T>::value;
 
 } // end namespace serializer::tools::mtf
 

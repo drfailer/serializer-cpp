@@ -23,6 +23,9 @@ class Composed {
 
     /* copy *******************************************************************/
     Composed &operator=(const Composed &other) {
+        if (&other == this) {
+            return *this;
+        }
         s_ = other.s_;
         z_ = other.z_;
         w_ = other.w_;

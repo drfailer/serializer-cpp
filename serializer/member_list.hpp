@@ -71,7 +71,8 @@ struct MemberList<Conv, H, Types...> {
     void deserialize(std::string_view &str) {
         if constexpr (tools::mtf::is_function_v<H>) {
             reference(Phases::Deserialization, str);
-        } else if constexpr (tools::mtf::assigned_on_deserialization_v<H>) {
+        } else if constexpr (tools::mtf::not_assigned_on_deserialization_v<H> ||
+            tools::concepts::Deserializable<H>) {
             // for the types that can't be assigned
             convertor.deserialize_(str, reference);
         } else {

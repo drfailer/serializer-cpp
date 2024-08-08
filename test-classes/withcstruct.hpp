@@ -43,13 +43,16 @@ class NotStruct {
                     other.arr_[2]) {}
 
     NotStruct &operator=(NotStruct const &other) {
-      d_ = other.d_;
-      c_ = other.c_;
+        if (&other == this) {
+            return *this;
+        }
+        d_ = other.d_;
+        c_ = other.c_;
 
-      for (size_t i = 0; i < sizeof(arr_)/sizeof(arr_[0]); ++i) {
-        arr_[i] = other.arr_[i];
-      }
-      return *this;
+        for (size_t i = 0; i < sizeof(arr_) / sizeof(arr_[0]); ++i) {
+            arr_[i] = other.arr_[i];
+        }
+        return *this;
     }
 
     double d_;

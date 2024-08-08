@@ -1,12 +1,13 @@
 #ifndef HANDLERS_HPP
 #define HANDLERS_HPP
 #include "../exceptions/unsupported_type.hpp"
+#include "../tools/c_struct.hpp"
 #include "../tools/concepts.hpp"
 #include "../tools/dynamic_array.hpp"
 #include "../tools/metafunctions.hpp"
 #include "../tools/tools.hpp"
-#include "../tools/c_struct.hpp"
 #include "convert.hpp"
+#include "serializer/tools/ml_arg_type.hpp"
 #include <algorithm>
 #include <string>
 #include <string_view>
@@ -38,7 +39,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::NonSerializable T>
-      requires (!tools::mtf::is_c_struct_v<T>)
+        requires(!tools::mtf::is_c_struct_v<T>)
     std::string &serialize_(T const &elt, std::string str) const {
         if constexpr (tools::mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
@@ -58,7 +59,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String view of the data.
     /// @param elt Reference to the element that we want to deserialize.
     template <serializer::tools::concepts::NonDeserializable T>
-      requires (!tools::mtf::is_c_struct_v<T>)
+        requires(!tools::mtf::is_c_struct_v<T>)
     T deserialize_(std::string_view &str, T &elt) {
         if constexpr (tools::mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
@@ -87,10 +88,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///            just used for creating an overload of the deserialize
     ///            function.
     template <serializer::tools::concepts::Deserializable T>
-    T deserialize_(std::string_view &str, T &) {
-        std::remove_reference_t<T> t;
-        t.deserialize(str);
-        return t;
+    T &deserialize_(std::string_view &str, T &elt) {
+        elt.deserialize(str);
+        return elt;
     }
 
     /* fundamental types ******************************************************/
@@ -246,7 +246,15 @@ struct Convertor : public Convert<AdditionalTypes>... {
         T tuple;
         (
             [&] {
-                std::get<Idx>(tuple) = deserialize_(str, std::get<Idx>(tuple));
+                using Type = decltype(std::get<Idx>(tuple));
+                if constexpr (tools::mtf::not_assigned_on_deserialization_v<
+                                  Type> ||
+                              tools::concepts::Serializable<Type>) {
+                    deserialize_(str, std::get<Idx>(tuple));
+                } else {
+                    std::get<Idx>(tuple) =
+                        deserialize_(str, std::get<Idx>(tuple));
+                }
             }(),
             ...);
         return tuple;
@@ -347,15 +355,29 @@ struct Convertor : public Convert<AdditionalTypes>... {
         size_t idx = 0;
         size_type size = deserialize_(str, size) - 1;
         for (size_t i = 0; i < size; ++i) {
+          if constexpr (tools::mtf::not_assigned_on_deserialization_v<ValueType> ||
+            tools::concepts::Deserializable<ValueType>) {
+            ValueType value;
+            deserialize_(str, value);
+            if constexpr (serializer::tools::concepts::Insertable<T,
+                ValueType> ||
+                serializer::tools::concepts::PushBackable<
+                T, ValueType>) {
+              serializer::tools::insert(result, std::move(value));
+            } else {
+              serializer::tools::insert(result, std::move(value), idx++);
+            }
+          } else {
             ValueType value = deserialize_(str, value);
             if constexpr (serializer::tools::concepts::Insertable<T,
-                                                                  ValueType> ||
-                          serializer::tools::concepts::PushBackable<
-                              T, ValueType>) {
-                serializer::tools::insert(result, std::move(value));
+                ValueType> ||
+                serializer::tools::concepts::PushBackable<
+                T, ValueType>) {
+              serializer::tools::insert(result, std::move(value));
             } else {
-                serializer::tools::insert(result, std::move(value), idx++);
+              serializer::tools::insert(result, std::move(value), idx++);
             }
+          }
         }
         return result;
     }
@@ -378,8 +400,11 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to deserialize.
     template <serializer::tools::concepts::StaticArray T>
     void deserialize_(std::string_view &str, T &elt) {
+        using InnerType = std::remove_extent_t<T>;
         for (size_t i = 0; i < std::extent_v<T>; ++i) {
-            if constexpr (std::is_array_v<std::remove_extent_t<T>>) {
+            if constexpr (tools::mtf::not_assigned_on_deserialization_v<
+                              InnerType> ||
+                          tools::concepts::Deserializable<InnerType>) {
                 deserialize_(str, elt[i]);
             } else {
                 elt[i] = deserialize_(str, elt[i]);
@@ -452,7 +477,13 @@ struct Convertor : public Convert<AdditionalTypes>... {
         } else {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
             for (size_t i = 0; i < size; ++i) {
-                elt.mem[i] = deserialize_(str, elt.mem[i]);
+                if constexpr (tools::mtf::not_assigned_on_deserialization_v<
+                                  ST> ||
+                              tools::concepts::Deserializable<ST>) {
+                    deserialize_(str, elt.mem[i]);
+                } else {
+                    elt.mem[i] = deserialize_(str, elt.mem[i]);
+                }
             }
         }
     }
@@ -460,17 +491,18 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /* C Structs **************************************************************/
 
     template <typename T>
-    std::string &serialize_(tools::CStruct<T> const &elt, std::string &str) const {
-      str.append(reinterpret_cast<const char*>(&elt.element), sizeof(elt.element));
-      return str;
+    std::string &serialize_(tools::CStruct<T> const &elt,
+                            std::string &str) const {
+        str.append(reinterpret_cast<const char *>(&elt.element),
+                   sizeof(elt.element));
+        return str;
     }
 
     template <typename T>
     void deserialize_(std::string_view &str, tools::CStruct<T> &elt) {
-      elt.element = *reinterpret_cast<const T*>(str.data());
-      str = str.substr(sizeof(elt.element));
+        elt.element = *reinterpret_cast<const T *>(str.data());
+        str = str.substr(sizeof(elt.element));
     }
-
 };
 
 } // namespace serializer

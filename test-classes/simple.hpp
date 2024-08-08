@@ -14,6 +14,9 @@ class Simple {
     /* copy *******************************************************************/
     Simple &
     operator=(const Simple &other) { // this is required for deserialization
+        if (&other == this) {
+            return *this;
+        }
         x_ = other.x_;
         y_ = other.y_;
         return *this;
