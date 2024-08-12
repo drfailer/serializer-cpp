@@ -1,7 +1,7 @@
 #ifndef METAFUNCTIONS_HPP
 #define METAFUNCTIONS_HPP
 #include "../types.hpp"
-#include "serializer/tools/c_struct.hpp"
+#include "../tools/c_struct.hpp"
 #include <memory>
 #include <string>
 #include <type_traits>

@@ -1,7 +1,7 @@
 #ifndef SERIALIZABLE_HPP
 #define SERIALIZABLE_HPP
 #include "serializer.hpp"
-#include "serializer/convertor/convertor.hpp"
+#include "convertor/convertor.hpp"
 #include "tools/dynamic_array.hpp"
 
 /******************************************************************************/

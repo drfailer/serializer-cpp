@@ -49,7 +49,7 @@ struct MemberList<Conv, H, Types...> {
     /// @param str String that will contain the result. We use the string to
     ///            manage an array of bytes that is modified by side effect.
     ///            This way, only one string is created.
-    std::string serialize(std::string &str) const {
+    void serialize(std::string &str) const {
         if constexpr (tools::mtf::is_function_v<H>) {
             reference(Phases::Serialization, str);
         } else {
@@ -58,7 +58,6 @@ struct MemberList<Conv, H, Types...> {
         if constexpr (sizeof...(Types) > 0) {
             next.serialize(str);
         }
-        return str;
     }
 
     /* deserialize ************************************************************/
@@ -75,9 +74,13 @@ struct MemberList<Conv, H, Types...> {
             tools::concepts::Deserializable<H>) {
             // for the types that can't be assigned
             convertor.deserialize_(str, reference);
-        } else {
+        } else if constexpr (std::is_move_assignable_v<H>) {
             // for the types that have to be assigned
             reference = std::move(convertor.deserialize_(str, reference));
+        } else if constexpr (std::is_copy_assignable_v<H>) {
+            reference = convertor.deserialize_(str, reference);
+        } else {
+          // TODO: exception
         }
         next.deserialize(str);
     }

@@ -5,9 +5,9 @@
 #include "../tools/concepts.hpp"
 #include "../tools/dynamic_array.hpp"
 #include "../tools/metafunctions.hpp"
+#include "../tools/ml_arg_type.hpp"
 #include "../tools/tools.hpp"
 #include "convert.hpp"
-#include "serializer/tools/ml_arg_type.hpp"
 #include <algorithm>
 #include <string>
 #include <string_view>
@@ -40,11 +40,11 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <serializer::tools::concepts::NonSerializable T>
         requires(!tools::mtf::is_c_struct_v<T>)
-    std::string &serialize_(T const &elt, std::string str) const {
+    void serialize_(T const &elt, std::string &str) const {
         if constexpr (tools::mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
-            return static_cast<const Convert<T> *>(this)->serialize(elt, str);
+            static_cast<const Convert<T> *>(this)->serialize(elt, str);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<T>();
         }
@@ -77,8 +77,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Serializable T>
-    std::string &serialize_(T const &elt, std::string &str) const {
-        return str.append(elt.serialize());
+    void serialize_(T const &elt, std::string &str) const {
+        elt.serialize(str);
     }
 
     /// @brief Deserialize function for the deserializable types (they have a
@@ -99,8 +99,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Fundamental T>
-    std::string &serialize_(T const &elt, std::string &str) const {
-        return str.append(reinterpret_cast<const char *>(&elt), sizeof(T));
+    void serialize_(T const &elt, std::string &str) const {
+        str.append(reinterpret_cast<const char *>(&elt), sizeof(T));
     }
 
     /// @brief Deserialize function for the deserializable fundamental types.
@@ -122,16 +122,16 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Pointer T>
-    std::string &serialize_(T const &elt, std::string &str) const {
+    void serialize_(T const &elt, std::string &str) const {
         if (elt != nullptr) {
             str.append("v");
             if constexpr (std::is_abstract_v<std::remove_pointer_t<T>>) {
-                return elt->serialize(str);
+                elt->serialize(str);
             } else {
-                return serialize_<std::remove_pointer_t<T>>(*elt, str);
+                serialize_<std::remove_pointer_t<T>>(*elt, str);
             }
         } else {
-            return str.append("n");
+            str.append("n");
         }
     }
 
@@ -171,17 +171,17 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::SmartPtr SP>
-    std::string &serialize_(SP const &elt, std::string &str) const {
+    void serialize_(SP const &elt, std::string &str) const {
         if (elt != nullptr) {
             str.append("v");
             if constexpr (serializer::tools::concepts::Serializable<
                               typename SP::element_type>) {
-                return elt->serialize(str);
+                elt->serialize(str);
             } else {
-                return serialize_<typename SP::element_type>(*elt, str);
+                serialize_<typename SP::element_type>(*elt, str);
             }
         } else {
-            return str.append("n");
+            str.append("n");
         }
     }
 
@@ -223,10 +223,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param tuple Tuple to serialize
     /// @param str String that will contain the result.
     template <class T, size_t... Idx>
-    std::string &serializeTuple(T const &tuple, std::string &str,
-                                std::index_sequence<Idx...>) const {
+    void serializeTuple(T const &tuple, std::string &str,
+                        std::index_sequence<Idx...>) const {
         ([&] { serialize_(std::get<Idx>(tuple), str); }(), ...);
-        return str;
     }
 
     /// @brief Serialize function for tuples (std::tuple and std::pair).
@@ -234,9 +233,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <serializer::tools::concepts::TupleLike T>
         requires(!serializer::tools::concepts::Array<T>)
-    std::string &serialize_(T const &tuple, std::string &str) const {
-        return serializeTuple(tuple, str,
-                              std::make_index_sequence<std::tuple_size_v<T>>());
+    void serialize_(T const &tuple, std::string &str) const {
+        serializeTuple(tuple, str,
+                       std::make_index_sequence<std::tuple_size_v<T>>());
     }
 
     /// @brief Helper function for deserializing tuples.
@@ -280,10 +279,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Enum T>
-    std::string &serialize_(T const &elt, std::string &str) const {
+    void serialize_(T const &elt, std::string &str) const {
         auto value = (std::underlying_type_t<T>)elt;
-        return str.append(reinterpret_cast<const char *>(&value),
-                          sizeof(value));
+        str.append(reinterpret_cast<const char *>(&value), sizeof(value));
     }
 
     /// @brief Deserialize function for enum types. The data is stored using the
@@ -305,10 +303,10 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @brief Serialize function for strings.
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
-    std::string &serialize_(std::string const &elt, std::string &str) const {
+    void serialize_(std::string const &elt, std::string &str) const {
         auto size = elt.size() + 1;
         str.append(reinterpret_cast<const char *>(&size), sizeof(size));
-        return str.append(elt);
+        str.append(elt);
     }
 
     /// @brief Deserialize function for strings.
@@ -331,13 +329,12 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::NonStringIterable T>
-    std::string &serialize_(T const &elts, std::string &str) const {
+    void serialize_(T const &elts, std::string &str) const {
         auto size = std::size(elts) + 1;
         str.append(reinterpret_cast<const char *>(&size), sizeof(size));
         for (auto const &elt : elts) {
-            str = serialize_(elt, str);
+            serialize_(elt, str);
         }
-        return str;
     }
 
     /// @brief Deserialize function for containers. They must be iterable and
@@ -354,30 +351,28 @@ struct Convertor : public Convert<AdditionalTypes>... {
         T result;
         size_t idx = 0;
         size_type size = deserialize_(str, size) - 1;
+        auto insert = [&result, &idx](ValueType &&value) {
+            if constexpr (serializer::tools::concepts::Insertable<T,
+                                                                  ValueType> ||
+                          serializer::tools::concepts::PushBackable<
+                              T, ValueType>) {
+                serializer::tools::insert(result, std::move(value));
+            } else {
+                serializer::tools::insert(result, std::move(value), idx++);
+            }
+        };
+
         for (size_t i = 0; i < size; ++i) {
-          if constexpr (tools::mtf::not_assigned_on_deserialization_v<ValueType> ||
-            tools::concepts::Deserializable<ValueType>) {
-            ValueType value;
-            deserialize_(str, value);
-            if constexpr (serializer::tools::concepts::Insertable<T,
-                ValueType> ||
-                serializer::tools::concepts::PushBackable<
-                T, ValueType>) {
-              serializer::tools::insert(result, std::move(value));
+            if constexpr (tools::mtf::not_assigned_on_deserialization_v<
+                              ValueType> ||
+                          tools::concepts::Deserializable<ValueType>) {
+                ValueType value;
+                deserialize_(str, value);
+                insert(std::move(value));
             } else {
-              serializer::tools::insert(result, std::move(value), idx++);
+                ValueType value = std::move(deserialize_(str, value));
+                insert(std::move(value));
             }
-          } else {
-            ValueType value = deserialize_(str, value);
-            if constexpr (serializer::tools::concepts::Insertable<T,
-                ValueType> ||
-                serializer::tools::concepts::PushBackable<
-                T, ValueType>) {
-              serializer::tools::insert(result, std::move(value));
-            } else {
-              serializer::tools::insert(result, std::move(value), idx++);
-            }
-          }
         }
         return result;
     }
@@ -388,11 +383,10 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::StaticArray T>
-    std::string &serialize_(T const &elt, std::string &str) const {
+    void serialize_(T const &elt, std::string &str) const {
         for (size_t i = 0; i < std::extent_v<T>; ++i) {
             serialize_(elt[i], str);
         }
-        return str;
     }
 
     /// @brief Deserialize function for static arrays.
@@ -419,17 +413,18 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <tools::concepts::Pointer T, typename DT, typename... DTs>
-    std::string &serialize_(tools::DynamicArray<T, DT, DTs...> const &elt,
-                            std::string &str) const {
+    void serialize_(tools::DynamicArray<T, DT, DTs...> const &elt,
+                    std::string &str) const {
         using ST = std::remove_pointer_t<T>;
         if (elt.mem == nullptr) {
-            return str.append("n");
+            str.append("n");
+            return;
         }
         str.append("v");
 
         if constexpr (std::is_pointer_v<ST>) {
             for (size_t i = 0; i < std::get<0>(elt.dimensions); ++i) {
-                str = serialize_(
+                serialize_(
                     tools::DynamicArray<ST, DTs...>(
                         elt.mem[i], tools::tuplePopFront(elt.dimensions)),
                     str);
@@ -440,10 +435,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
         } else {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
             for (size_t i = 0; i < size; ++i) {
-                str = serialize_(elt.mem[i], str);
+                serialize_(elt.mem[i], str);
             }
         }
-        return str;
     }
 
     /// @brief Deserialize function for dynamic arrays (dynamic arrays should be
@@ -491,11 +485,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /* C Structs **************************************************************/
 
     template <typename T>
-    std::string &serialize_(tools::CStruct<T> const &elt,
-                            std::string &str) const {
+    void serialize_(tools::CStruct<T> const &elt, std::string &str) const {
         str.append(reinterpret_cast<const char *>(&elt.element),
                    sizeof(elt.element));
-        return str;
     }
 
     template <typename T>

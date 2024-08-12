@@ -682,10 +682,10 @@ TEST_CASE("cstruct") {
 
     // c like serialization
     auto begin = std::chrono::system_clock::now();
-    name = typeid(cs).name();
-    size = name.size();
-    result.append(reinterpret_cast<char *>(&size), sizeof(size));
-    result.append(name);
+    /* name = typeid(cs).name(); */
+    /* size = name.size(); */
+    /* result.append(reinterpret_cast<char *>(&size), sizeof(size)); */
+    /* result.append(name); */
     result.append(reinterpret_cast<char *>(&cs), sizeof(cs));
     auto end = std::chrono::system_clock::now();
     std::cout << "c serialization time: "
@@ -706,10 +706,11 @@ TEST_CASE("cstruct") {
 
     // c like deserialization
     begin = std::chrono::system_clock::now();
-    size = *reinterpret_cast<size_t *>(result.data());
-    nameDeserialization.append(
-        reinterpret_cast<char *>(result.data() + sizeof(size)), size);
-    otherCS = *reinterpret_cast<CStruct *>(result.data() + sizeof(size) + size);
+    /* size = *reinterpret_cast<size_t *>(result.data()); */
+    /* nameDeserialization.append( */
+    /*     reinterpret_cast<char *>(result.data() + sizeof(size)), size); */
+    /* otherCS = *reinterpret_cast<CStruct *>(result.data() + sizeof(size) + size); */
+    otherCS = *reinterpret_cast<CStruct *>(result.data());
     end = std::chrono::system_clock::now();
     std::cout << "c deserialization time: "
               << std::chrono::duration_cast<std::chrono::nanoseconds>(end -

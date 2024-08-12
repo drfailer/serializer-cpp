@@ -1,7 +1,7 @@
 #ifndef TOOLS_HPP
 #define TOOLS_HPP
+#include "../exceptions/unknown_specialized_type.hpp"
 #include "concepts.hpp"
-#include "serializer/exceptions/unknown_specialized_type.hpp"
 
 namespace serializer::tools {
 
@@ -66,7 +66,7 @@ std::tuple<Types...> tuplePopFront(std::tuple<H, Types...> const &t) {
     return tuplePopFront_(t, std::make_index_sequence<sizeof...(Types)>());
 }
 
-template <typename T, typename ...Types, size_t ...Idx>
+template <typename T, typename... Types, size_t... Idx>
 T tupleProd_(std::tuple<Types...> const &tuple, std::index_sequence<Idx...>) {
     if constexpr (sizeof...(Types) == 0) {
         return 0;
@@ -75,11 +75,10 @@ T tupleProd_(std::tuple<Types...> const &tuple, std::index_sequence<Idx...>) {
     }
 }
 
-template <typename T, typename ...Types>
+template <typename T, typename... Types>
 T tupleProd(std::tuple<Types...> const &tuple) {
     return tupleProd_<T>(tuple, std::make_index_sequence<sizeof...(Types)>());
 }
-
 
 /******************************************************************************/
 /*                               helper macros                                */
@@ -156,9 +155,8 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
         return serializer::tools::type_switch_fn<GenericType, __VA_ARGS__>(    \
             className, str);                                                   \
     }                                                                          \
-    std::string &serialize(GenericType const &elt, std::string &str)           \
-        const override {                                                       \
-        return Convertor::serialize_(elt, str);                                \
+    void serialize(GenericType const &elt, std::string &str) const override {  \
+        Convertor::serialize_(elt, str);                                       \
     }
 
 /// @brief Generates a deserialize function for the pointers and smart pointers
