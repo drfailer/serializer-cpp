@@ -13,6 +13,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <bit>
 
 /******************************************************************************/
 /*                          default convertor class                           */
@@ -100,7 +101,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Fundamental T>
     void serialize_(T const &elt, std::string &str) const {
-        str.append(reinterpret_cast<const char *>(&elt), sizeof(T));
+        str.append(std::bit_cast<const char *>(&elt), sizeof(T));
     }
 
     /// @brief Deserialize function for the deserializable fundamental types.
@@ -110,7 +111,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///            function.
     template <serializer::tools::concepts::Fundamental T>
     T deserialize_(std::string_view &str, T &) {
-        T t = *reinterpret_cast<const T *>(str.data());
+        T t = *std::bit_cast<const T *>(str.data());
         str = str.substr(sizeof(T));
         return t;
     }
@@ -281,7 +282,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::Enum T>
     void serialize_(T const &elt, std::string &str) const {
         auto value = (std::underlying_type_t<T>)elt;
-        str.append(reinterpret_cast<const char *>(&value), sizeof(value));
+        str.append(std::bit_cast<const char *>(&value), sizeof(value));
     }
 
     /// @brief Deserialize function for enum types. The data is stored using the
@@ -293,7 +294,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::Enum T>
     T deserialize_(std::string_view &str, T &) {
         using Type = std::underlying_type_t<T>;
-        Type out = *reinterpret_cast<const Type *>(str.data());
+        Type out = *std::bit_cast<const Type *>(str.data());
         str = str.substr(sizeof(Type));
         return (T)out;
     }
@@ -305,7 +306,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     void serialize_(std::string const &elt, std::string &str) const {
         auto size = elt.size() + 1;
-        str.append(reinterpret_cast<const char *>(&size), sizeof(size));
+        str.append(std::bit_cast<const char *>(&size), sizeof(size));
         str.append(elt);
     }
 
@@ -331,7 +332,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::NonStringIterable T>
     void serialize_(T const &elts, std::string &str) const {
         auto size = std::size(elts) + 1;
-        str.append(reinterpret_cast<const char *>(&size), sizeof(size));
+        str.append(std::bit_cast<const char *>(&size), sizeof(size));
         for (auto const &elt : elts) {
             serialize_(elt, str);
         }
@@ -370,7 +371,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
                 deserialize_(str, value);
                 insert(std::move(value));
             } else {
-                ValueType value = std::move(deserialize_(str, value));
+                ValueType value = deserialize_(str, value);
                 insert(std::move(value));
             }
         }
@@ -431,7 +432,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
             }
         } else if constexpr (std::is_fundamental_v<ST>) {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
-            str.append(reinterpret_cast<char *>(elt.mem), size * sizeof(ST));
+            str.append(std::bit_cast<char *>(elt.mem), size * sizeof(ST));
         } else {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
             for (size_t i = 0; i < size; ++i) {
@@ -486,13 +487,13 @@ struct Convertor : public Convert<AdditionalTypes>... {
 
     template <typename T>
     void serialize_(tools::CStruct<T> const &elt, std::string &str) const {
-        str.append(reinterpret_cast<const char *>(&elt.element),
+        str.append(std::bit_cast<const char *>(&elt.element),
                    sizeof(elt.element));
     }
 
     template <typename T>
     void deserialize_(std::string_view &str, tools::CStruct<T> &elt) {
-        elt.element = *reinterpret_cast<const T *>(str.data());
+        elt.element = *std::bit_cast<const T *>(str.data());
         str = str.substr(sizeof(elt.element));
     }
 };
