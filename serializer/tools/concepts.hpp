@@ -1,17 +1,20 @@
 #ifndef CONCEPTS_HPP
 #define CONCEPTS_HPP
 #include "metafunctions.hpp"
+#include <string_view>
 #include <type_traits>
 
 namespace serializer::tools::concepts {
 
 /// @brief Objects that have a serialize member function.
 template <typename T>
-concept Serializable = requires(T obj) { obj.serialize(); };
+concept Serializable =
+    requires(T obj, std::string &str) { obj.serialize(str); };
 
 /// @brief Objects that have a deserialize member function.
 template <typename T>
-concept Deserializable = requires(T obj) { obj.deserialize(""); };
+concept Deserializable =
+    requires(T obj, std::string_view &str) { obj.deserialize(str); };
 
 /// @brief Smart pointers.
 template <typename T>
@@ -69,9 +72,7 @@ concept Array = mtf::is_std_array_v<T>;
 
 /// @brief Match types on which we can use std::forward
 template <typename T>
-concept Forwardable = requires(T &&obj) {
-    std::forward<T>(obj);
-};
+concept Forwardable = requires(T &&obj) { std::forward<T>(obj); };
 
 /* unsupported types */
 
