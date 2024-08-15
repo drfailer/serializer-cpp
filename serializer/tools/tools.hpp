@@ -171,7 +171,7 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
 ///        serialization and the deserialization.
 /// @param code Code to execute.
 #define SER_FUN(code)                                                          \
-    [&](serializer::Phases phase,                                              \
+    [&]([[maybe_unused]] serializer::Phases phase,                             \
         [[maybe_unused]] std::string_view const &str) { code; }
 
 /// @brief Helper macro to create a lambdat that is executed during the

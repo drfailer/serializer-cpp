@@ -9,11 +9,11 @@
 #include "../tools/tools.hpp"
 #include "convert.hpp"
 #include <algorithm>
+#include <bit>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <bit>
 
 /******************************************************************************/
 /*                          default convertor class                           */
@@ -225,7 +225,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that will contain the result.
     template <class T, size_t... Idx>
     constexpr void serializeTuple(T const &tuple, std::string &str,
-                        std::index_sequence<Idx...>) const {
+                                  std::index_sequence<Idx...>) const {
         ([&] { serialize_(std::get<Idx>(tuple), str); }(), ...);
     }
 
@@ -242,7 +242,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @brief Helper function for deserializing tuples.
     /// @param str String that contains the data.
     template <class T, size_t... Idx>
-    constexpr T deserializeTuple(std::string_view &str, std::index_sequence<Idx...>) {
+    constexpr T deserializeTuple(std::string_view &str,
+                                 std::index_sequence<Idx...>) {
         T tuple;
         (
             [&] {
@@ -357,6 +358,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
                                                                   ValueType> ||
                           serializer::tools::concepts::PushBackable<
                               T, ValueType>) {
+                (void)idx;
                 serializer::tools::insert(result, std::move(value));
             } else {
                 serializer::tools::insert(result, std::move(value), idx++);
@@ -415,7 +417,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <tools::concepts::Pointer T, typename DT, typename... DTs>
     constexpr void serialize_(tools::DynamicArray<T, DT, DTs...> const &elt,
-                    std::string &str) const {
+                              std::string &str) const {
         using ST = std::remove_pointer_t<T>;
         if (elt.mem == nullptr) {
             str.append("n");
@@ -450,7 +452,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to deserialize.
     template <tools::concepts::Pointer T, typename DT, typename... DTs>
     constexpr void deserialize_(std::string_view &str,
-                      tools::DynamicArray<T, DT, DTs...> &elt) {
+                                tools::DynamicArray<T, DT, DTs...> &elt) {
         using ST = std::remove_pointer_t<T>;
         bool ptrValid = str[0] == 'v';
         str = str.substr(1);
@@ -486,7 +488,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /* C Structs **************************************************************/
 
     template <typename T>
-    constexpr void serialize_(tools::CStruct<T> const &elt, std::string &str) const {
+    constexpr void serialize_(tools::CStruct<T> const &elt,
+                              std::string &str) const {
         str.append(std::bit_cast<const char *>(&elt.element),
                    sizeof(elt.element));
     }
