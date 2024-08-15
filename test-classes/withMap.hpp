@@ -1,15 +1,15 @@
 #ifndef WITH_MAP_HPP
 #define WITH_MAP_HPP
-#include <serializer/serializable.hpp>
+#include <serializer/serialize.hpp>
 #include <map>
 #include <string>
 
 class WithMap {
-    SERIALIZABLE(std::map<std::string, std::string>);
-
   public:
-    WithMap() : SERIALIZER(map_) {}
+    WithMap() {}
     ~WithMap() = default;
+
+    SERIALIZE(map_);
 
     /* accessors **************************************************************/
     void insert(const std::string &key, const std::string &value) {

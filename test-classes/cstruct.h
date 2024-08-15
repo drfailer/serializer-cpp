@@ -1,6 +1,6 @@
 #ifndef CSTRUCT_H
 #define CSTRUCT_H
-#include <serializer/serializable.hpp>
+#include <serializer/serialize.hpp>
 
 struct CStruct {
     char c;
@@ -11,13 +11,12 @@ struct CStruct {
 };
 
 class CStructSerializable {
-    SERIALIZABLE(char, int, long, float, double);
-
   public:
     explicit CStructSerializable(char c_ = 0, int i_ = 0, long l_ = 0,
                                  float f_ = 0, double d_ = 0)
-        : SERIALIZER(c, i, l, f, d), c(c_), i(i_), l(l_), f(f_), d(d_) {}
+        : c(c_), i(i_), l(l_), f(f_), d(d_) {}
 
+    SERIALIZE(serializer::tools::mtf::type_list<char, int, long, float, double>(), c, i, l, f, d);
     char c = 0;
     int i = 0;
     long l = 0;

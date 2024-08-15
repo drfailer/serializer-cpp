@@ -1,26 +1,14 @@
 #ifndef SIMPLE_HPP
 #define SIMPLE_HPP
-#include "serializer/serializable.hpp"
+#include "serializer/serialize.hpp"
 
 class Simple {
-    SERIALIZABLE(int, std::string, int);
-
   public:
     explicit Simple(int x = 0, int y = 0, std::string str = "")
-        : SERIALIZER(x_, str_, y_), x_(x), y_(y), str_(std::move(str)) {}
-    Simple(const Simple &other) : Simple(other.x_, other.y_) {}
+        : x_(x), y_(y), str_(std::move(str)) {}
     ~Simple() = default;
 
-    /* copy *******************************************************************/
-    Simple &
-    operator=(const Simple &other) { // this is required for deserialization
-        if (&other == this) {
-            return *this;
-        }
-        x_ = other.x_;
-        y_ = other.y_;
-        return *this;
-    }
+    SERIALIZE(x_, y_, str_);
 
     /* accessors **************************************************************/
     void y(int y) { this->y_ = y; }

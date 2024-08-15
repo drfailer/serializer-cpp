@@ -1,19 +1,14 @@
 #ifndef WITHCONTAINER_HPP
 #define WITHCONTAINER_HPP
-#include "serializer/serializer.hpp"
+#include <serializer/serialize.hpp>
 #include "test-classes/simple.hpp"
 #include <array>
 #include <list>
 #include <vector>
 
 class WithContainer {
-    SERIALIZABLE(std::vector<int>, std::vector<int>, std::list<double>,
-                 std::vector<Simple>, std::vector<std::vector<int>>,
-                 std::array<int, 10>);
-
   public:
-    WithContainer() : SERIALIZER(emptyVec, vec, lst, classVec, vec2D, arr) {}
-    ~WithContainer() = default;
+     SERIALIZE(emptyVec, vec, lst, classVec, vec2D, arr);
 
     /* accessors **************************************************************/
     void addSimple(const Simple &simple) { classVec.push_back(simple); }

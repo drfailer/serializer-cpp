@@ -1,23 +1,30 @@
 #ifndef TREE_HPP
 #define TREE_HPP
-#include "serializer/serializable.hpp"
+#include "serializer/serialize.hpp"
 #include <iostream>
 
 template <typename T> struct Node {
-    SERIALIZABLE(T, Node<T> *, Node<T> *, serializer::function_t);
   public:
-    explicit Node(T value = 0)
-        : SERIALIZER(this->value, left, right, SER_DFUN({
-                         if (this->left)
-                             this->left->father = this;
-                         if (this->right)
-                             this->right->father = this;
-                     })),
-          value(value) {}
+    explicit Node(T value = 0) : value(value) {}
     ~Node() {
         delete left;
         delete right;
     }
+
+    SERIALIZE(
+        serializer::tools::mtf::type_list<T, Node<T> *, Node<T> *,
+                                          serializer::function_t>(),
+        value, left, right, SER_DFUN({
+            if constexpr (!std::is_const_v<
+                              std::remove_pointer_t<decltype(this)>>) {
+                static_assert(
+                    !std::is_const_v<std::remove_pointer_t<decltype(this)>>);
+                if (this->left)
+                    this->left->father = this;
+                if (this->right)
+                    this->right->father = this;
+            }
+        }));
 
     void print(size_t rank = 0) {
         if (left)
@@ -34,10 +41,8 @@ template <typename T> struct Node {
 };
 
 template <typename T> struct Tree {
-    SERIALIZABLE(Node<T> *)
   public:
-    Tree(): SERIALIZER(root) {}
-    ~Tree() = default;
+    SERIALIZE(root);
 
     void print() {
         if (root) {

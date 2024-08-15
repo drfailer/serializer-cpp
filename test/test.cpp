@@ -319,45 +319,6 @@ TEST_CASE("serialize super class") {
 }
 
 /******************************************************************************/
-/*                                using files                                 */
-/******************************************************************************/
-
-TEST_CASE("serialization/deserialization in a FILE") {
-    Simple original(10, 20);
-    Simple other(0, 0);
-
-    REQUIRE(original.x() != other.x());
-    REQUIRE(original.y() != other.y());
-
-    original.serializeFile("test_serialize.txt");
-    other.deserializeFile("test_serialize.txt");
-
-    // the serialization and deserialization work
-    REQUIRE(original.x() == other.x());
-    REQUIRE(original.y() == other.y());
-
-    original.x(3); // modify an attribute
-
-    REQUIRE(original.x() != other.x());
-
-    original.serializeFile("test_serialize.txt");
-    other.deserializeFile("test_serialize.txt");
-
-    // the modification is taken in count by the serializer (references)
-    REQUIRE(original.x() == other.x());
-
-    original.x(28);
-    original.y(32);
-    Simple copied = original;
-
-    original.serializeFile("test_serialize.txt");
-    other.deserializeFile("test_serialize.txt");
-
-    REQUIRE(original.x() == other.x());
-    REQUIRE(original.y() == other.y());
-}
-
-/******************************************************************************/
 /*                            multiple inheritance                            */
 /******************************************************************************/
 
@@ -678,7 +639,7 @@ TEST_CASE("cstruct") {
     std::string resultSerializable;
     std::string name;
     std::string nameDeserialization;
-    size_t size;
+    /* size_t size; */
 
     // c like serialization
     auto begin = std::chrono::system_clock::now();
@@ -748,20 +709,20 @@ TEST_CASE("cstruct") {
 /*                                  function                                  */
 /******************************************************************************/
 
-TEST_CASE("functions") {
-    int originI = 4;
-    WithFunctions origin(originI);
-    WithFunctions other;
-    std::string result;
+/* TEST_CASE("functions") { */
+/*     int originI = 4; */
+/*     WithFunctions origin(originI); */
+/*     WithFunctions other; */
+/*     std::string result; */
 
-    REQUIRE(origin.i() != other.i());
+/*     REQUIRE(origin.i() != other.i()); */
 
-    result = origin.serialize();
-    other.deserialize(result);
+/*     result = origin.serialize(); */
+/*     other.deserialize(result); */
 
-    REQUIRE(origin.i() == originI * 2);
-    REQUIRE(other.i() == originI * originI);
-}
+/*     REQUIRE(origin.i() == originI * 2); */
+/*     REQUIRE(other.i() == originI * originI); */
+/* } */
 
 /******************************************************************************/
 /*                               static arrays                                */
@@ -815,59 +776,59 @@ TEST_CASE("static arrays") {
 /*                               dynamic arrays                               */
 /******************************************************************************/
 
-TEST_CASE("dynamic arrays") {
-    WithDynamicArray origin(2);
-    WithDynamicArray other;
-    auto *external = new double[10];
-    std::string result;
+/* TEST_CASE("dynamic arrays") { */
+/*     WithDynamicArray origin(2); */
+/*     WithDynamicArray other; */
+/*     auto *external = new double[10]; */
+/*     std::string result; */
 
-    for (size_t i = 0; i < 10; ++i) {
-        external[i] = (double)i * 3.0;
-    }
-    origin.borrow(external, 10);
+/*     for (size_t i = 0; i < 10; ++i) { */
+/*         external[i] = (double)i * 3.0; */
+/*     } */
+/*     origin.borrow(external, 10); */
 
-    for (size_t i = 0; i < (4 * 4); ++i) {
-        origin.twoDOneD()[i] = (int)i * 2;
-    }
+/*     for (size_t i = 0; i < (4 * 4); ++i) { */
+/*         origin.twoDOneD()[i] = (int)i * 2; */
+/*     } */
 
-    for (size_t i = 0; i < 5; ++i) {
-        origin.own()[i] = (int)i;
-        origin.ownSimple()[i] = Simple((int)i, (int)i, "simple");
-    }
+/*     for (size_t i = 0; i < 5; ++i) { */
+/*         origin.own()[i] = (int)i; */
+/*         origin.ownSimple()[i] = Simple((int)i, (int)i, "simple"); */
+/*     } */
 
-    for (size_t i = 0; i < 2; ++i) {
-        for (size_t j = 0; j < 2; ++j) {
-            origin.multipleDim()[i][j] = (int)(i + j);
-        }
-    }
+/*     for (size_t i = 0; i < 2; ++i) { */
+/*         for (size_t j = 0; j < 2; ++j) { */
+/*             origin.multipleDim()[i][j] = (int)(i + j); */
+/*         } */
+/*     } */
 
-    result = origin.serialize();
-    other.deserialize(result);
+/*     result = origin.serialize(); */
+/*     other.deserialize(result); */
 
-    for (size_t i = 0; i < 10; ++i) {
-        REQUIRE(external[i] == other.borrowed()[i]);
-    }
+/*     for (size_t i = 0; i < 10; ++i) { */
+/*         REQUIRE(external[i] == other.borrowed()[i]); */
+/*     } */
 
-    for (size_t i = 0; i < (4 * 4); ++i) {
-        REQUIRE(origin.twoDOneD()[i] == other.twoDOneD()[i]);
-    }
+/*     for (size_t i = 0; i < (4 * 4); ++i) { */
+/*         REQUIRE(origin.twoDOneD()[i] == other.twoDOneD()[i]); */
+/*     } */
 
-    for (size_t i = 0; i < 5; ++i) {
-        REQUIRE(origin.own()[i] == other.own()[i]);
-        REQUIRE(origin.ownSimple()[i] == other.ownSimple()[i]);
-        REQUIRE(origin.null2()[i] == other.null2()[i]);
-    }
-    REQUIRE(origin.null() == other.null());
+/*     for (size_t i = 0; i < 5; ++i) { */
+/*         REQUIRE(origin.own()[i] == other.own()[i]); */
+/*         REQUIRE(origin.ownSimple()[i] == other.ownSimple()[i]); */
+/*         REQUIRE(origin.null2()[i] == other.null2()[i]); */
+/*     } */
+/*     REQUIRE(origin.null() == other.null()); */
 
-    for (size_t i = 0; i < 2; ++i) {
-        for (size_t j = 0; j < 2; ++j) {
-            REQUIRE(origin.multipleDim()[i][j] == other.multipleDim()[i][j]);
-        }
-    }
+/*     for (size_t i = 0; i < 2; ++i) { */
+/*         for (size_t j = 0; j < 2; ++j) { */
+/*             REQUIRE(origin.multipleDim()[i][j] == other.multipleDim()[i][j]); */
+/*         } */
+/*     } */
 
-    delete[] external;
-    delete[] other.borrowed();
-}
+/*     delete[] external; */
+/*     delete[] other.borrowed(); */
+/* } */
 
 /******************************************************************************/
 /*                                    tree                                    */

@@ -1,33 +1,23 @@
 #ifndef WITH_DYNAMIC_ARRAYS_HPP
 #define WITH_DYNAMIC_ARRAYS_HPP
 #include "simple.hpp"
-#include <serializer/serializable.hpp>
+#include <serializer/tools/dynamic_array.hpp>
+#include <serializer/serialize.hpp>
 
 class WithDynamicArray {
-    SERIALIZABLE(size_t, size_t, SER_DARR_T(int *, size_t), // own_
-                 SER_DARR_T(int *, size_t),                 // null_
-                 SER_DARR_T(int **, size_t, size_t),        // null2_
-                 SER_DARR_T(double *, size_t &),            // borrowed_
-                 SER_DARR_T(Simple *, size_t),              // ownSimple_
-                 SER_DARR_T(int **, size_t &, size_t),      // multipleDim_
-                 SER_DARR_T(int *, size_t, size_t)          // twoDOneD_
-    );
+    using type_list = serializer::tools::mtf::type_list<
+        size_t, size_t, SER_DARR_T(int *, size_t), // own_
+        SER_DARR_T(int *, size_t),                 // null_
+        SER_DARR_T(int **, size_t, size_t),        // null2_
+        SER_DARR_T(double *, size_t &),            // borrowed_
+        SER_DARR_T(Simple *, size_t),              // ownSimple_
+        SER_DARR_T(int **, size_t &, size_t),      // multipleDim_
+        SER_DARR_T(int *, size_t, size_t)          // twoDOneD_
+        >;
 
   public:
     explicit WithDynamicArray(size_t multipleDimSize1 = 0)
-        : SERIALIZER(
-              borrowedSize_, multipleDimSize1_,
-              SER_DARR_T(int *, size_t)(own_, 5),               // own_
-              SER_DARR_T(int *, size_t)(null_, 5),              // null_
-              SER_DARR_T(int **, size_t, size_t)(null2_, 5, 5), // null2_
-              SER_DARR_T(double *, size_t &)(borrowed_,
-                                             borrowedSize_), // borrowed_
-              SER_DARR_T(Simple *, size_t)(ownSimple_, 5),   // ownSimple_
-              SER_DARR_T(int **, size_t &, size_t)(
-                  multipleDim_, multipleDimSize1_, 2),           // multipleDim_
-              SER_DARR_T(int *, size_t, size_t)(twoDOneD_, 4, 4) // twoDOneD_
-              ),
-          own_(new int[5]), null2_(new int *[5]), ownSimple_(new Simple[5]),
+        : own_(new int[5]), null2_(new int *[5]), ownSimple_(new Simple[5]),
           multipleDim_(multipleDimSize1 == 0 ? nullptr
                                              : new int *[multipleDimSize1]),
           twoDOneD_(new int[4 * 4]), multipleDimSize1_(multipleDimSize1) {
@@ -56,6 +46,19 @@ class WithDynamicArray {
         }
         delete[] multipleDim_;
     }
+
+    /* SERIALIZE(type_list(), borrowedSize_, multipleDimSize1_, */
+    /*           SER_DARR_T(int *, size_t)(own_, 5),               // own_ */
+    /*           SER_DARR_T(int *, size_t)(null_, 5),              // null_ */
+    /*           SER_DARR_T(int **, size_t, size_t)(null2_, 5, 5), // null2_ */
+    /*           SER_DARR_T(double *, size_t &)(borrowed_, */
+    /*                                          borrowedSize_), // borrowed_ */
+    /*           SER_DARR_T(Simple *, size_t)(ownSimple_, 5),   // ownSimple_ */
+    /*           SER_DARR_T(int **, size_t &, size_t)(multipleDim_, */
+    /*                                                multipleDimSize1_, */
+    /*                                                2),           // multipleDim_ */
+    /*           SER_DARR_T(int *, size_t, size_t)(twoDOneD_, 4, 4) // twoDOneD_ */
+    /* ); */
 
     /* accessors
      * ****************************************************************/

@@ -1,22 +1,18 @@
 #ifndef WITHFUNCTIONS_HPP
 #define WITHFUNCTIONS_HPP
-#include <serializer/serializable.hpp>
+#include <serializer/serialize.hpp>
 
 class WithFunctions {
-    SERIALIZABLE(int, serializer::function_t);
-
   public:
-    explicit WithFunctions(int i = 0)
-        : SERIALIZER(
-              i_,
-              [this](serializer::Phases phase, std::string_view const &) {
-                  if (phase == serializer::Phases::Serialization) {
-                      i_ += i_;
-                  } else {
-                      i_ *= i_;
+    explicit WithFunctions(int i = 0) : i_(i) {}
+
+    SERIALIZE(serializer::tools::mtf::type_list<int, serializer::function_t>(),
+              i_, SER_DFUN({
+                  if constexpr (!std::is_const_v<
+                                    std::remove_pointer_t<decltype(this)>>) {
+                      /* i_ *= i_; */
                   }
-              }),
-          i_(i) {}
+              }));
 
     [[nodiscard]] int i() const { return i_; }
     void i(int i) { this->i_ = i; }
