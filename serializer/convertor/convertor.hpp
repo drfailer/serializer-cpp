@@ -10,6 +10,8 @@
 #include "convert.hpp"
 #include <algorithm>
 #include <bit>
+#include <cstring>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -26,8 +28,31 @@ namespace serializer {
 ///        convert behavior for additional types so the user can add its own
 ///        functions.
 /// @param AdditionalTypes External types for which the user can add support.
-template <typename... AdditionalTypes>
+template <typename MemT, typename... AdditionalTypes>
 struct Convertor : public Convert<AdditionalTypes>... {
+    using mem_type = MemT;
+    mem_type &mem;
+
+    using byte_type = std::remove_cvref_t<decltype(mem[0])>;
+    using mem_view_type = std::span<byte_type>;
+    mem_view_type view = mem;
+
+    size_t pos = 0;
+    size_t size = 0;
+
+    constexpr Convertor(MemT &mem): mem(mem), size(mem.max_size()) {}
+
+    constexpr void append(const byte_type *bytes, size_t nb_bytes) {
+      /* if ((pos + nb_bytes) >= size) { */
+      /*   size *= 2; */
+      /*   mem.resize(size); */
+      /* } */
+      std::memcpy(mem.data() + pos, &bytes, nb_bytes);
+      for (size_t i = 0; i < nb_bytes; ++i) {
+        mem.push_back(bytes[i]);
+      }
+      pos += nb_bytes;
+    }
 
     /* no automatic serialization types (custom convertor) ********************/
 
@@ -41,11 +66,11 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <serializer::tools::concepts::NonSerializable T>
         requires(!tools::mtf::is_c_struct_v<T>)
-    constexpr void serialize_(T const &elt, std::string &str) const {
+    constexpr void serialize_(T const &elt) {
         if constexpr (tools::mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
-            static_cast<const Convert<T> *>(this)->serialize(elt, str);
+            static_cast<const Convert<T> *>(this)->serialize(elt, mem);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<T>();
         }
@@ -78,8 +103,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Serializable T>
-    constexpr void serialize_(T const &elt, std::string &str) const {
-        elt.serialize(str);
+    constexpr void serialize_(T const &elt) {
+        elt.serialize(mem);
     }
 
     /// @brief Deserialize function for the deserializable types (they have a
@@ -100,8 +125,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Fundamental T>
-    constexpr void serialize_(T const &elt, std::string &str) const {
-        str.append(std::bit_cast<const char *>(&elt), sizeof(T));
+    constexpr void serialize_(T const &elt) {
+        append(std::bit_cast<const byte_type *>(&elt), sizeof(T));
     }
 
     /// @brief Deserialize function for the deserializable fundamental types.
@@ -123,16 +148,16 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Pointer T>
-    constexpr void serialize_(T const &elt, std::string &str) const {
+    constexpr void serialize_(T const &elt) {
         if (elt != nullptr) {
-            str.append("v");
+            append('v', 1);
             if constexpr (std::is_abstract_v<std::remove_pointer_t<T>>) {
-                elt->serialize(str);
+                elt->serialize(mem);
             } else {
-                serialize_<std::remove_pointer_t<T>>(*elt, str);
+                serialize_<std::remove_pointer_t<T>>(*elt);
             }
         } else {
-            str.append("n");
+            append('n', 1);
         }
     }
 
@@ -172,17 +197,17 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::SmartPtr SP>
-    constexpr void serialize_(SP const &elt, std::string &str) const {
+    constexpr void serialize_(SP const &elt) {
         if (elt != nullptr) {
-            str.push_back('v');
+            mem.push_back('v');
             if constexpr (serializer::tools::concepts::Serializable<
                               typename SP::element_type>) {
-                elt->serialize(str);
+                elt->serialize(mem);
             } else {
-                serialize_<typename SP::element_type>(*elt, str);
+                serialize_<typename SP::element_type>(*elt);
             }
         } else {
-            str.push_back('n');
+            mem.push_back('n');
         }
     }
 
@@ -224,9 +249,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param tuple Tuple to serialize
     /// @param str String that will contain the result.
     template <class T, size_t... Idx>
-    constexpr void serializeTuple(T const &tuple, std::string &str,
-                                  std::index_sequence<Idx...>) const {
-        ([&] { serialize_(std::get<Idx>(tuple), str); }(), ...);
+    constexpr void serializeTuple(T const &tuple,
+                                  std::index_sequence<Idx...>) {
+        ([&] { serialize_(std::get<Idx>(tuple)); }(), ...);
     }
 
     /// @brief Serialize function for tuples (std::tuple and std::pair).
@@ -234,8 +259,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <serializer::tools::concepts::TupleLike T>
         requires(!serializer::tools::concepts::Array<T>)
-    constexpr void serialize_(T const &tuple, std::string &str) const {
-        serializeTuple(tuple, str,
+    constexpr void serialize_(T const &tuple) {
+        serializeTuple(tuple, mem,
                        std::make_index_sequence<std::tuple_size_v<T>>());
     }
 
@@ -281,9 +306,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Enum T>
-    constexpr void serialize_(T const &elt, std::string &str) const {
+    constexpr void serialize_(T const &elt) {
         auto value = (std::underlying_type_t<T>)elt;
-        str.append(std::bit_cast<const char *>(&value), sizeof(value));
+        append(std::bit_cast<const byte_type*>(&value), sizeof(value));
     }
 
     /// @brief Deserialize function for enum types. The data is stored using the
@@ -305,10 +330,10 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @brief Serialize function for strings.
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
-    constexpr void serialize_(std::string const &elt, std::string &str) const {
+    constexpr void serialize_(std::string const &elt) {
         auto size = elt.size() + 1;
-        str.append(std::bit_cast<const char *>(&size), sizeof(size));
-        str.append(elt);
+        append(std::bit_cast<const byte_type*>(&size), sizeof(size));
+        append(std::bit_cast<const byte_type*>(elt.data()), elt.size());
     }
 
     /// @brief Deserialize function for strings.
@@ -331,11 +356,11 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::NonStringIterable T>
-    constexpr void serialize_(T const &elts, std::string &str) const {
+    constexpr void serialize_(T const &elts) {
         auto size = std::size(elts) + 1;
-        str.append(std::bit_cast<const char *>(&size), sizeof(size));
+        append(std::bit_cast<const byte_type*>(&size), sizeof(size));
         for (auto const &elt : elts) {
-            serialize_(elt, str);
+            serialize_(elt);
         }
     }
 
@@ -386,9 +411,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::StaticArray T>
-    constexpr void serialize_(T const &elt, std::string &str) const {
+    constexpr void serialize_(T const &elt) {
         for (size_t i = 0; i < std::extent_v<T>; ++i) {
-            serialize_(elt[i], str);
+            serialize_(elt[i]);
         }
     }
 
@@ -416,29 +441,27 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <tools::concepts::Pointer T, typename DT, typename... DTs>
-    constexpr void serialize_(tools::DynamicArray<T, DT, DTs...> const &elt,
-                              std::string &str) const {
+    constexpr void serialize_(tools::DynamicArray<T, DT, DTs...> const &elt) {
         using ST = std::remove_pointer_t<T>;
         if (elt.mem == nullptr) {
-            str.append("n");
+            mem.push_back('n');
             return;
         }
-        str.append("v");
+        mem.push_back('v');
 
         if constexpr (std::is_pointer_v<ST>) {
             for (size_t i = 0; i < std::get<0>(elt.dimensions); ++i) {
                 serialize_(
                     tools::DynamicArray<ST, DTs...>(
-                        elt.mem[i], tools::tuplePopFront(elt.dimensions)),
-                    str);
+                        elt.mem[i], tools::tuplePopFront(elt.dimensions)));
             }
         } else if constexpr (std::is_fundamental_v<ST>) {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
-            str.append(std::bit_cast<char *>(elt.mem), size * sizeof(ST));
+            append(std::bit_cast<char *>(elt.mem), size * sizeof(ST));
         } else {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
             for (size_t i = 0; i < size; ++i) {
-                serialize_(elt.mem[i], str);
+                serialize_(elt.mem[i]);
             }
         }
     }
@@ -488,9 +511,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /* C Structs **************************************************************/
 
     template <typename T>
-    constexpr void serialize_(tools::CStruct<T> const &elt,
-                              std::string &str) const {
-        str.append(std::bit_cast<const char *>(&elt.element),
+    constexpr void serialize_(tools::CStruct<T> const &elt) {
+        append(std::bit_cast<const byte_type*>(&elt.element),
                    sizeof(elt.element));
     }
 
