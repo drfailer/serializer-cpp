@@ -1,6 +1,6 @@
 #include "catch.hpp"
 /* #include "test-classes/abstract.hpp" */
-/* #include "test-classes/composed.hpp" */
+#include "test-classes/composed.hpp"
 /* #include "test-classes/cstruct.h" */
 /* #include "test-classes/multipleinheritance.hpp" */
 /* #include "test-classes/polymorphic.hpp" */
@@ -37,7 +37,7 @@ TEST_CASE("serialization/deserialization on a SIMPLE CLASS") {
     REQUIRE(original.y() != other.y());
     REQUIRE(original.str() != other.str());
 
-    result = original.serialize();
+    original.serialize(result);
     other.deserialize(result);
 
     // the serialization and deserialization work
@@ -48,7 +48,7 @@ TEST_CASE("serialization/deserialization on a SIMPLE CLASS") {
 
     REQUIRE(original.x() != other.x());
 
-    result = original.serialize();
+    original.serialize(result);
     other.deserialize(result);
 
     // the modification is taken in count by the serializer (references)
@@ -58,7 +58,7 @@ TEST_CASE("serialization/deserialization on a SIMPLE CLASS") {
     original.y(32);
     Simple copied = original;
 
-    result = original.serialize();
+    original.serialize(result);
     other.deserialize(result);
 
     REQUIRE(original.x() == other.x());
@@ -69,40 +69,40 @@ TEST_CASE("serialization/deserialization on a SIMPLE CLASS") {
 /*          tests with a class composed of a serializable subclass            */
 /******************************************************************************/
 
-/* TEST_CASE("serialization/deserialization on a COMPOSED CLASS") { */
-/*     Composed original(Simple(10, 20), 3, 3.14); */
-/*     Composed other(Simple(0, 0), 0, 0); */
-/*     std::string result; */
+TEST_CASE("serialization/deserialization on a COMPOSED CLASS") {
+    Composed original(Simple(10, 20), 3, 3.14);
+    Composed other(Simple(0, 0), 0, 0);
+    serializer::default_mem_type result;
 
-/*     REQUIRE(original.s().x() != other.s().x()); */
-/*     REQUIRE(original.s().y() != other.s().y()); */
-/*     REQUIRE(original.z() != other.z()); */
-/*     REQUIRE(original.w() != other.w()); */
+    REQUIRE(original.s().x() != other.s().x());
+    REQUIRE(original.s().y() != other.s().y());
+    REQUIRE(original.z() != other.z());
+    REQUIRE(original.w() != other.w());
 
-/*     result = original.serialize(); */
-/*     other.deserialize(result); */
+    result = original.serialize();
+    other.deserialize(result);
 
-/*     REQUIRE(original.s().x() == other.s().x()); */
-/*     REQUIRE(original.s().y() == other.s().y()); */
-/*     REQUIRE(original.z() == other.z()); */
-/*     REQUIRE(original.w() == other.w()); */
+    REQUIRE(original.s().x() == other.s().x());
+    REQUIRE(original.s().y() == other.s().y());
+    REQUIRE(original.z() == other.z());
+    REQUIRE(original.w() == other.w());
 
-/*     original.w(1.618); */
-/*     original.s(Simple(2, 2)); */
+    original.w(1.618);
+    original.s(Simple(2, 2));
 
-/*     REQUIRE(original.s().x() != other.s().x()); */
-/*     REQUIRE(original.s().y() != other.s().y()); */
-/*     REQUIRE(original.w() != other.w()); */
+    REQUIRE(original.s().x() != other.s().x());
+    REQUIRE(original.s().y() != other.s().y());
+    REQUIRE(original.w() != other.w());
 
-/*     result = original.serialize(); */
-/*     other.deserialize(result); */
+    result = original.serialize();
+    other.deserialize(result);
 
-/*     // again, we check if the references allow tracking of modifications */
-/*     REQUIRE(original.s().x() == other.s().x()); */
-/*     REQUIRE(original.s().y() == other.s().y()); */
-/*     REQUIRE(original.z() == other.z()); */
-/*     REQUIRE(original.w() == other.w()); */
-/* } */
+    // again, we check if the references allow tracking of modifications
+    REQUIRE(original.s().x() == other.s().x());
+    REQUIRE(original.s().y() == other.s().y());
+    REQUIRE(original.z() == other.z());
+    REQUIRE(original.w() == other.w());
+}
 
 /******************************************************************************/
 /*                            string serialization                            */

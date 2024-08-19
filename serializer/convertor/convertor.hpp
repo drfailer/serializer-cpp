@@ -39,24 +39,17 @@ struct Convertor : public Convert<AdditionalTypes>... {
 
     size_t spos = 0;
     size_t dpos = 0;
-    size_t size = 0;
-    size_t capacity = 0;
 
-    constexpr Convertor(MemT &mem)
-        : mem(mem), size(mem.size()), capacity(mem.capacity()) {}
+    constexpr Convertor(MemT &mem, size_t pos = 0)
+        : mem(mem), spos(pos), dpos(pos) { }
 
     constexpr void append(const byte_type *bytes, size_t nb_bytes) {
-        if ((spos + nb_bytes) >= capacity) {
-            if (capacity == 0) [[unlikely]] {
-                capacity = nb_bytes;
-            } else {
-                capacity *= 2;
-            }
-            mem.resize(capacity);
+        if ((spos + nb_bytes) >= mem.capacity()) {
+          mem.resize(std::max(mem.capacity() * 2, nb_bytes));
         }
         std::memcpy(mem.data() + spos, bytes, nb_bytes);
         spos += nb_bytes;
-        mem.resize(spos);
+        /* mem.resize(spos); */
     }
 
     /* no automatic serialization types (custom convertor) ********************/
@@ -110,7 +103,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Serializable T>
     constexpr void serialize_(T const &elt) {
-        elt.serialize(mem);
+        spos = elt.serialize(mem, spos);
     }
 
     /// @brief Deserialize function for the deserializable types (they have a
@@ -120,10 +113,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///            just used for creating an overload of the deserialize
     ///            function.
     template <serializer::tools::concepts::Deserializable T>
-    constexpr T &deserialize_(T &elt) {
-        // TODO: create a new deserialze function
-        /* elt.deserialize(view); */
-        return elt;
+    constexpr void deserialize_(T &elt) {
+        dpos = elt.deserialize(mem, dpos);
     }
 
     /* fundamental types ******************************************************/
@@ -157,14 +148,14 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::Pointer T>
     constexpr void serialize_(T const &elt) {
         if (elt != nullptr) {
-            append('v', 1);
+            append("v", 1);
             if constexpr (std::is_abstract_v<std::remove_pointer_t<T>>) {
                 elt->serialize(mem);
             } else {
                 serialize_<std::remove_pointer_t<T>>(*elt);
             }
         } else {
-            append('n', 1);
+            append("n", 1);
         }
     }
 
@@ -191,8 +182,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
         if constexpr (std::is_fundamental_v<Type>) {
             *elt = deserialize_(*elt);
         } else {
-            // TODO: rework the deserialize function
-            /* elt->deserialize(str); */
+            elt->deserialize(mem, dpos);
         }
         return elt;
     }
@@ -206,7 +196,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::SmartPtr SP>
     constexpr void serialize_(SP const &elt) {
         if (elt != nullptr) {
-            mem[spos++] = 'v';
+            append("v", 1);
             if constexpr (serializer::tools::concepts::Serializable<
                               typename SP::element_type>) {
                 elt->serialize(mem);
@@ -214,7 +204,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
                 serialize_<typename SP::element_type>(*elt);
             }
         } else {
-            mem[spos++] = 'n';
+            append("n", 1);
         }
     }
 
@@ -242,8 +232,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
         }
         if constexpr (serializer::tools::concepts::Deserializable<
                           typename SP::element_type>) {
-            // TODO: rework deserialize function
-            /* t->deserialize(str); */
+            t->deserialize(mem, dpos);
         } else {
             *t = deserialize_(*t);
         }
@@ -450,10 +439,10 @@ struct Convertor : public Convert<AdditionalTypes>... {
     constexpr void serialize_(tools::DynamicArray<T, DT, DTs...> const &elt) {
         using ST = std::remove_pointer_t<T>;
         if (elt.mem == nullptr) {
-            mem[spos++] = 'n';
+            append("n", 1);
             return;
         }
-        mem[spos++] = 'v';
+        append("v", 1);
 
         if constexpr (std::is_pointer_v<ST>) {
             for (size_t i = 0; i < std::get<0>(elt.dimensions); ++i) {
