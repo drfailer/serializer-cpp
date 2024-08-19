@@ -38,31 +38,31 @@ TEST_CASE("serialization/deserialization on a SIMPLE CLASS") {
     REQUIRE(original.str() != other.str());
 
     result = original.serialize();
-    /* other.deserialize(result); */
+    other.deserialize(result);
 
-    /* // the serialization and deserialization work */
-    /* REQUIRE(original.x() == other.x()); */
-    /* REQUIRE(original.y() == other.y()); */
+    // the serialization and deserialization work
+    REQUIRE(original.x() == other.x());
+    REQUIRE(original.y() == other.y());
 
-    /* original.x(3); // modify an attribute */
+    original.x(3); // modify an attribute
 
-    /* REQUIRE(original.x() != other.x()); */
+    REQUIRE(original.x() != other.x());
 
-    /* result = original.serialize(); */
-    /* other.deserialize(result); */
+    result = original.serialize();
+    other.deserialize(result);
 
-    /* // the modification is taken in count by the serializer (references) */
-    /* REQUIRE(original.x() == other.x()); */
+    // the modification is taken in count by the serializer (references)
+    REQUIRE(original.x() == other.x());
 
-    /* original.x(28); */
-    /* original.y(32); */
-    /* Simple copied = original; */
+    original.x(28);
+    original.y(32);
+    Simple copied = original;
 
-    /* result = original.serialize(); */
-    /* other.deserialize(result); */
+    result = original.serialize();
+    other.deserialize(result);
 
-    /* REQUIRE(original.x() == other.x()); */
-    /* REQUIRE(original.y() == other.y()); */
+    REQUIRE(original.x() == other.x());
+    REQUIRE(original.y() == other.y());
 }
 
 /******************************************************************************/

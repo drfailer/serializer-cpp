@@ -96,9 +96,11 @@ constexpr bool is_dynamic_array_v = is_dynamic_array<T>::value;
 
 /// @brief Used to know if the type has to be assigned during the
 ///        deserialization.
+// TODO: the containers and the classes should be here as well
 template <typename T> struct not_assigned_on_deserialization {
     static constexpr bool value =
-        std::is_array_v<T> || is_dynamic_array_v<T> || is_c_struct_v<T>;
+        std::is_array_v<T> || is_dynamic_array_v<T> || is_c_struct_v<T> ||
+        is_string_v<T>;
 };
 
 template <typename T>

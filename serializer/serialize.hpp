@@ -44,14 +44,14 @@ constexpr void deserialize(typename Conv::mem_type &mem,
                                      Args> ||
                                  tools::concepts::Deserializable<Args>) {
                 // for the types that can't be assigned
-                conv.deserialize_(mem, args);
+                conv.deserialize_(args);
             } else if constexpr (std::is_move_assignable_v<Args>) {
                 // for the types that have to be assigned
-                args = std::move(conv.deserialize_(mem, args));
+                args = std::move(conv.deserialize_(args));
             } else {
                 static_assert(std::is_copy_assignable_v<Args>,
                               "deserialized types must be assignable.");
-                args = conv.deserialize_(mem, args);
+                args = conv.deserialize_(args);
             }
         }(),
         ...);
@@ -63,7 +63,7 @@ constexpr void deserialize(typename Conv::mem_type &mem, H &h, Args &...args) {
     deserialize<Conv>(mem, tools::mtf::type_list<H, Args...>(), h, args...);
 }
 
-using default_mem_type = std::vector<std::byte>;
+using default_mem_type = std::vector<uint8_t>;
 
 } // end namespace serializer
 
