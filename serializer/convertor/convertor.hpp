@@ -41,15 +41,17 @@ struct Convertor : public Convert<AdditionalTypes>... {
     size_t dpos = 0;
 
     constexpr Convertor(MemT &mem, size_t pos = 0)
-        : mem(mem), spos(pos), dpos(pos) { }
+        : mem(mem), spos(pos), dpos(pos) {}
 
     constexpr void append(const byte_type *bytes, size_t nb_bytes) {
         if ((spos + nb_bytes) >= mem.capacity()) {
-          mem.resize(std::max(mem.capacity() * 2, nb_bytes));
+            /* mem.resize(spos + nb_bytes); */
+            /* mem.reserve(std::max(mem.capacity() * 2, spos + nb_bytes)); */
+            mem.resize(std::max(mem.capacity() * 2, spos + nb_bytes));
         }
+        /* mem.resize(spos + nb_bytes); */
         std::memcpy(mem.data() + spos, bytes, nb_bytes);
         spos += nb_bytes;
-        /* mem.resize(spos); */
     }
 
     /* no automatic serialization types (custom convertor) ********************/
@@ -339,9 +341,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     constexpr void deserialize_(T &str) {
         using size_type = typename T::size_type;
         size_type size = deserialize_(size) - 1;
-        str.reserve(size);
-        std::memcpy(str.data(), std::bit_cast<const char *>(mem.data() + dpos), size);
-        str[size] = 0;
+        str.assign(std::bit_cast<const char *>(mem.data() + dpos), size);
         dpos += size;
     }
 

@@ -22,6 +22,7 @@ constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
             }
         }(),
         ...);
+    /* mem.resize(conv.spos); */
     return conv.spos;
 }
 
@@ -92,18 +93,22 @@ using default_mem_type = std::vector<uint8_t>;
     }                                                                          \
     HELPER_serialize
 
+// TODO: move this in a proper function and update the macro
 #define SERIALIZE_STRUCT()                                                     \
     template <typename MemT>                                                   \
-    size_t serialize(MemT &mem, size_t pos = 0) const {                        \
-        mem.resize(sizeof(*this));                                             \
-        std::memcpy(mem.data(), std::bit_cast<const char *>(this),             \
-                    sizeof(*this));                                            \
-        return pos + sizeof(*this);                                            \
+    constexpr size_t serialize(MemT &mem, size_t pos = 0) const {              \
+        constexpr size_t nb_bytes = sizeof(*this);                             \
+        using byte_type = std::remove_cvref_t<decltype(mem[0])>;               \
+        if ((pos + nb_bytes) >= mem.capacity()) {                              \
+            mem.resize(pos + nb_bytes);                                        \
+        }                                                                      \
+        std::memcpy(mem.data(), std::bit_cast<const byte_type *>(this),        \
+                    nb_bytes);                                                 \
+        return pos + nb_bytes;                                                 \
     }                                                                          \
     template <typename MemT>                                                   \
-    constexpr void deserialize(MemT const &mem, size_t pos = 0) {              \
+    constexpr size_t deserialize(MemT const &mem, size_t pos = 0) {            \
         *this = *std::bit_cast<const decltype(this)>(mem.data());              \
-        mem = mem.substr(sizeof(*this));                                       \
         return pos + sizeof(*this);                                            \
     }                                                                          \
     HELPER_serialize

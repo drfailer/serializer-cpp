@@ -18,7 +18,7 @@
 /* #include "test-classes/withpointers.hpp" */
 /* #include "test-classes/withset.hpp" */
 /* #include "test-classes/withstaticarrays.hpp" */
-/* #include "test-classes/withstring.hpp" */
+#include "test-classes/withstring.hpp"
 /* #include "test-classes/withtuple.hpp" */
 #include <chrono>
 #include <stack>
@@ -79,7 +79,7 @@ TEST_CASE("serialization/deserialization on a COMPOSED CLASS") {
     REQUIRE(original.z() != other.z());
     REQUIRE(original.w() != other.w());
 
-    result = original.serialize();
+    original.serialize(result);
     other.deserialize(result);
 
     REQUIRE(original.s().x() == other.s().x());
@@ -94,7 +94,7 @@ TEST_CASE("serialization/deserialization on a COMPOSED CLASS") {
     REQUIRE(original.s().y() != other.s().y());
     REQUIRE(original.w() != other.w());
 
-    result = original.serialize();
+    original.serialize(result);
     other.deserialize(result);
 
     // again, we check if the references allow tracking of modifications
@@ -108,39 +108,39 @@ TEST_CASE("serialization/deserialization on a COMPOSED CLASS") {
 /*                            string serialization                            */
 /******************************************************************************/
 
-/* TEST_CASE("serialization/deserialization with STRING ATTRIBUTE") { */
-/*     WithString original(2, "hello"); */
-/*     WithString originalEmptyString(3, ""); */
-/*     WithString other(0, "world"); */
-/*     std::string result; */
+TEST_CASE("serialization/deserialization with STRING ATTRIBUTE") {
+    WithString original(2, "hello");
+    WithString originalEmptyString(3, "");
+    WithString other(0, "world");
+    serializer::default_mem_type result;
 
-/*     REQUIRE(original.x() != other.x()); */
-/*     REQUIRE(original.str() != other.str()); */
-/*     REQUIRE(originalEmptyString.x() != other.x()); */
-/*     REQUIRE(originalEmptyString.str() != other.str()); */
+    REQUIRE(original.x() != other.x());
+    REQUIRE(original.str() != other.str());
+    REQUIRE(originalEmptyString.x() != other.x());
+    REQUIRE(originalEmptyString.str() != other.str());
 
-/*     // with non-empty string */
-/*     result = original.serialize(); */
-/*     other.deserialize(result); */
+    // with non-empty string
+    original.serialize(result);
+    other.deserialize(result);
 
-/*     REQUIRE(original.x() == other.x()); */
-/*     REQUIRE(original.str() == other.str()); */
+    REQUIRE(original.x() == other.x());
+    REQUIRE(original.str() == other.str());
 
-/*     // with empty string */
-/*     result = originalEmptyString.serialize(); */
-/*     other.deserialize(result); */
+    // with empty string
+    originalEmptyString.serialize(result);
+    other.deserialize(result);
 
-/*     REQUIRE(originalEmptyString.x() == other.x()); */
-/*     REQUIRE(originalEmptyString.str() == other.str()); */
+    REQUIRE(originalEmptyString.x() == other.x());
+    REQUIRE(originalEmptyString.str() == other.str());
 
-/*     originalEmptyString.str("world"); */
+    originalEmptyString.str("world");
 
-/*     result = originalEmptyString.serialize(); */
-/*     other.deserialize(result); */
+    originalEmptyString.serialize(result);
+    other.deserialize(result);
 
-/*     REQUIRE(originalEmptyString.x() == other.x()); */
-/*     REQUIRE(originalEmptyString.str() == other.str()); */
-/* } */
+    REQUIRE(originalEmptyString.x() == other.x());
+    REQUIRE(originalEmptyString.str() == other.str());
+}
 
 /******************************************************************************/
 /*                           pointer serialization                            */

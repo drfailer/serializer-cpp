@@ -1,16 +1,16 @@
 #ifndef WITH_STRING_HPP
 #define WITH_STRING_HPP
-#include "serializer/serializer.hpp"
+#include <serializer/serialize.hpp>
 #include <string>
 #include <utility>
 
 class WithString {
-    SERIALIZABLE(int, std::string);
-
   public:
     WithString(int x, std::string str)
-        : SERIALIZER(x_, str_), x_(x), str_(std::move(str)) {}
+        : x_(x), str_(std::move(str)) {}
     ~WithString() = default;
+
+    SERIALIZE(x_, str_);
 
     /* accessors **************************************************************/
     void str(std::string str) { this->str_ = std::move(str); }
