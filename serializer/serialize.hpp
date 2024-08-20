@@ -7,10 +7,12 @@
 #include "tools/vec.hpp"
 #include "types.hpp"
 
+// TODO: use always inline attribute
+
 namespace serializer {
 
 template <typename Conv, typename... Args>
-constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
+inline constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
                            Args &&...args) {
     Conv conv(mem, pos);
     (
@@ -26,7 +28,7 @@ constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
 }
 
 template <typename Conv, typename... Args>
-constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
+inline constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
                              Args &&...args) {
     Conv conv(mem, pos);
     (
@@ -43,7 +45,7 @@ constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
 }
 
 template <typename MemT, typename T>
-constexpr size_t serialize_struct(MemT &mem, size_t pos, T const *obj) {
+inline constexpr size_t serialize_struct(MemT &mem, size_t pos, T const obj) {
     constexpr size_t nb_bytes = sizeof(*obj);
     using byte_type = std::remove_cvref_t<decltype(mem[0])>;
     mem.append(pos, std::bit_cast<const byte_type *>(obj), nb_bytes);
@@ -51,13 +53,13 @@ constexpr size_t serialize_struct(MemT &mem, size_t pos, T const *obj) {
 }
 
 template <typename MemT, typename T>
-constexpr size_t deserialize_struct(MemT &mem, size_t pos, T const obj) {
+inline constexpr size_t deserialize_struct(MemT &mem, size_t pos, T const obj) {
     *obj = *std::bit_cast<const decltype(obj)>(mem.data() + pos);
     return pos + sizeof(*obj);
 }
 
 template <typename Conv, typename T, typename... Supers>
-constexpr size_t serialize_super(T const self, typename Conv::mem_type &mem,
+inline constexpr size_t serialize_super(T const self, typename Conv::mem_type &mem,
                                  size_t pos) {
     ([&self, &mem,
       &pos] { pos = dynamic_cast<Supers>(self).serialize(mem, pos); }(),
@@ -66,7 +68,7 @@ constexpr size_t serialize_super(T const self, typename Conv::mem_type &mem,
 }
 
 template <typename Conv, typename T, typename... Supers>
-constexpr size_t deserialize_super(T self, typename Conv::mem_type &mem,
+inline constexpr size_t deserialize_super(T self, typename Conv::mem_type &mem,
                                    size_t pos) {
     ([&self, &mem,
       &pos] { pos = dynamic_cast<Supers>(self).deserialize(mem, pos); }(),

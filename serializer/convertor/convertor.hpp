@@ -1,7 +1,6 @@
 #ifndef HANDLERS_HPP
 #define HANDLERS_HPP
 #include "../exceptions/unsupported_type.hpp"
-#include "../tools/c_struct.hpp"
 #include "../tools/concepts.hpp"
 #include "../tools/dynamic_array.hpp"
 #include "../tools/metafunctions.hpp"
@@ -290,8 +289,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::TupleLike T>
         requires(!serializer::tools::concepts::Array<T>)
     constexpr void serialize_(T &&tuple) {
-        serializeTuple(tuple, mem,
-                       std::make_index_sequence<std::tuple_size_v<T>>());
+        serializeTuple(tuple, std::make_index_sequence<
+                                  std::tuple_size_v<tools::mtf::base_t<T>>>());
     }
 
     /// @brief Helper function for deserializing tuples.
@@ -299,18 +298,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <class T, size_t... Idx>
     constexpr T deserializeTuple(std::index_sequence<Idx...>) {
         T tuple;
-        (
-            [&] {
-                using Type = decltype(std::get<Idx>(tuple));
-                if constexpr (tools::mtf::not_assigned_on_deserialization_v<
-                                  Type> ||
-                              tools::concepts::Serializable<Type>) {
-                    deserialize_(std::get<Idx>(tuple));
-                } else {
-                    std::get<Idx>(tuple) = deserialize_(std::get<Idx>(tuple));
-                }
-            }(),
-            ...);
+        ([&] { deserialize_(std::get<Idx>(tuple)); }(), ...);
         return tuple;
     }
 
@@ -322,8 +310,10 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::TupleLike T>
         requires(!serializer::tools::concepts::Array<T>)
     constexpr void deserialize_(T &&elt) {
-        elt = deserializeTuple<serializer::tools::mtf::remove_const_tuple_t<T>>(
-            std::make_index_sequence<std::tuple_size_v<T>>());
+        elt = deserializeTuple<
+            tools::mtf::remove_const_tuple_t<tools::mtf::base_t<T>>>(
+            std::make_index_sequence<
+                std::tuple_size_v<tools::mtf::base_t<T>>>());
     }
 
     /* enums ******************************************************************/
@@ -386,7 +376,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     constexpr void serialize_(T &&elts) {
         auto size = std::size(elts) + 1;
         append(std::bit_cast<const byte_type *>(&size), sizeof(size));
-        for (auto const &elt : elts) {
+        for (auto &&elt : elts) {
             serialize_(elt);
         }
     }
@@ -401,8 +391,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::NonStringIterable T>
     constexpr void deserialize_(T &&elt) {
         using size_type = decltype(std::size(std::declval<T>()));
-        using ValueType =
-          serializer::tools::mtf::iter_value_t<tools::mtf::base_t<T>>;
+        using ValueType = tools::concepts::remove_const_t<
+            serializer::tools::mtf::iter_value_t<tools::mtf::base_t<T>>>;
         size_t idx = 0;
         size_type size = deserialize_size();
         auto insert = [&elt, &idx](ValueType &&value) {

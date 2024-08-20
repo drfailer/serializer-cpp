@@ -26,10 +26,6 @@ struct ml_arg_type<serializer::tools::DynamicArray<T, DT, DTs...>> {
     using type = serializer::tools::DynamicArray<T, DT, DTs...>;
 };
 
-template <typename T> struct ml_arg_type<serializer::tools::CStruct<T>> {
-    using type = serializer::tools::CStruct<T>;
-};
-
 /// @brief Shorthand for ml_arg_type.
 template <typename T> using ml_arg_type_t = typename ml_arg_type<T>::type;
 
@@ -49,10 +45,6 @@ struct ser_arg_type<serializer::tools::DynamicArray<T, DT, DTs...>> {
     using type = const serializer::tools::DynamicArray<T, DT, DTs...>;
 };
 
-template <typename T> struct ser_arg_type<serializer::tools::CStruct<T>> {
-    using type = serializer::tools::CStruct<T>;
-};
-
 /// @brief Shorthand for ml_arg_type.
 template <typename T> using ml_arg_type_t = typename ml_arg_type<T>::type;
 
@@ -70,10 +62,6 @@ template <> struct arg_type<function_t> {
 template <typename T, typename DT, typename... DTs>
 struct arg_type<serializer::tools::DynamicArray<T, DT, DTs...>> {
     using type = serializer::tools::DynamicArray<T, DT, DTs...>;
-};
-
-template <typename T> struct arg_type<serializer::tools::CStruct<T>> {
-    using type = serializer::tools::CStruct<T>;
 };
 
 /// @brief Shorthand for ml_arg_type.

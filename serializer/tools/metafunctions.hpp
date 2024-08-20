@@ -1,7 +1,6 @@
 #ifndef METAFUNCTIONS_HPP
 #define METAFUNCTIONS_HPP
 #include "../types.hpp"
-#include "../tools/c_struct.hpp"
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -160,8 +159,6 @@ template <typename T> constexpr bool is_std_array_v = is_std_array<T>::value;
 
 /// @brief CHesk if the type is a tools::CStruct
 template <typename T> struct is_c_struct : std::false_type {};
-
-template <typename T> struct is_c_struct<tools::CStruct<T>> : std::true_type {};
 
 template <typename T> constexpr bool is_c_struct_v = is_c_struct<T>::value;
 

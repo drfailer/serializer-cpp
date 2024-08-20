@@ -16,7 +16,7 @@ class CStructSerializable {
                                  float f_ = 0, double d_ = 0)
         : c(c_), i(i_), l(l_), f(f_), d(d_) {}
 
-    SERIALIZE(serializer::tools::mtf::type_list<char, int, long, float, double>(), c, i, l, f, d);
+    SERIALIZE(c, i, l, f, d);
     char c = 0;
     int i = 0;
     long l = 0;

@@ -1,17 +1,16 @@
 #include "catch.hpp"
 /* #include "test-classes/abstract.hpp" */
 #include "test-classes/composed.hpp"
-/* #include "test-classes/cstruct.h" */
+#include "test-classes/cstruct.h"
 /* #include "test-classes/multipleinheritance.hpp" */
 /* #include "test-classes/polymorphic.hpp" */
 #include "test-classes/simple.hpp"
 /* #include "test-classes/tree.hpp" */
-/* #include "test-classes/withMap.hpp" */
+#include "test-classes/withMap.hpp"
 /* #include "test-classes/withPair.hpp" */
 /* #include "test-classes/withSmartPtr.hpp" */
 #include "test-classes/withcontainer.hpp"
 /* #include "test-classes/withconvertor.hpp" */
-/* #include "test-classes/withcstruct.hpp" */
 /* #include "test-classes/withdynamicarrays.hpp" */
 /* #include "test-classes/withenums.hpp" */
 /* #include "test-classes/withfunctions.hpp" */
@@ -577,26 +576,26 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
 /*                                    map                                     */
 /******************************************************************************/
 
-/* TEST_CASE("map") { */
-/*     WithMap original; */
-/*     WithMap other; */
-/*     std::string result; */
+TEST_CASE("map") {
+    WithMap original;
+    WithMap other;
+    serializer::default_mem_type result;
 
-/*     REQUIRE(original.map().empty()); */
-/*     REQUIRE(other.map().empty()); */
+    REQUIRE(original.map().empty());
+    REQUIRE(other.map().empty());
 
-/*     original.insert("hello", "pouf"); */
-/*     original.insert("world", "pouf"); */
+    original.insert("hello", "pouf");
+    original.insert("world", "pouf");
 
-/*     REQUIRE(original.map().size() == 2); */
+    REQUIRE(original.map().size() == 2);
 
-/*     result = original.serialize(); */
-/*     other.deserialize(result); */
+    original.serialize(result);
+    other.deserialize(result);
 
-/*     REQUIRE(other.map().size() == original.map().size()); */
-/*     REQUIRE(other.map().at("hello") == "pouf"); */
-/*     REQUIRE(other.map().at("world") == "pouf"); */
-/* } */
+    REQUIRE(other.map().size() == original.map().size());
+    REQUIRE(other.map().at("hello") == "pouf");
+    REQUIRE(other.map().at("world") == "pouf");
+}
 
 /******************************************************************************/
 /*                                    set                                     */
@@ -630,80 +629,80 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
 /*                                  cstruct                                   */
 /******************************************************************************/
 
-/* TEST_CASE("cstruct") { */
-/*     CStruct cs = {.c = 'c', .i = 4, .l = 12347890, .f = 3.14, .d = 1.618}; */
-/*     CStruct otherCS = {}; */
-/*     CStructSerializable css('c', 4, 12347890, 3.14, 1.618); */
-/*     CStructSerializable otherCSS; */
-/*     std::string result; */
-/*     std::string resultSerializable; */
-/*     std::string name; */
-/*     std::string nameDeserialization; */
-/*     /1* size_t size; *1/ */
+TEST_CASE("cstruct") {
+    CStruct cs = {.c = 'c', .i = 4, .l = 12347890, .f = 3.14, .d = 1.618};
+    CStruct otherCS = {};
+    CStructSerializable css('c', 4, 12347890, 3.14, 1.618);
+    CStructSerializable otherCSS;
+    serializer::default_mem_type result(40);
+    serializer::default_mem_type resultSerializable(40);
+    std::string name;
+    std::string nameDeserialization;
+    /* size_t size; */
 
-/*     // c like serialization */
-/*     auto begin = std::chrono::system_clock::now(); */
-/*     /1* name = typeid(cs).name(); *1/ */
-/*     /1* size = name.size(); *1/ */
-/*     /1* result.append(reinterpret_cast<char *>(&size), sizeof(size)); *1/ */
-/*     /1* result.append(name); *1/ */
-/*     result.append(reinterpret_cast<char *>(&cs), sizeof(cs)); */
-/*     auto end = std::chrono::system_clock::now(); */
-/*     std::cout << "c serialization time: " */
-/*               << std::chrono::duration_cast<std::chrono::nanoseconds>(end - */
-/*                                                                       begin) */
-/*                      .count() */
-/*               << "ns" << std::endl; */
+    // c like serialization
+    auto begin = std::chrono::system_clock::now();
+    /* name = typeid(cs).name(); */
+    /* size = name.size(); */
+    /* result.append(reinterpret_cast<char *>(&size), sizeof(size)); */
+    /* result.append(name); */
+    result.append(0, reinterpret_cast<uint8_t *>(&cs), sizeof(cs));
+    auto end = std::chrono::system_clock::now();
+    std::cout << "c serialization time: "
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
+                                                                      begin)
+                     .count()
+              << "ns" << std::endl;
 
-/*     // serializer serialization */
-/*     begin = std::chrono::system_clock::now(); */
-/*     css.serialize(resultSerializable); */
-/*     end = std::chrono::system_clock::now(); */
-/*     std::cout << "serializer serialization time: " */
-/*               << std::chrono::duration_cast<std::chrono::nanoseconds>(end - */
-/*                                                                       begin) */
-/*                      .count() */
-/*               << "ns" << std::endl; */
+    // serializer serialization
+    begin = std::chrono::system_clock::now();
+    css.serialize(resultSerializable);
+    end = std::chrono::system_clock::now();
+    std::cout << "serializer serialization time: "
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
+                                                                      begin)
+                     .count()
+              << "ns" << std::endl;
 
-/*     // c like deserialization */
-/*     begin = std::chrono::system_clock::now(); */
-/*     /1* size = *reinterpret_cast<size_t *>(result.data()); *1/ */
-/*     /1* nameDeserialization.append( *1/ */
-/*     /1*     reinterpret_cast<char *>(result.data() + sizeof(size)), size); *1/ */
-/*     /1* otherCS = *reinterpret_cast<CStruct *>(result.data() + sizeof(size) + size); *1/ */
-/*     otherCS = *reinterpret_cast<CStruct *>(result.data()); */
-/*     end = std::chrono::system_clock::now(); */
-/*     std::cout << "c deserialization time: " */
-/*               << std::chrono::duration_cast<std::chrono::nanoseconds>(end - */
-/*                                                                       begin) */
-/*                      .count() */
-/*               << "ns" << std::endl; */
+    // c like deserialization
+    begin = std::chrono::system_clock::now();
+    /* size = *reinterpret_cast<size_t *>(result.data()); */
+    /* nameDeserialization.append( */
+    /*     reinterpret_cast<char *>(result.data() + sizeof(size)), size); */
+    /* otherCS = *reinterpret_cast<CStruct *>(result.data() + sizeof(size) + size); */
+    otherCS = *reinterpret_cast<CStruct *>(result.data());
+    end = std::chrono::system_clock::now();
+    std::cout << "c deserialization time: "
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
+                                                                      begin)
+                     .count()
+              << "ns" << std::endl;
 
-/*     // serializer deserialization */
-/*     begin = std::chrono::system_clock::now(); */
-/*     otherCSS.deserialize(resultSerializable); */
-/*     end = std::chrono::system_clock::now(); */
-/*     std::cout << "serializer deserialization time: " */
-/*               << std::chrono::duration_cast<std::chrono::nanoseconds>(end - */
-/*                                                                       begin) */
-/*                      .count() */
-/*               << "ns" << std::endl; */
+    // serializer deserialization
+    begin = std::chrono::system_clock::now();
+    otherCSS.deserialize(resultSerializable);
+    end = std::chrono::system_clock::now();
+    std::cout << "serializer deserialization time: "
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
+                                                                      begin)
+                     .count()
+              << "ns" << std::endl;
 
-/*     // test cs deserialization */
-/*     REQUIRE(otherCS.c == cs.c); */
-/*     REQUIRE(otherCS.i == cs.i); */
-/*     REQUIRE(otherCS.l == cs.l); */
-/*     REQUIRE(otherCS.f == cs.f); */
-/*     REQUIRE(otherCS.d == cs.d); */
-/*     REQUIRE(nameDeserialization == name); */
+    // test cs deserialization
+    REQUIRE(otherCS.c == cs.c);
+    REQUIRE(otherCS.i == cs.i);
+    REQUIRE(otherCS.l == cs.l);
+    REQUIRE(otherCS.f == cs.f);
+    REQUIRE(otherCS.d == cs.d);
+    REQUIRE(nameDeserialization == name);
 
-/*     // test css deserialization */
-/*     REQUIRE(otherCSS.c == css.c); */
-/*     REQUIRE(otherCSS.i == css.i); */
-/*     REQUIRE(otherCSS.l == css.l); */
-/*     REQUIRE(otherCSS.f == css.f); */
-/*     REQUIRE(otherCSS.d == css.d); */
-/* } */
+    // test css deserialization
+    REQUIRE(otherCSS.c == css.c);
+    REQUIRE(otherCSS.i == css.i);
+    REQUIRE(otherCSS.l == css.l);
+    REQUIRE(otherCSS.f == css.f);
+    REQUIRE(otherCSS.d == css.d);
+}
 
 /******************************************************************************/
 /*                                  function                                  */
@@ -875,71 +874,4 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
 /*             nodes.pop(); */
 /*         } */
 /*     } */
-/* } */
-
-/******************************************************************************/
-/*                                  C-Struct                                  */
-/******************************************************************************/
-
-/* TEST_CASE("CStruct") { */
-/*     long t1, t2; */
-/*     /1* with c struct *1/ { */
-/*         WithCStruct origin(1, 2.4, 'a', 5, 6, 7); */
-/*         WithCStruct other; */
-/*         std::string result; */
-/*         size_t arrSize = */
-/*             sizeof(origin.cstruct().arr) / sizeof(origin.cstruct().arr[0]); */
-
-/*         REQUIRE(origin.i() != other.i()); */
-/*         REQUIRE(origin.cstruct().d != other.cstruct().d); */
-/*         REQUIRE(origin.cstruct().c != other.cstruct().c); */
-/*         for (size_t i = 0; i < arrSize; ++i) { */
-/*             REQUIRE(origin.cstruct().arr[i] != other.cstruct().arr[i]); */
-/*         } */
-
-/*         auto begin = std::chrono::system_clock::now(); */
-/*         result = origin.serialize(); */
-/*         other.deserialize(result); */
-/*         auto end = std::chrono::system_clock::now(); */
-/*         t1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin) */
-/*                  .count(); */
-/*         std::cout << "time with cstruct: " << t1 << "ns" << std::endl; */
-
-/*         REQUIRE(origin.i() == other.i()); */
-/*         REQUIRE(origin.cstruct().d == other.cstruct().d); */
-/*         REQUIRE(origin.cstruct().c == other.cstruct().c); */
-/*         for (size_t i = 0; i < arrSize; ++i) { */
-/*             REQUIRE(origin.cstruct().arr[i] == other.cstruct().arr[i]); */
-/*         } */
-/*     } */
-/*     /1* without c struct *1/ { */
-/*         WithoutCStruct origin(1, 2.4, 'a', 5, 6, 7); */
-/*         WithoutCStruct other; */
-/*         std::string result; */
-/*         size_t arrSize = */
-/*             sizeof(origin.notcstruct().arr_) / sizeof(origin.notcstruct().arr_[0]); */
-
-/*         REQUIRE(origin.i() != other.i()); */
-/*         REQUIRE(origin.notcstruct().d_ != other.notcstruct().d_); */
-/*         REQUIRE(origin.notcstruct().c_ != other.notcstruct().c_); */
-/*         for (size_t i = 0; i < arrSize; ++i) { */
-/*             REQUIRE(origin.notcstruct().arr_[i] != other.notcstruct().arr_[i]); */
-/*         } */
-
-/*         auto begin = std::chrono::system_clock::now(); */
-/*         result = origin.serialize(); */
-/*         other.deserialize(result); */
-/*         auto end = std::chrono::system_clock::now(); */
-/*         t2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin) */
-/*                 .count(); */
-/*         std::cout << "time without cstruct: " << t2 << "ns" << std::endl; */
-
-/*         REQUIRE(origin.i() == other.i()); */
-/*         REQUIRE(origin.notcstruct().d_ == other.notcstruct().d_); */
-/*         REQUIRE(origin.notcstruct().c_ == other.notcstruct().c_); */
-/*         for (size_t i = 0; i < arrSize; ++i) { */
-/*             REQUIRE(origin.notcstruct().arr_[i] == other.notcstruct().arr_[i]); */
-/*         } */
-/*     } */
-/*     REQUIRE(t1 < t2); */
 /* } */

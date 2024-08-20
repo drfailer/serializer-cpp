@@ -1,7 +1,7 @@
 #ifndef CONCEPTS_HPP
 #define CONCEPTS_HPP
-#include "metafunctions.hpp"
 #include "../tools/vec.hpp"
+#include "metafunctions.hpp"
 #include <type_traits>
 
 namespace serializer::tools::concepts {
@@ -68,9 +68,22 @@ concept NonStringIterable = !String<T> && Iterable<T>;
 template <typename T>
 concept TupleLike = requires(mtf::base_t<T> obj) {
     std::get<0>(obj);
-    typename std::tuple_element_t<0, T>;
-    std::tuple_size_v<T>;
+    typename std::tuple_element_t<0, mtf::base_t<T>>;
+    std::tuple_size_v<mtf::base_t<T>>;
 };
+
+/// @brief Remove const on all types
+/// TODO: move this elsewhere
+template <typename T> struct remove_const {
+    using type = std::remove_const_t<T>;
+};
+
+template <TupleLike T> struct remove_const<T> {
+    using type = mtf::remove_const_tuple_t<T>;
+};
+
+template <typename T>
+using remove_const_t = typename remove_const<T>::type;
 
 /// @brief Match std::array.
 template <typename T>
