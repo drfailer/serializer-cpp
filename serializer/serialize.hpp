@@ -10,8 +10,8 @@
 namespace serializer {
 
 template <typename Conv, typename... Args>
-constexpr size_t serialize_(typename Conv::mem_type &mem, size_t pos,
-                            tools::mtf::ser_arg_type_t<Args>... args) {
+constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
+                           Args &&...args) {
     Conv conv(mem, pos);
     (
         [&conv, &args] {
@@ -26,43 +26,20 @@ constexpr size_t serialize_(typename Conv::mem_type &mem, size_t pos,
 }
 
 template <typename Conv, typename... Args>
-constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
-                           tools::mtf::type_list<Args...>,
-                           tools::mtf::ser_arg_type_t<Args>... args) {
-  return serialize_<Conv, Args...>(mem, pos, args...);
-}
-
-template <typename Conv, typename... Args>
-constexpr size_t deserialize_(typename Conv::mem_type &mem, size_t pos,
-                              tools::mtf::arg_type_t<Args>... args) {
+constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
+                             Args &&...args) {
     Conv conv(mem, pos);
     (
         [&conv, &args] {
             if constexpr (tools::mtf::is_function_v<Args>) {
                 args(Phases::Deserialization, conv.mem);
-            } else if constexpr (tools::mtf::not_assigned_on_deserialization_v<
-                                     Args> ||
-                                 tools::concepts::Deserializable<Args>) {
+            } else {
                 // for the types that can't be assigned
                 conv.deserialize_(args);
-            } else if constexpr (std::is_move_assignable_v<Args>) {
-                // for the types that have to be assigned
-                args = std::move(conv.deserialize_(args));
-            } else {
-                static_assert(std::is_copy_assignable_v<Args>,
-                              "deserialized types must be assignable.");
-                args = conv.deserialize_(args);
             }
         }(),
         ...);
     return conv.pos;
-}
-
-template <typename Conv, typename... Args>
-constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
-                             tools::mtf::type_list<Args...>,
-                             tools::mtf::arg_type_t<Args>... args) {
-  return deserialize_<Conv, Args...>(mem, pos, args...);
 }
 
 template <typename MemT, typename T>
@@ -79,20 +56,22 @@ constexpr size_t deserialize_struct(MemT &mem, size_t pos, T const obj) {
     return pos + sizeof(*obj);
 }
 
-template <typename Conv, typename H, typename... Args>
-    requires(!tools::mtf::is_type_list<H>::value)
-constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos, const H &h,
-                           const Args &...args) {
-    return serialize<Conv>(mem, pos, tools::mtf::type_list<H, Args...>(), h,
-                           args...);
+template <typename Conv, typename T, typename... Supers>
+constexpr size_t serialize_super(T const self, typename Conv::mem_type &mem,
+                                 size_t pos) {
+    ([&self, &mem,
+      &pos] { pos = dynamic_cast<Supers>(self).serialize(mem, pos); }(),
+     ...);
+    return pos;
 }
 
-template <typename Conv, typename H, typename... Args>
-    requires(!tools::mtf::is_type_list<H>::value)
-constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos, H &h,
-                             Args &...args) {
-    return deserialize<Conv>(mem, pos, tools::mtf::type_list<H, Args...>(), h,
-                             args...);
+template <typename Conv, typename T, typename... Supers>
+constexpr size_t deserialize_super(T self, typename Conv::mem_type &mem,
+                                   size_t pos) {
+    ([&self, &mem,
+      &pos] { pos = dynamic_cast<Supers>(self).deserialize(mem, pos); }(),
+     ...);
+    return pos;
 }
 
 using default_mem_type = tools::vec<uint8_t>;
@@ -102,14 +81,35 @@ using default_mem_type = tools::vec<uint8_t>;
 
 #define SERIALIZE(...)                                                         \
     template <typename MemT>                                                   \
-    size_t serialize(MemT &mem, size_t pos = 0) const {                        \
+    constexpr size_t serialize(MemT &mem, size_t pos = 0) const {              \
         return serializer::serialize<serializer::Convertor<MemT>>(             \
             mem, pos, __VA_ARGS__);                                            \
     }                                                                          \
     template <typename MemT>                                                   \
-    size_t deserialize(MemT const &mem, size_t pos = 0) {                      \
+    constexpr size_t deserialize(MemT const &mem, size_t pos = 0) {            \
         return serializer::deserialize<serializer::Convertor<const MemT>>(     \
             mem, pos, __VA_ARGS__);                                            \
+    }
+
+#define SERIALIZE_CONV(Conv, ...)                                              \
+    template <typename MemT>                                                   \
+    size_t serialize(MemT &mem, size_t pos = 0) const {                        \
+        return serializer::serialize<Conv<MemT>>(mem, pos, __VA_ARGS__);       \
+    }                                                                          \
+    template <typename MemT>                                                   \
+    size_t deserialize(MemT const &mem, size_t pos = 0) {                      \
+        return serializer::deserialize<Conv<const MemT>>(mem, pos,             \
+                                                         __VA_ARGS__);         \
+    }
+
+#define SERIALIZE_SUPER()
+
+#define SERIALIZE_EMPTY()                                                      \
+    template <typename MemT> size_t serialize(MemT &, size_t = 0) const {      \
+        return 0;                                                              \
+    }                                                                          \
+    template <typename MemT> size_t deserialize(MemT const &, size_t = 0) {    \
+        return 0;                                                              \
     }
 
 // TODO: move this in a proper function and update the macro

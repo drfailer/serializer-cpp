@@ -1,8 +1,8 @@
 #ifndef ABSTRACT_HPP
 #define ABSTRACT_HPP
-#include "serializer/convertor/convertor.hpp"
-#include "serializer/serializable.hpp"
 #include <iostream>
+#include <serializer/convertor/convertor.hpp>
+#include <serializer/serialize.hpp>
 #include <vector>
 
 /******************************************************************************/
@@ -10,11 +10,13 @@
 /******************************************************************************/
 
 class SuperAbstract {
-    SERIALIZABLE_EMPTY();
-
   public:
     SuperAbstract() = default;
     virtual ~SuperAbstract() = default;
+    using MemT = serializer::default_mem_type;
+
+    virtual size_t serialize(MemT &, size_t = 0) const { return 0; }
+    virtual size_t deserialize(MemT const &, size_t = 0) { return 0; };
 
     virtual void method() = 0;
     virtual bool operator==(const SuperAbstract *) const = 0;
@@ -27,11 +29,20 @@ class SuperAbstract {
 /******************************************************************************/
 
 class Concrete1 : public SuperAbstract {
-    SERIALIZABLE_SUPER(SuperAbstract, int, double);
 
   public:
-    explicit Concrete1(int x = 0, double y = 0)
-        : SERIALIZER(x_, y_), x_(x), y_(y) {}
+    explicit Concrete1(int x = 0, double y = 0) : x_(x), y_(y) {}
+
+    size_t serialize(MemT &mem, size_t pos = 0) const override {
+        pos = SuperAbstract::serialize(mem, pos);
+        return serializer::serialize<serializer::Convertor<MemT>>(mem, pos, x_,
+                                                                  y_);
+    }
+    size_t deserialize(MemT const &mem, size_t pos = 0) override {
+        pos = SuperAbstract::deserialize(mem, pos);
+        return serializer::deserialize<serializer::Convertor<const MemT>>(
+            mem, pos, x_, y_);
+    };
 
     /* accessors **************************************************************/
     void x(int x) { this->x_ = x; }
@@ -76,11 +87,18 @@ class Concrete1 : public SuperAbstract {
 /******************************************************************************/
 
 class Concrete2 : public SuperAbstract {
-    SERIALIZABLE_SUPER(SuperAbstract, std::string);
-
   public:
     explicit Concrete2(std::string str = "")
-        : SERIALIZER(str_), str_(std::move(str)) {}
+        : str_(std::move(str)) {}
+
+    size_t serialize(MemT &mem, size_t pos = 0) const override {
+        pos = SuperAbstract::serialize(mem, pos);
+        return serializer::serialize<serializer::Convertor<MemT>>(mem, pos, str_);
+    }
+    size_t deserialize(MemT const &mem, size_t pos = 0) override {
+        pos = SuperAbstract::deserialize(mem, pos);
+        return serializer::deserialize<serializer::Convertor<const MemT>>( mem, pos, str_);
+    };
 
     /* accessors **************************************************************/
     void str(std::string str) { this->str_ = std::move(str); }

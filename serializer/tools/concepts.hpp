@@ -1,24 +1,26 @@
 #ifndef CONCEPTS_HPP
 #define CONCEPTS_HPP
 #include "metafunctions.hpp"
-#include <string_view>
+#include "../tools/vec.hpp"
 #include <type_traits>
 
 namespace serializer::tools::concepts {
 
 /// @brief Objects that have a serialize member function.
+/// TODO: change str
 template <typename T>
 concept Serializable =
-    requires(T obj, std::string &str) { obj.serialize(str); };
+    requires(mtf::base_t<T> obj, vec<char> &mem) { obj.serialize(mem); };
 
 /// @brief Objects that have a deserialize member function.
+/// TODO: change str
 template <typename T>
 concept Deserializable =
-    requires(T obj, std::string_view &str) { obj.deserialize(str); };
+    requires(mtf::base_t<T> obj, vec<char> &mem) { obj.deserialize(mem); };
 
 /// @brief Smart pointers.
 template <typename T>
-concept SmartPtr = mtf::is_smart_ptr_v<T>;
+concept SmartPtr = mtf::is_smart_ptr_v<mtf::base_t<T>>;
 
 /// @brief Smart pointers.
 template <typename T>
@@ -27,31 +29,35 @@ concept ConcreteSmartPtr =
 
 /// @brief Concreate pointer.
 template <typename T>
-concept ConcretePtr = mtf::is_concrete_ptr_v<T>;
+concept ConcretePtr = mtf::is_concrete_ptr_v<mtf::base_t<T>>;
 
 /// @brief Pointers
 template <typename T>
-concept Pointer = std::is_pointer_v<T>;
+concept Pointer = std::is_pointer_v<mtf::base_t<T>>;
 
 /// @brief Static arrays
 template <typename T>
-concept StaticArray = std::is_array_v<T>;
+concept StaticArray = std::is_array_v<mtf::base_t<T>>;
 
 /// @brief Fundamental types
 template <typename T>
-concept Fundamental = std::is_fundamental_v<T>;
+concept Fundamental = std::is_fundamental_v<mtf::base_t<T>>;
 
 /// @brief Enum types.
 template <typename T>
-concept Enum = std::is_enum_v<T>;
+concept Enum = std::is_enum_v<mtf::base_t<T>>;
 
 /// @brief String types.
 template <typename T>
-concept String = mtf::is_string_v<T>;
+concept String = mtf::is_string_v<mtf::base_t<T>>;
 
 /// @brief Iterable types.
 template <typename T>
-concept Iterable = requires { typename T::iterator; };
+concept Iterable = requires { typename mtf::base_t<T>::iterator; };
+
+/// @brief The object has a clear memeber function.
+template <typename T>
+concept Clearable = requires(mtf::base_t<T> obj) { obj.clear(); };
 
 /// @brief Iterable types that are not strings (string are handled differently
 ///        for optimization and readability).
@@ -60,7 +66,7 @@ concept NonStringIterable = !String<T> && Iterable<T>;
 
 /// @brief Match tuples (exists in C++23).
 template <typename T>
-concept TupleLike = requires(T obj) {
+concept TupleLike = requires(mtf::base_t<T> obj) {
     std::get<0>(obj);
     typename std::tuple_element_t<0, T>;
     std::tuple_size_v<T>;
@@ -68,7 +74,7 @@ concept TupleLike = requires(T obj) {
 
 /// @brief Match std::array.
 template <typename T>
-concept Array = mtf::is_std_array_v<T>;
+concept Array = mtf::is_std_array_v<mtf::base_t<T>>;
 
 /// @brief Match types on which we can use std::forward
 template <typename T>
