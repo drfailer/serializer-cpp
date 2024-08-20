@@ -183,7 +183,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
         if (elt != nullptr) {
             append('v');
             if constexpr (std::is_abstract_v<std::remove_pointer_t<T>>) {
-                elt->serialize(mem);
+                elt->serialize(mem, pos);
             } else {
                 serialize_(*elt);
             }
@@ -227,15 +227,16 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///        The pointer should be valid (nullptr or value).
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
-    template <serializer::tools::concepts::SmartPtr SP>
-    constexpr void serialize_(SP &&elt) {
+    template <serializer::tools::concepts::SmartPtr T>
+    constexpr void serialize_(T &&elt) {
+        using SP = tools::mtf::base_t<T>;
         if (elt != nullptr) {
             append('v');
             if constexpr (serializer::tools::concepts::Serializable<
                               typename SP::element_type>) {
-                elt->serialize(mem);
+                elt->serialize(mem, pos);
             } else {
-                serialize_<typename SP::element_type>(*elt);
+                serialize_(*elt);
             }
         } else {
             append('n');
@@ -248,8 +249,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to deserialize. It it
     ///            just used for creating an overload of the deserialize
     ///            function.
-    template <serializer::tools::concepts::ConcreteSmartPtr SP>
-    constexpr void deserialize_(SP &&elt) {
+    template <serializer::tools::concepts::ConcreteSmartPtr T>
+    constexpr void deserialize_(T &&elt) {
+        using SP = tools::mtf::base_t<T>;
         bool ptrValid = mem[pos++] == 'v';
 
         if (!ptrValid) {
@@ -270,7 +272,6 @@ struct Convertor : public Convert<AdditionalTypes>... {
         } else {
             deserialize_(*elt);
         }
-        return elt;
     }
 
     /* tuples *****************************************************************/

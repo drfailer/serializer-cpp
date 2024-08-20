@@ -25,7 +25,7 @@ concept SmartPtr = mtf::is_smart_ptr_v<mtf::base_t<T>>;
 /// @brief Smart pointers.
 template <typename T>
 concept ConcreteSmartPtr =
-    SmartPtr<T> && !std::is_abstract_v<typename T::element_type>;
+    SmartPtr<T> && !std::is_abstract_v<typename mtf::base_t<T>::element_type>;
 
 /// @brief Concreate pointer.
 template <typename T>

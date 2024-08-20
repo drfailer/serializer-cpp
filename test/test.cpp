@@ -11,7 +11,7 @@
 /* #define TEST_POLYMORPHIC */
 /* #define TEST_SUPER */
 /* #define TEST_INHERITANCE */
-/* #define TEST_SMART_PTR */
+#define TEST_SMART_PTR
 #define TEST_ENUMS
 #define TEST_PAIR
 #define TEST_TUPLE
