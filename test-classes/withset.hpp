@@ -1,15 +1,15 @@
 #ifndef WITH_SET_HPP
 #define WITH_SET_HPP
-#include <serializer/serializable.hpp>
+#include <serializer/serialize.hpp>
 #include <set>
 #include <string>
 
 class WithSet {
-    SERIALIZABLE(std::set<std::string>);
-
   public:
-    WithSet() : SERIALIZER(set_) {}
+    WithSet() = default;
     ~WithSet() = default;
+
+    SERIALIZE(set_);
 
     /* accessors **************************************************************/
     void insert(const std::string &elt) { set_.insert(elt); }

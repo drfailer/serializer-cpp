@@ -324,7 +324,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Enum T>
     constexpr void serialize_(T &&elt) {
-        auto value = (std::underlying_type_t<T>)elt;
+        auto value = (std::underlying_type_t<tools::mtf::base_t<T>>)elt;
         append(std::bit_cast<const byte_type *>(&value), sizeof(value));
     }
 
@@ -336,8 +336,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///            function.
     template <serializer::tools::concepts::Enum T>
     constexpr void deserialize_(T &&elt) {
-        using Type = std::underlying_type_t<T>;
-        elt = *std::bit_cast<const Type *>(mem.data() + pos);
+        using Type = std::underlying_type_t<tools::mtf::base_t<T>>;
+        elt = (tools::mtf::base_t<T>) *std::bit_cast<const Type *>(mem.data() + pos);
         pos += sizeof(Type);
     }
 
