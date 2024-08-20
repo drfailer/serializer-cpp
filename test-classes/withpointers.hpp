@@ -1,14 +1,11 @@
 #ifndef WITH_POINTERS_HPP
 #define WITH_POINTERS_HPP
-#include "serializer/serializer.hpp"
 #include "test-classes/simple.hpp"
+#include <serializer/serialize.hpp>
 
 class WithPointers {
-    SERIALIZABLE(int *, double *, Simple *);
   public:
-    explicit WithPointers(Simple *classPointer)
-        : SERIALIZER(nullPointer_, fundamentalPointer_, classPointer_),
-          classPointer_(classPointer) {
+    explicit WithPointers(Simple *classPointer) : classPointer_(classPointer) {
         fundamentalPointer_ = new double;
         *fundamentalPointer_ = 1.9;
     }
@@ -16,6 +13,8 @@ class WithPointers {
         delete fundamentalPointer_;
         delete classPointer_;
     }
+
+    SERIALIZE(nullPointer_, fundamentalPointer_, classPointer_)
 
     /* accessors **************************************************************/
     void classPointer(Simple *classPointer) {
@@ -27,7 +26,9 @@ class WithPointers {
         this->fundamentalPointer_ = fundamentalPointer;
     }
     [[nodiscard]] Simple *classPointer() const { return classPointer_; }
-    [[nodiscard]] double *fundamentalPointer() const { return fundamentalPointer_; }
+    [[nodiscard]] double *fundamentalPointer() const {
+        return fundamentalPointer_;
+    }
     [[nodiscard]] int *nullPointer() const { return nullPointer_; }
 
   private:

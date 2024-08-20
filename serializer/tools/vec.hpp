@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <iostream>
 #include <type_traits>
 
 namespace serializer::tools {
@@ -33,39 +34,25 @@ class vec {
     constexpr void size(size_t new_size) { size_ = new_size; }
 
     constexpr void insert(size_t pos, T const *src, size_t count) {
-        if (pos + count > capacity_) {
-            if (capacity_ == 0) [[unlikely]] {
-                alloc(pos + count);
-            } else {
-                alloc(capacity_ * 2);
-            }
-        }
+        upsize(pos + count);
         size_ = std::max(pos + count, size_);
         std::memcpy(mem_ + pos, src, count);
     }
 
     constexpr void append(size_t pos, T const *src, size_t count) {
-        if (pos + count > capacity_) {
-            if (capacity_ == 0) [[unlikely]] {
-                alloc(pos + count);
-            } else {
-                alloc(capacity_ * 2);
-            }
-        }
+        upsize(pos + count);
         size_ = pos + count;
         std::memcpy(mem_ + pos, src, count);
     }
 
-    constexpr void append(T const *src, size_t count) {
-        if (size_ + count > capacity_) {
-            if (capacity_ == 0) [[unlikely]] {
-                alloc(size_ + count);
+    constexpr void upsize(size_t size) {
+        if (size > capacity_) {
+            if (size > (capacity_ * 2)) [[unlikely]] {
+                alloc(size);
             } else {
                 alloc(capacity_ * 2);
             }
         }
-        std::memcpy(mem_ + size_, src, count);
-        size_ += count;
     }
 
     constexpr void alloc(size_t size) {
@@ -74,17 +61,6 @@ class vec {
         mem_ = new T[capacity_];
         std::memcpy(mem_, tmp, size_);
         delete[] tmp;
-    }
-
-    constexpr void resize(size_t new_size) {
-        if (new_size > capacity_) {
-            if (capacity_ == 0) [[unlikely]] {
-                alloc(new_size);
-            } else {
-                alloc(capacity_ * 2);
-            }
-        }
-        size_ = new_size;
     }
 
     constexpr void clear() { size_ = 0; }

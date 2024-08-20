@@ -42,6 +42,10 @@ struct Convertor : public Convert<AdditionalTypes>... {
     constexpr Convertor(MemT &mem, size_t pos = 0)
         : mem(mem), pos(pos) {}
 
+    constexpr void append(char chr) {
+      mem.append(pos++, std::bit_cast<const byte_type*>(&chr), 1);
+    }
+
     constexpr void append(const byte_type *bytes, size_t nb_bytes) {
         // size not changed correctly:
         /* if ((spos + nb_bytes) >= mem.capacity()) { */
@@ -172,14 +176,14 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::Pointer T>
     constexpr void serialize_(T const &elt) {
         if (elt != nullptr) {
-            append("v", 1);
+            append('v');
             if constexpr (std::is_abstract_v<std::remove_pointer_t<T>>) {
                 elt->serialize(mem);
             } else {
                 serialize_<std::remove_pointer_t<T>>(*elt);
             }
         } else {
-            append("n", 1);
+            append('n');
         }
     }
 
@@ -220,7 +224,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::SmartPtr SP>
     constexpr void serialize_(SP const &elt) {
         if (elt != nullptr) {
-            append("v", 1);
+            append('v');
             if constexpr (serializer::tools::concepts::Serializable<
                               typename SP::element_type>) {
                 elt->serialize(mem);
@@ -228,7 +232,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
                 serialize_<typename SP::element_type>(*elt);
             }
         } else {
-            append("n", 1);
+            append('n');
         }
     }
 

@@ -9,13 +9,13 @@
 /* #include "test-classes/withMap.hpp" */
 /* #include "test-classes/withPair.hpp" */
 /* #include "test-classes/withSmartPtr.hpp" */
-/* #include "test-classes/withcontainer.hpp" */
+#include "test-classes/withcontainer.hpp"
 /* #include "test-classes/withconvertor.hpp" */
 /* #include "test-classes/withcstruct.hpp" */
 /* #include "test-classes/withdynamicarrays.hpp" */
 /* #include "test-classes/withenums.hpp" */
 /* #include "test-classes/withfunctions.hpp" */
-/* #include "test-classes/withpointers.hpp" */
+#include "test-classes/withpointers.hpp"
 /* #include "test-classes/withset.hpp" */
 /* #include "test-classes/withstaticarrays.hpp" */
 #include "test-classes/withstring.hpp"
@@ -147,37 +147,37 @@ TEST_CASE("serialization/deserialization with STRING ATTRIBUTE") {
 /******************************************************************************/
 
 /* IMPORTANT: this test should be run with valgrind. */
-/* TEST_CASE("serialization/deserialization with POINTERS ATTRIBUTE") { */
-/*     WithPointers original(new Simple(1, 2)); */
-/*     WithPointers other(new Simple(0, 0)); */
-/*     std::string result; */
+TEST_CASE("serialization/deserialization with POINTERS ATTRIBUTE") {
+    WithPointers original(new Simple(1, 2));
+    WithPointers other(new Simple(0, 0));
+    serializer::default_mem_type result;
 
-/*     REQUIRE(original.classPointer()->x() != other.classPointer()->x()); */
-/*     REQUIRE(original.classPointer()->y() != other.classPointer()->y()); */
-/*     REQUIRE(*original.fundamentalPointer() == */
-/*             *other.fundamentalPointer()); // this one doesn't move here */
+    REQUIRE(original.classPointer()->x() != other.classPointer()->x());
+    REQUIRE(original.classPointer()->y() != other.classPointer()->y());
+    REQUIRE(*original.fundamentalPointer() ==
+            *other.fundamentalPointer()); // this one doesn't move here
 
-/*     result = original.serialize(); */
-/*     other.deserialize(result); */
+    original.serialize(result);
+    other.deserialize(result);
 
-/*     REQUIRE(original.classPointer()->x() == other.classPointer()->x()); */
-/*     REQUIRE(original.classPointer()->y() == other.classPointer()->y()); */
-/*     REQUIRE(*original.fundamentalPointer() == *other.fundamentalPointer()); */
+    REQUIRE(original.classPointer()->x() == other.classPointer()->x());
+    REQUIRE(original.classPointer()->y() == other.classPointer()->y());
+    REQUIRE(*original.fundamentalPointer() == *other.fundamentalPointer());
 
-/*     original.classPointer(new Simple(20, 30)); */
-/*     original.fundamentalPointer(new double(3.14)); */
+    original.classPointer(new Simple(20, 30));
+    original.fundamentalPointer(new double(3.14));
 
-/*     REQUIRE(original.classPointer()->x() != other.classPointer()->x()); */
-/*     REQUIRE(original.classPointer()->y() != other.classPointer()->y()); */
-/*     REQUIRE(*original.fundamentalPointer() != *other.fundamentalPointer()); */
+    REQUIRE(original.classPointer()->x() != other.classPointer()->x());
+    REQUIRE(original.classPointer()->y() != other.classPointer()->y());
+    REQUIRE(*original.fundamentalPointer() != *other.fundamentalPointer());
 
-/*     result = original.serialize(); */
-/*     other.deserialize(result); */
+    original.serialize(result);
+    other.deserialize(result);
 
-/*     REQUIRE(original.classPointer()->x() == other.classPointer()->x()); */
-/*     REQUIRE(original.classPointer()->y() == other.classPointer()->y()); */
-/*     REQUIRE(*original.fundamentalPointer() == *other.fundamentalPointer()); */
-/* } */
+    REQUIRE(original.classPointer()->x() == other.classPointer()->x());
+    REQUIRE(original.classPointer()->y() == other.classPointer()->y());
+    REQUIRE(*original.fundamentalPointer() == *other.fundamentalPointer());
+}
 
 /******************************************************************************/
 /*                  serialization with a members_ attribute                  */
@@ -186,51 +186,51 @@ TEST_CASE("serialization/deserialization with STRING ATTRIBUTE") {
 /*
  * NOTE: there is a problem with precision for doubles.
  */
-/* TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") { */
-/*     WithContainer original; */
-/*     WithContainer other; */
-/*     std::string result; */
+TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
+    WithContainer original;
+    WithContainer other;
+    serializer::default_mem_type result;
 
-/*     // adding elements_ in containers */
-/*     for (int i = 0; i < 10; ++i) { */
-/*         original.addInt(i); */
-/*         original.addDouble(double(i)); */
-/*         original.addSimple(Simple(i, 2 * i)); */
-/*         original.addVec(std::vector<int>{1 * i, 2 * i, 3 * i, 4 * i, 5 * i}); */
-/*         original.addArr(i, i * 2); */
-/*     } */
+    // adding elements_ in containers
+    for (int i = 0; i < 10; ++i) {
+        original.addInt(i);
+        original.addDouble(double(i));
+        original.addSimple(Simple(i, 2 * i));
+        original.addVec(std::vector<int>{1 * i, 2 * i, 3 * i, 4 * i, 5 * i});
+        original.addArr(i, i * 2);
+    }
 
-/*     REQUIRE(original.getEmptyVec().empty()); */
-/*     REQUIRE(other.getEmptyVec().empty()); */
-/*     REQUIRE(original.getVec().size() == 10); */
-/*     REQUIRE(original.getLst().size() == 10); */
-/*     REQUIRE(original.getClassVec().size() == 10); */
-/*     REQUIRE(original.getArr().size() == 10); */
-/*     REQUIRE(other.getVec().empty()); */
-/*     REQUIRE(other.getLst().empty()); */
-/*     REQUIRE(other.getClassVec().empty()); */
-/*     REQUIRE(other.getVec2D().empty()); */
-/*     REQUIRE(other.getArr().size() == 10); */
+    REQUIRE(original.getEmptyVec().empty());
+    REQUIRE(other.getEmptyVec().empty());
+    REQUIRE(original.getVec().size() == 10);
+    REQUIRE(original.getLst().size() == 10);
+    REQUIRE(original.getClassVec().size() == 10);
+    REQUIRE(original.getArr().size() == 10);
+    REQUIRE(other.getVec().empty());
+    REQUIRE(other.getLst().empty());
+    REQUIRE(other.getClassVec().empty());
+    REQUIRE(other.getVec2D().empty());
+    REQUIRE(other.getArr().size() == 10);
 
-/*     result = original.serialize(); */
-/*     other.deserialize(result); */
+    original.serialize(result);
+    other.deserialize(result);
 
-/*     REQUIRE(other.getEmptyVec().empty()); */
-/*     for (int i = 0; i < 10; ++i) { */
-/*         REQUIRE(original.getVec()[i] == other.getVec()[i]); */
-/*         REQUIRE(original.getClassVec()[i] == other.getClassVec()[i]); */
-/*         REQUIRE(original.getArr()[i] == other.getArr()[i]); */
-/*         for (int j = 0; j < 5; ++j) { */
-/*             REQUIRE(original.getVec2D().at(i).at(j) == */
-/*                     original.getVec2D().at(i).at(j)); */
-/*         } */
-/*     } */
+    REQUIRE(other.getEmptyVec().empty());
+    for (int i = 0; i < 10; ++i) {
+        REQUIRE(original.getVec()[i] == other.getVec()[i]);
+        REQUIRE(original.getClassVec()[i] == other.getClassVec()[i]);
+        REQUIRE(original.getArr()[i] == other.getArr()[i]);
+        for (int j = 0; j < 5; ++j) {
+            REQUIRE(original.getVec2D().at(i).at(j) ==
+                    original.getVec2D().at(i).at(j));
+        }
+    }
 
-/*     auto it = original.getLst().begin(); */
-/*     for (double d : other.getLst()) { */
-/*         REQUIRE(d == *it++); */
-/*     } */
-/* } */
+    auto it = original.getLst().begin();
+    for (double d : other.getLst()) {
+        REQUIRE(d == *it++);
+    }
+}
 
 /******************************************************************************/
 /*                       implementation of a convertor                        */
