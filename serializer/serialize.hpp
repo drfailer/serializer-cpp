@@ -4,14 +4,14 @@
 #include "convertor/convertor.hpp"
 #include "tools/concepts.hpp"
 #include "tools/ml_arg_type.hpp"
+#include "tools/vec.hpp"
 #include "types.hpp"
 
 namespace serializer {
 
 template <typename Conv, typename... Args>
-constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
-                           tools::mtf::type_list<Args...>,
-                           tools::mtf::ser_arg_type_t<Args>... args) {
+constexpr size_t serialize_(typename Conv::mem_type &mem, size_t pos,
+                            tools::mtf::ser_arg_type_t<Args>... args) {
     Conv conv(mem, pos);
     (
         [&conv, &args] {
@@ -22,22 +22,19 @@ constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
             }
         }(),
         ...);
-    /* mem.resize(conv.spos); */
-    return conv.spos;
-}
-
-template <typename Conv, typename H, typename... Args>
-    requires(!tools::mtf::is_type_list<H>::value)
-constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos, const H &h,
-                           const Args &...args) {
-    return serialize<Conv>(mem, pos, tools::mtf::type_list<H, Args...>(), h,
-                           args...);
+    return conv.pos;
 }
 
 template <typename Conv, typename... Args>
-constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
-                             tools::mtf::type_list<Args...>,
-                             tools::mtf::arg_type_t<Args>... args) {
+constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
+                           tools::mtf::type_list<Args...>,
+                           tools::mtf::ser_arg_type_t<Args>... args) {
+  return serialize_<Conv, Args...>(mem, pos, args...);
+}
+
+template <typename Conv, typename... Args>
+constexpr size_t deserialize_(typename Conv::mem_type &mem, size_t pos,
+                              tools::mtf::arg_type_t<Args>... args) {
     Conv conv(mem, pos);
     (
         [&conv, &args] {
@@ -58,7 +55,36 @@ constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
             }
         }(),
         ...);
-    return conv.dpos;
+    return conv.pos;
+}
+
+template <typename Conv, typename... Args>
+constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
+                             tools::mtf::type_list<Args...>,
+                             tools::mtf::arg_type_t<Args>... args) {
+  return deserialize_<Conv, Args...>(mem, pos, args...);
+}
+
+template <typename MemT, typename T>
+constexpr size_t serialize_struct(MemT &mem, size_t pos, T const *obj) {
+    constexpr size_t nb_bytes = sizeof(*obj);
+    using byte_type = std::remove_cvref_t<decltype(mem[0])>;
+    mem.append(pos, std::bit_cast<const byte_type *>(obj), nb_bytes);
+    return pos + nb_bytes;
+}
+
+template <typename MemT, typename T>
+constexpr size_t deserialize_struct(MemT &mem, size_t pos, T const obj) {
+    *obj = *std::bit_cast<const decltype(obj)>(mem.data() + pos);
+    return pos + sizeof(*obj);
+}
+
+template <typename Conv, typename H, typename... Args>
+    requires(!tools::mtf::is_type_list<H>::value)
+constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos, const H &h,
+                           const Args &...args) {
+    return serialize<Conv>(mem, pos, tools::mtf::type_list<H, Args...>(), h,
+                           args...);
 }
 
 template <typename Conv, typename H, typename... Args>
@@ -69,16 +95,10 @@ constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos, H &h,
                              args...);
 }
 
-using default_mem_type = std::vector<uint8_t>;
+using default_mem_type = tools::vec<uint8_t>;
+/* using default_mem_type = std::vector<uint8_t>; */
 
 } // end namespace serializer
-
-#define HELPER_serialize                                                       \
-    serializer::default_mem_type serialize() const {                           \
-        serializer::default_mem_type mem;                                      \
-        serialize<serializer::default_mem_type>(mem);                          \
-        return mem;                                                            \
-    }
 
 #define SERIALIZE(...)                                                         \
     template <typename MemT>                                                   \
@@ -90,27 +110,17 @@ using default_mem_type = std::vector<uint8_t>;
     size_t deserialize(MemT const &mem, size_t pos = 0) {                      \
         return serializer::deserialize<serializer::Convertor<const MemT>>(     \
             mem, pos, __VA_ARGS__);                                            \
-    }                                                                          \
-    HELPER_serialize
+    }
 
 // TODO: move this in a proper function and update the macro
 #define SERIALIZE_STRUCT()                                                     \
     template <typename MemT>                                                   \
     constexpr size_t serialize(MemT &mem, size_t pos = 0) const {              \
-        constexpr size_t nb_bytes = sizeof(*this);                             \
-        using byte_type = std::remove_cvref_t<decltype(mem[0])>;               \
-        if ((pos + nb_bytes) >= mem.capacity()) {                              \
-            mem.resize(pos + nb_bytes);                                        \
-        }                                                                      \
-        std::memcpy(mem.data(), std::bit_cast<const byte_type *>(this),        \
-                    nb_bytes);                                                 \
-        return pos + nb_bytes;                                                 \
+        return serializer::serialize_struct(mem, pos, this);                   \
     }                                                                          \
     template <typename MemT>                                                   \
     constexpr size_t deserialize(MemT const &mem, size_t pos = 0) {            \
-        *this = *std::bit_cast<const decltype(this)>(mem.data());              \
-        return pos + sizeof(*this);                                            \
-    }                                                                          \
-    HELPER_serialize
+        return serializer::deserialize_struct(mem, pos, this);                 \
+    }
 
 #endif
