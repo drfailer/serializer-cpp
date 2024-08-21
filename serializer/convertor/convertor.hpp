@@ -338,7 +338,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::Enum T>
     constexpr void deserialize_(T &&elt) {
         using Type = std::underlying_type_t<tools::mtf::base_t<T>>;
-        elt = (tools::mtf::base_t<T>) *std::bit_cast<const Type *>(mem.data() + pos);
+        elt = (tools::mtf::base_t<T>)*std::bit_cast<const Type *>(mem.data() +
+                                                                  pos);
         pos += sizeof(Type);
     }
 
@@ -426,7 +427,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <serializer::tools::concepts::StaticArray T>
     constexpr void serialize_(T &&elt) {
-        for (size_t i = 0; i < std::extent_v<T>; ++i) {
+        size_t size = std::extent_v<tools::mtf::base_t<T>>;
+        for (size_t i = 0; i < size; ++i) {
             serialize_(elt[i]);
         }
     }
@@ -436,15 +438,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to deserialize.
     template <serializer::tools::concepts::StaticArray T>
     constexpr void deserialize_(T &&elt) {
-        using InnerType = std::remove_extent_t<T>;
-        for (size_t i = 0; i < std::extent_v<T>; ++i) {
-            if constexpr (tools::mtf::not_assigned_on_deserialization_v<
-                              InnerType> ||
-                          tools::concepts::Deserializable<InnerType>) {
-                deserialize_(elt[i]);
-            } else {
-                elt[i] = deserialize_(elt[i]);
-            }
+        size_t size = std::extent_v<tools::mtf::base_t<T>>;
+        for (size_t i = 0; i < size; ++i) {
+            deserialize_(elt[i]);
         }
     }
 
@@ -458,10 +454,10 @@ struct Convertor : public Convert<AdditionalTypes>... {
     constexpr void serialize_(tools::DynamicArray<T, DT, DTs...> &&elt) {
         using ST = std::remove_pointer_t<T>;
         if (elt.mem == nullptr) {
-            append("n", 1);
+            append('n');
             return;
         }
-        append("v", 1);
+        append('v');
 
         if constexpr (std::is_pointer_v<ST>) {
             for (size_t i = 0; i < std::get<0>(elt.dimensions); ++i) {
@@ -508,13 +504,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
         } else {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
             for (size_t i = 0; i < size; ++i) {
-                if constexpr (tools::mtf::not_assigned_on_deserialization_v<
-                                  ST> ||
-                              tools::concepts::Deserializable<ST>) {
-                    deserialize_(elt.mem[i]);
-                } else {
-                    elt.mem[i] = deserialize_(elt.mem[i]);
-                }
+                deserialize_(elt.mem[i]);
             }
         }
     }

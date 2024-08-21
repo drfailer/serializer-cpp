@@ -6,8 +6,7 @@
 
 class WithStaticArrays {
   public:
-    SERIALIZE(serializer::tools::mtf::type_list<int[10], int[10][10], int[10][10][2], Simple[2], Simple[2][2]>(),
-        arr_, grid_, tensor_, arrSimple_, gridSimple_);
+    SERIALIZE(arr_, grid_, tensor_, arrSimple_, gridSimple_);
 
     /* accessors **************************************************************/
     int &arr(size_t i) { return arr_[i]; }

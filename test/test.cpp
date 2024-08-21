@@ -20,7 +20,7 @@
 #define TEST_SET
 #define TEST_CSTRUCT
 /* #define TEST_FUNCTION */
-/* #define TEST_STATIC_ARRAYS */
+#define TEST_STATIC_ARRAYS
 /* #define TEST_DYNAMIC_ARRAYS */
 /* #define TEST_TREE */
 
@@ -786,7 +786,7 @@ TEST_CASE("functions") {
 TEST_CASE("static arrays") {
     WithStaticArrays origin;
     WithStaticArrays other;
-    std::string result;
+    serializer::default_mem_type result;
 
     // filling the arrays
     for (size_t i = 0; i < 10; ++i) {
@@ -806,7 +806,7 @@ TEST_CASE("static arrays") {
         }
     }
 
-    result = origin.serialize();
+    origin.serialize(result);
     other.deserialize(result);
 
     for (size_t i = 0; i < 10; ++i) {
