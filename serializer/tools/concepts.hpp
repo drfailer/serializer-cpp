@@ -82,8 +82,7 @@ template <TupleLike T> struct remove_const<T> {
     using type = mtf::remove_const_tuple_t<T>;
 };
 
-template <typename T>
-using remove_const_t = typename remove_const<T>::type;
+template <typename T> using remove_const_t = typename remove_const<T>::type;
 
 /// @brief Match std::array.
 template <typename T>
@@ -130,5 +129,11 @@ concept PushBackable =
     requires(Container obj) { obj.push_back(std::declval<T>()); };
 
 }; // namespace serializer::tools::concepts
+
+/// @brief Serializer function type. It should be a concepts but compilers
+///        cannot deduce the type of the lambda.
+///        TODO: this should not be defined here
+#define SerializerFunction(func, conv)                                         \
+    requires { func(Context<Phases::Serialization, decltype(conv)>(conv)); }
 
 #endif

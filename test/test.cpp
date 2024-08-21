@@ -19,9 +19,9 @@
 #define TEST_MAP
 #define TEST_SET
 #define TEST_CSTRUCT
-/* #define TEST_FUNCTION */
+#define TEST_FUNCTION
 #define TEST_STATIC_ARRAYS
-/* #define TEST_DYNAMIC_ARRAYS */
+#define TEST_DYNAMIC_ARRAYS
 /* #define TEST_TREE */
 
 
@@ -760,20 +760,18 @@ TEST_CASE("cstruct") {
 /******************************************************************************/
 
 #ifdef TEST_FUNCTION
-/* #include "test-classes/withfunctions.hpp" */
+#include "test-classes/withfunctions.hpp"
 TEST_CASE("functions") {
-    int originI = 4;
-    WithFunctions origin(originI);
+    WithFunctions origin(4);
     WithFunctions other;
-    std::string result;
+    serializer::default_mem_type result;
 
     REQUIRE(origin.i() != other.i());
 
-    result = origin.serialize();
+    origin.serialize(result);
     other.deserialize(result);
 
-    REQUIRE(origin.i() == originI * 2);
-    REQUIRE(other.i() == originI * originI);
+    REQUIRE(other.i() == origin.i());
 }
 #endif
 

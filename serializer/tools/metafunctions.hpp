@@ -41,21 +41,12 @@ template <typename T> struct contains<T> {
 template <typename T, typename H, typename... Tail>
 struct contains<T, H, Tail...> {
     static constexpr bool value =
-        std::is_same_v<T, H> || contains<T, Tail...>::value;
+        std::is_same_v<T, H> || contains<base_t<T>, Tail...>::value;
 };
 
 /// @brief Shorthand for contains.
 template <typename T, typename... Types>
-constexpr bool contains_v = contains<T, Types...>::value;
-
-/******************************************************************************/
-/*                                 functions                                  */
-/******************************************************************************/
-
-/// @brief True if T is a function_t (function that can be given to the
-///        serializer).
-template <typename T>
-constexpr bool is_function_v = std::is_same_v<T, function_t>;
+constexpr bool contains_v = contains<base_t<T>, Types...>::value;
 
 /******************************************************************************/
 /*                                  pointers                                  */

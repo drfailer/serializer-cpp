@@ -46,8 +46,7 @@ class WithDynamicArray {
               SER_DARR(twoDOneD_, 4, 4)                     // twoDOneD_
     );
 
-    /* accessors
-     * ****************************************************************/
+    /* accessors **************************************************************/
     void borrow(double *borrowed, size_t size) {
         this->borrowed_ = borrowed;
         this->borrowedSize_ = size;

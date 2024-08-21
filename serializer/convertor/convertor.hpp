@@ -48,7 +48,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
 
     inline constexpr void append(char chr) {
         if constexpr (tools::mtf::is_vec_v<tools::mtf::base_t<mem_type>>) {
-          mem.append(pos++, std::bit_cast<const byte_type *>(&chr), 1);
+            mem.append(pos++, std::bit_cast<const byte_type *>(&chr), 1);
         } else {
             if (mem.size() < pos + 1) {
                 mem.resize((mem.size() + 1) * 2);
@@ -86,7 +86,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
             static_cast<const Convert<T> *>(this)->serialize(elt, mem);
-        } else if constexpr (std::is_trivially_copyable_v<
+        } else if constexpr (std::is_copy_assignable_v<tools::mtf::base_t<T>> &&
+                             std::is_trivially_copyable_v<
                                  tools::mtf::base_t<T>>) {
             constexpr size_t nb_bytes = sizeof(elt);
             append(std::bit_cast<const byte_type *>(&elt), nb_bytes);
@@ -111,7 +112,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
             // pointer to shared_ptr)
             // TODO: rework convert functions
             static_cast<Convert<T> *>(this)->deserialize(elt);
-        } else if constexpr (std::is_trivially_copyable_v<
+        } else if constexpr (std::is_copy_assignable_v<tools::mtf::base_t<T>> &&
+                             std::is_trivially_copyable_v<
                                  tools::mtf::base_t<T>>) {
             elt =
                 *std::bit_cast<const tools::mtf::base_t<T> *>(mem.data() + pos);
@@ -273,7 +275,8 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param tuple Tuple to serialize
     /// @param str String that will contain the result.
     template <class T, size_t... Idx>
-    inline constexpr void serializeTuple(T &&tuple, std::index_sequence<Idx...>) {
+    inline constexpr void serializeTuple(T &&tuple,
+                                         std::index_sequence<Idx...>) {
         ([&] { serialize_(std::get<Idx>(tuple)); }(), ...);
     }
 
@@ -437,7 +440,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <tools::concepts::Pointer T, typename DT, typename... DTs>
     inline constexpr void serialize_(tools::DynamicArray<T, DT, DTs...> &&elt) {
-        using ST = std::remove_pointer_t<T>;
+        using ST = std::remove_pointer_t<tools::mtf::base_t<T>>;
         if (elt.mem == nullptr) {
             append('n');
             return;
@@ -468,8 +471,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String view of the data.
     /// @param elt Reference to the element that we want to deserialize.
     template <tools::concepts::Pointer T, typename DT, typename... DTs>
-    inline constexpr void deserialize_(tools::DynamicArray<T, DT, DTs...> &&elt) {
-        using ST = std::remove_pointer_t<T>;
+    inline constexpr void
+    deserialize_(tools::DynamicArray<T, DT, DTs...> &&elt) {
+        using ST = std::remove_pointer_t<tools::mtf::base_t<T>>;
         bool ptrValid = mem[pos++] == 'v';
 
         if (!ptrValid) {

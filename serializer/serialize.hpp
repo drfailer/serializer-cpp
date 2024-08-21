@@ -18,8 +18,9 @@ inline constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
     Conv conv(mem, pos);
     (
         [&conv, &args] {
-            if constexpr (tools::mtf::is_function_v<decltype(args)>) {
-                args(Phases::Serialization, conv.mem);
+            if constexpr (SerializerFunction(args, conv)) {
+                args(Context<Phases::Serialization, decltype(conv)>(
+                    conv));
             } else {
                 conv.serialize_(args);
             }
@@ -39,8 +40,9 @@ inline constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
     Conv conv(mem, pos);
     (
         [&conv, &args] {
-            if constexpr (tools::mtf::is_function_v<decltype(args)>) {
-                args(Phases::Deserialization, conv.mem);
+            if constexpr (SerializerFunction(args, conv)) {
+                args(Context<Phases::Deserialization, decltype(conv)>(
+                    conv));
             } else {
                 conv.deserialize_(args);
             }
@@ -84,6 +86,10 @@ inline constexpr size_t deserialize_super(T self, typename Conv::mem_type &mem,
 
 using default_mem_type = tools::vec<uint8_t>;
 /* using default_mem_type = std::vector<uint8_t>; */
+
+template <typename Super> inline constexpr Super &super(auto *obj) {
+    return static_cast<Super>(*obj);
+}
 
 } // end namespace serializer
 

@@ -1,7 +1,5 @@
 #ifndef TYPES_HPP
 #define TYPES_HPP
-#include <functional>
-#include <string_view>
 
 namespace serializer {
 
@@ -9,10 +7,10 @@ namespace serializer {
 ///        serialization.
 enum class Phases { Serialization, Deserialization };
 
-/// @brief Serializer function type (functions that can be given the the
-///        serializer and which are executed during the serialization /
-///        deserialization).
-using function_t = std::function<void(Phases, std::string_view const &)>;
+template <Phases phase, typename Conv>
+struct Context {
+  Conv convertor;
+};
 
 } // end namespace serializer
 

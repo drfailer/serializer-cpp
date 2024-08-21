@@ -159,28 +159,25 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
 ///        serialization and the deserialization.
 /// @param code Code to execute.
 #define SER_FUN(code)                                                          \
-    [&]([[maybe_unused]] serializer::Phases phase,                             \
-        [[maybe_unused]] std::string_view const &str) { code; }
+    [&]<serializer::Phases Phase, typename Conv>(                              \
+        [[maybe_unused]] serializer::Context<Phase, Conv> &&context) code
 
 /// @brief Helper macro to create a lambdat that is executed during the
 ///        serialization.
 /// @param code Code to execute.
 #define SER_SFUN(code)                                                         \
-    [&](serializer::Phases phase,                                              \
-        [[maybe_unused]] std::string_view const &str) {                        \
-        if (phase == serializer::Phases::Serialization) {                      \
+    SER_FUN({                                                                  \
+        if constexpr (Phase == serializer::Phases::Serialization)              \
             code;                                                              \
-        }                                                                      \
-    }
+    })
 
 /// @brief Helper macro to create a lambdat that is executed during the
 ///        deserialization.
 /// @param code Code to execute.
 #define SER_DFUN(code)                                                         \
-    [&](serializer::Phases phase, [[maybe_unused]] std::string_view const &) { \
-        if (phase == serializer::Phases::Deserialization) {                    \
+    SER_FUN({                                                                  \
+        if constexpr (Phase == serializer::Phases::Deserialization)            \
             code;                                                              \
-        }                                                                      \
-    }
+    })
 
 #endif
