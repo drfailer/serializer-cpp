@@ -39,9 +39,10 @@ concept Pointer = std::is_pointer_v<mtf::base_t<T>>;
 template <typename T>
 concept StaticArray = std::is_array_v<mtf::base_t<T>>;
 
-/// @brief Fundamental types
 template <typename T>
-concept Fundamental = std::is_fundamental_v<mtf::base_t<T>>;
+concept Trivial = !std::is_pointer_v<mtf::base_t<T>> &&
+                  std::is_copy_assignable_v<tools::mtf::base_t<T>> &&
+                  std::is_trivially_copyable_v<tools::mtf::base_t<T>>;
 
 /// @brief Enum types.
 template <typename T>
@@ -98,14 +99,14 @@ concept Forwardable = requires(T &&obj) { std::forward<T>(obj); };
 ///        serialization function.
 template <typename T>
 concept AutoSerializationSupported =
-    SmartPtr<T> || Pointer<T> || Fundamental<T> || Enum<T> || String<T> ||
+    SmartPtr<T> || Pointer<T> || Trivial<T> || Enum<T> || String<T> ||
     Iterable<T> || TupleLike<T> || StaticArray<T>;
 
 /// @brief Used to detect the types for which we do not have an automatic
 ///        deserialization function.
 template <typename T>
 concept AutoDeserializationSupported =
-    ConcreteSmartPtr<T> || ConcretePtr<T> || Fundamental<T> || Enum<T> ||
+    ConcreteSmartPtr<T> || ConcretePtr<T> || Trivial<T> || Enum<T> ||
     String<T> || Iterable<T> || TupleLike<T> || StaticArray<T>;
 
 /// @brief Detect if a type is serializable.

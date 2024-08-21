@@ -81,16 +81,12 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::NonSerializable T>
+        requires(!tools::mtf::is_dynamic_array<tools::mtf::base_t<T>>::value)
     inline constexpr void serialize_(T &&elt) {
         if constexpr (tools::mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
             static_cast<const Convert<T> *>(this)->serialize(elt, mem);
-        } else if constexpr (std::is_copy_assignable_v<tools::mtf::base_t<T>> &&
-                             std::is_trivially_copyable_v<
-                                 tools::mtf::base_t<T>>) {
-            constexpr size_t nb_bytes = sizeof(elt);
-            append(std::bit_cast<const byte_type *>(&elt), nb_bytes);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<
                 tools::mtf::base_t<T>>();
@@ -106,18 +102,13 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String view of the data.
     /// @param elt Reference to the element that we want to deserialize.
     template <serializer::tools::concepts::NonDeserializable T>
+        requires(!tools::mtf::is_dynamic_array<tools::mtf::base_t<T>>::value)
     inline constexpr void deserialize_(T &&elt) {
         if constexpr (tools::mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
             // TODO: rework convert functions
             static_cast<Convert<T> *>(this)->deserialize(elt);
-        } else if constexpr (std::is_copy_assignable_v<tools::mtf::base_t<T>> &&
-                             std::is_trivially_copyable_v<
-                                 tools::mtf::base_t<T>>) {
-            elt =
-                *std::bit_cast<const tools::mtf::base_t<T> *>(mem.data() + pos);
-            pos += sizeof(T);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<
                 tools::mtf::base_t<T>>();
@@ -151,9 +142,9 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @brief Serialize function for the fundamental types.
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
-    template <serializer::tools::concepts::Fundamental T>
+    template <serializer::tools::concepts::Trivial T>
     inline constexpr void serialize_(T &&elt) {
-        append(std::bit_cast<const byte_type *>(&elt), sizeof(T));
+        append(std::bit_cast<const byte_type *>(&elt), sizeof(elt));
     }
 
     /// @brief Deserialize function for the deserializable fundamental types.
@@ -161,7 +152,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to deserialize. It it
     ///            just used for creating an overload of the deserialize
     ///            function.
-    template <serializer::tools::concepts::Fundamental T>
+    template <serializer::tools::concepts::Trivial T>
     inline constexpr void deserialize_(T &&elt) {
         elt = *std::bit_cast<const tools::mtf::base_t<T> *>(mem.data() + pos);
         pos += sizeof(T);
@@ -284,7 +275,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::TupleLike T>
-        requires(!serializer::tools::concepts::Array<T>)
+      requires (!tools::concepts::Trivial<T>)
     inline constexpr void serialize_(T &&tuple) {
         serializeTuple(tuple, std::make_index_sequence<
                                   std::tuple_size_v<tools::mtf::base_t<T>>>());
@@ -305,7 +296,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///            just used for creating an overload of the deserialize
     ///            function.
     template <serializer::tools::concepts::TupleLike T>
-        requires(!serializer::tools::concepts::Array<T>)
+      requires (!tools::concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
         elt = deserializeTuple<
             tools::mtf::remove_const_tuple_t<tools::mtf::base_t<T>>>(
@@ -320,6 +311,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::Enum T>
+      requires (!tools::concepts::Trivial<T>)
     inline constexpr void serialize_(T &&elt) {
         auto value = (std::underlying_type_t<tools::mtf::base_t<T>>)elt;
         append(std::bit_cast<const byte_type *>(&value), sizeof(value));
@@ -332,6 +324,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///            just used for creating an overload of the deserialize
     ///            function.
     template <serializer::tools::concepts::Enum T>
+      requires (!tools::concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
         using Type = std::underlying_type_t<tools::mtf::base_t<T>>;
         elt = (tools::mtf::base_t<T>)*std::bit_cast<const Type *>(mem.data() +
@@ -371,6 +364,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::NonStringIterable T>
+      requires (!tools::concepts::Trivial<T>)
     inline constexpr void serialize_(T &&elts) {
         auto size = std::size(elts) + 1;
         append(std::bit_cast<const byte_type *>(&size), sizeof(size));
@@ -387,6 +381,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     ///            just used for creating an overload of the deserialize
     ///            function.
     template <serializer::tools::concepts::NonStringIterable T>
+      requires (!tools::concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
         using size_type = decltype(std::size(std::declval<T>()));
         using ValueType = tools::concepts::remove_const_t<
@@ -414,6 +409,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::StaticArray T>
+      requires (!tools::concepts::Trivial<T>)
     inline constexpr void serialize_(T &&elt) {
         size_t size = std::extent_v<tools::mtf::base_t<T>>;
         for (size_t i = 0; i < size; ++i) {
@@ -425,6 +421,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String view of the data.
     /// @param elt Reference to the element that we want to deserialize.
     template <serializer::tools::concepts::StaticArray T>
+      requires (!tools::concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
         size_t size = std::extent_v<tools::mtf::base_t<T>>;
         for (size_t i = 0; i < size; ++i) {
@@ -439,7 +436,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <tools::concepts::Pointer T, typename DT, typename... DTs>
-    inline constexpr void serialize_(tools::DynamicArray<T, DT, DTs...> &&elt) {
+    inline constexpr void serialize_(tools::DynamicArray<T, DT, DTs...> elt) {
         using ST = std::remove_pointer_t<tools::mtf::base_t<T>>;
         if (elt.mem == nullptr) {
             append('n');
@@ -448,17 +445,20 @@ struct Convertor : public Convert<AdditionalTypes>... {
         append('v');
 
         if constexpr (std::is_pointer_v<ST>) {
-            for (size_t i = 0; i < std::get<0>(elt.dimensions); ++i) {
-                serialize_(tools::DynamicArray<ST, DTs...>(
+            size_t size = (size_t)std::get<0>(elt.dimensions);
+            for (size_t i = 0; i < size; ++i) {
+                serialize_(tools::DynamicArray(
                     elt.mem[i], tools::tuplePopFront(elt.dimensions)));
             }
-        } else if constexpr (std::is_fundamental_v<ST>) {
-            size_t size = tools::tupleProd<size_t>(elt.dimensions);
-            append(std::bit_cast<char *>(elt.mem), size * sizeof(ST));
         } else {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
-            for (size_t i = 0; i < size; ++i) {
-                serialize_(elt.mem[i]);
+            if constexpr (tools::concepts::Trivial<ST>) {
+                append(std::bit_cast<const byte_type *>(elt.mem),
+                       size * sizeof(ST));
+            } else {
+                for (size_t i = 0; i < size; ++i) {
+                    serialize_(elt.mem[i]);
+                }
             }
         }
     }
@@ -471,8 +471,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String view of the data.
     /// @param elt Reference to the element that we want to deserialize.
     template <tools::concepts::Pointer T, typename DT, typename... DTs>
-    inline constexpr void
-    deserialize_(tools::DynamicArray<T, DT, DTs...> &&elt) {
+    inline constexpr void deserialize_(tools::DynamicArray<T, DT, DTs...> elt) {
         using ST = std::remove_pointer_t<tools::mtf::base_t<T>>;
         bool ptrValid = mem[pos++] == 'v';
 
@@ -480,20 +479,28 @@ struct Convertor : public Convert<AdditionalTypes>... {
             elt.mem = nullptr;
             return;
         }
-        if (elt.mem == nullptr) {
-            elt.mem = new ST[std::get<0>(elt.dimensions)]();
-        }
 
         if constexpr (std::is_pointer_v<ST>) {
-            for (size_t i = 0; i < std::get<0>(elt.dimensions); ++i) {
-                tools::DynamicArray<ST, DTs...> subArray(
-                    elt.mem[i], tools::tuplePopFront(elt.dimensions));
-                deserialize_(subArray);
+            size_t size = (size_t)std::get<0>(elt.dimensions);
+            if (elt.mem == nullptr) {
+                elt.mem = new ST[size]();
+            }
+            for (size_t i = 0; i < size; ++i) {
+                deserialize_(tools::DynamicArray(
+                    elt.mem[i], tools::tuplePopFront(elt.dimensions)));
             }
         } else {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
-            for (size_t i = 0; i < size; ++i) {
-                deserialize_(elt.mem[i]);
+            if (elt.mem == nullptr) {
+                elt.mem = new ST[size]();
+            }
+            if constexpr (tools::concepts::Trivial<ST>) {
+                std::memcpy(elt.mem, mem.data() + pos, size * sizeof(ST));
+                pos += size * sizeof(ST);
+            } else {
+                for (size_t i = 0; i < size; ++i) {
+                    deserialize_(elt.mem[i]);
+                }
             }
         }
     }

@@ -10,28 +10,36 @@ namespace serializer::tools {
 
 /// @brief Wrapper object for dynamic arrays (can store references to the
 ///        variables that contains the array size).
-template <concepts::Pointer T, typename DT, typename... DTs>
-struct DynamicArray {
+template <concepts::Pointer T, typename... DTs> struct DynamicArray {
     /// @brief Constructor that should be used by the user.
     /// @param mem Reference to the pointer of the array that should be
     ///            serialized.
     /// @params dim Reference or value of the first dimension of the array (the
     ///         array must have at least one dimension)
     /// @params dims Other dimensions of the array.
-    explicit DynamicArray(T &mem, DT dim, DTs... dims)
-        : mem(mem), dimensions(dim, dims...) {}
+    constexpr explicit DynamicArray(T &mem, DTs const &...dims)
+        : mem(mem), dimensions(dims...) {}
 
     /// @brief Constructor that is used to create sub-arrays in the default
     ///        convertor.
     /// @param mem Reference to the pointer of the array that should be
     ///            serialized.
     /// @param dimensions Tuple that holds the dimensions of the sub-array.
-    explicit DynamicArray(T &mem, std::tuple<DT, DTs...> dimensions)
+    constexpr explicit DynamicArray(T &mem,
+                                    std::tuple<const DTs &...> &&dimensions)
         : mem(mem), dimensions(dimensions) {}
 
     T &mem; ///< reference to the pointer of the array.
-    std::tuple<DT, DTs...> dimensions; ///< dimensions of the array.
+    std::tuple<const DTs &...> dimensions; ///< dimensions of the array.
 };
+
+namespace mtf {
+template <typename T> struct is_dynamic_array : std::false_type {};
+
+template <typename T, typename... Sizes>
+struct is_dynamic_array<DynamicArray<T, Sizes...>> : std::true_type {};
+
+} // end namespace mtf
 
 } // end namespace serializer::tools
 

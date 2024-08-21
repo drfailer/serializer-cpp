@@ -37,7 +37,8 @@ class WithDynamicArray {
         delete[] multipleDim_;
     }
 
-    SERIALIZE(borrowedSize_, multipleDimSize1_, SER_DARR(own_, 5), // own_
+    SERIALIZE(borrowedSize_, multipleDimSize1_,
+        SER_DARR(own_, 5), // own_
               SER_DARR(null_, 5),                                  // null_
               SER_DARR(null2_, 5, 5),                              // null2_
               SER_DARR(borrowed_, borrowedSize_),                  // borrowed_

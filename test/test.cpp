@@ -24,8 +24,6 @@
 #define TEST_DYNAMIC_ARRAYS
 /* #define TEST_TREE */
 
-
-
 /******************************************************************************/
 /*                         tests with a simple class                          */
 /******************************************************************************/
@@ -839,7 +837,7 @@ TEST_CASE("dynamic arrays") {
     serializer::default_mem_type result;
 
     for (size_t i = 0; i < 10; ++i) {
-        external[i] = (double)i * 3.0;
+        external[i] = (double) i * 3.0;
     }
     origin.borrow(external, 10);
 
