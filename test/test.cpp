@@ -838,7 +838,7 @@ TEST_CASE("dynamic arrays") {
     WithDynamicArray origin(2);
     WithDynamicArray other;
     auto *external = new double[10];
-    std::string result;
+    serializer::default_mem_type result;
 
     for (size_t i = 0; i < 10; ++i) {
         external[i] = (double)i * 3.0;
@@ -860,7 +860,7 @@ TEST_CASE("dynamic arrays") {
         }
     }
 
-    result = origin.serialize();
+    origin.serialize(result);
     other.deserialize(result);
 
     for (size_t i = 0; i < 10; ++i) {

@@ -1,6 +1,7 @@
 #ifndef METAFUNCTIONS_HPP
 #define METAFUNCTIONS_HPP
 #include "../types.hpp"
+#include "../tools/vec.hpp"
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -153,14 +154,14 @@ struct is_std_array<std::array<T, N>> : std::true_type {};
 
 template <typename T> constexpr bool is_std_array_v = is_std_array<T>::value;
 
-/******************************************************************************/
-/*                                  C-Struct                                  */
-/******************************************************************************/
+/// @brief True if T is a vec
+template <typename T> struct is_vec : std::false_type {};
 
-/// @brief CHesk if the type is a tools::CStruct
-template <typename T> struct is_c_struct : std::false_type {};
+template <typename T>
+struct is_vec<serializer::tools::vec<T>> : std::true_type {};
 
-template <typename T> constexpr bool is_c_struct_v = is_c_struct<T>::value;
+template <typename T>
+constexpr bool is_vec_v = is_vec<T>::value;
 
 } // namespace serializer::tools::mtf
 

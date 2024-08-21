@@ -51,37 +51,16 @@ struct Convertor : public Convert<AdditionalTypes>... {
     }
 
     constexpr void append(const byte_type *bytes, size_t nb_bytes) {
-        // size not changed correctly:
-        /* if ((spos + nb_bytes) >= mem.capacity()) { */
-        /*     mem.resize(std::max(mem.capacity() * 2, spos + nb_bytes)); */
-        /* } */
-        /* std::memcpy(mem.data() + spos, bytes, nb_bytes); */
-        /* spos += nb_bytes; */
-
-        // 1164 / 882
-        /* for (size_t i = 0; i < nb_bytes; ++i) { */
-        /*   mem.push_back(bytes[i]); */
-        /* } */
-
-        // 2112 / 901
-        /* std::copy(bytes, bytes + nb_bytes, std::back_inserter(mem)); */
-
-        // 5992 / 876
-        /* mem.insert(mem.begin() + spos, bytes, bytes + nb_bytes); */
-        /* spos += nb_bytes; */
-
-        /* custom vector */
-
-        // 673 / 815
-        /* mem.insert(spos, bytes, nb_bytes); */
-        /* spos += nb_bytes; */
-
-        // 673 / 815
-        mem.append(pos, bytes, nb_bytes);
-        pos += nb_bytes;
-
-        // 641 / 842
-        /* mem.append(bytes, nb_bytes); */
+        if constexpr (tools::mtf::is_vec_v<tools::mtf::base_t<mem_type>>) {
+            mem.append(pos, bytes, nb_bytes);
+            pos += nb_bytes;
+        } else {
+            if (mem.size() < pos + nb_bytes) {
+                mem.resize(pos + nb_bytes);
+            }
+            std::memcpy(mem.data() + pos, bytes, nb_bytes);
+            pos += nb_bytes;
+        }
     }
 
     /* no automatic serialization types (custom convertor) ********************/
@@ -95,15 +74,18 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::tools::concepts::NonSerializable T>
-        requires(!tools::mtf::is_c_struct_v<T>)
     constexpr void serialize_(T &&elt) {
         if constexpr (tools::mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
             static_cast<const Convert<T> *>(this)->serialize(elt, mem);
+        } else if constexpr (std::is_trivially_copyable_v<
+                                 tools::mtf::base_t<T>>) {
+            constexpr size_t nb_bytes = sizeof(elt);
+            append(std::bit_cast<const byte_type *>(&elt), nb_bytes);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<
-                std::remove_reference_t<T>>();
+                tools::mtf::base_t<T>>();
         }
     }
 
@@ -116,16 +98,20 @@ struct Convertor : public Convert<AdditionalTypes>... {
     /// @param str String view of the data.
     /// @param elt Reference to the element that we want to deserialize.
     template <serializer::tools::concepts::NonDeserializable T>
-        requires(!tools::mtf::is_c_struct_v<T>)
     constexpr void deserialize_(T &&elt) {
         if constexpr (tools::mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
             // TODO: rework convert functions
             static_cast<Convert<T> *>(this)->deserialize(elt);
+        } else if constexpr (std::is_trivially_copyable_v<
+                                 tools::mtf::base_t<T>>) {
+            elt =
+                *std::bit_cast<const tools::mtf::base_t<T> *>(mem.data() + pos);
+            pos += sizeof(T);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<
-                std::remove_reference_t<T>>();
+                tools::mtf::base_t<T>>();
         }
     }
 

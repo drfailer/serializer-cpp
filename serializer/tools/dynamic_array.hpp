@@ -43,7 +43,6 @@ struct DynamicArray {
 /// @param ArrType Type of the pointer to serialize (int* for a basic array).
 /// @param ... Types of the dimensions (ex: size_t if we want to pass it by
 ///            value or size_t& by reference)
-#define SER_DARR_T(ArrType, ...)                                               \
-    serializer::tools::DynamicArray<ArrType, __VA_ARGS__>
+#define SER_DARR(...) serializer::tools::DynamicArray(__VA_ARGS__)
 
 #endif
