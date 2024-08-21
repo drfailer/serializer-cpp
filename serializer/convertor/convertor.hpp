@@ -383,26 +383,18 @@ struct Convertor : public Convert<AdditionalTypes>... {
             serializer::tools::mtf::iter_value_t<tools::mtf::base_t<T>>>;
         size_t idx = 0;
         size_type size = deserialize_size();
-        auto insert = [&elt, &idx](ValueType &&value) {
-            if constexpr (serializer::tools::concepts::Insertable<T,
-                                                                  ValueType> ||
-                          serializer::tools::concepts::PushBackable<
-                              T, ValueType>) {
-                (void)idx;
-                serializer::tools::insert(elt, std::move(value));
-            } else {
-                serializer::tools::insert(elt, std::move(value), idx++);
-            }
-        };
-
-        if constexpr (tools::concepts::Clearable<T>) {
-            elt.clear();
-        }
 
         for (size_t i = 0; i < size; ++i) {
             ValueType value;
             deserialize_(value);
-            insert(std::move(value));
+            if constexpr (serializer::tools::concepts::Insertable<T,
+                                                                  ValueType> ||
+                          serializer::tools::concepts::PushBackable<
+                              T, ValueType>) {
+                serializer::tools::insert(elt, std::move(value));
+            } else {
+                serializer::tools::insert(elt, std::move(value), idx++);
+            }
         }
     }
 

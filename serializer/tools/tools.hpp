@@ -21,34 +21,22 @@ namespace serializer::tools {
 /// @brief Insert an element into an iterable using the insert member function.
 template <typename Container, typename T>
     requires serializer::tools::concepts::Insertable<Container, T>
-void insert(Container &container, T &&element) {
-    if constexpr (concepts::Forwardable<T>) {
-        container.insert(std::forward<T>(element));
-    } else {
-        container.insert(element);
-    }
+inline constexpr void insert(Container &&container, T &&element) {
+    container.insert(element);
 }
 
 /// @brief Insert an element into an iterable using the add member
 ///        function.
 template <typename Container, typename T>
     requires serializer::tools::concepts::PushBackable<Container, T>
-void insert(Container &container, T &&element) {
-    if constexpr (concepts::Forwardable<T>) {
-        container.push_back(std::forward<T>(element));
-    } else {
-        container.push_back(element);
-    }
+inline constexpr void insert(Container &&container, T &&element) {
+    container.push_back(element);
 }
 
 /// @brief Insert an element into an iterable using the operator[].
 template <typename Container, typename T>
-void insert(Container &container, T &&element, size_t idx) {
-    if constexpr (concepts::Forwardable<T>) {
-        container[idx] = std::forward<T>(element);
-    } else {
-        container[idx] = element;
-    }
+inline constexpr void insert(Container &&container, T &&element, size_t idx) {
+    container[idx] = element;
 }
 
 /******************************************************************************/
