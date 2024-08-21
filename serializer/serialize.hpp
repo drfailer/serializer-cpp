@@ -14,6 +14,7 @@ namespace serializer {
 template <typename Conv>
 inline constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
                                   auto &&...args) {
+    [[maybe_unused]] bool first_level = pos == 0;
     Conv conv(mem, pos);
     (
         [&conv, &args] {
@@ -24,6 +25,11 @@ inline constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
             }
         }(),
         ...);
+    if constexpr (!tools::mtf::is_vec_v<tools::mtf::base_t<decltype(mem)>>) {
+        if (first_level) {
+            mem.resize(conv.pos);
+        }
+    }
     return conv.pos;
 }
 
