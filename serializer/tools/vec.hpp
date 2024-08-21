@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
-#include <iostream>
 #include <type_traits>
+#include <vector>
 
 namespace serializer::tools {
 
@@ -46,7 +46,7 @@ class vec {
     }
 
     constexpr void upsize(size_t size) {
-        if (size > capacity_) {
+        if (size > capacity_) [[unlikely]] {
             if (size > (capacity_ * 2)) [[unlikely]] {
                 alloc(size);
             } else {
@@ -87,6 +87,8 @@ class vec {
         std::swap(this->mem, other.mem_);
         return *this;
     }
+
+    std::vector<T> vector() const { return std::vector<T>(mem_, mem_ + size_); }
 
   private:
     T *mem_ = nullptr;
