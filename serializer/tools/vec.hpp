@@ -3,13 +3,10 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
-#include <type_traits>
-#include <vector>
 
 namespace serializer::tools {
 
 template <typename T>
-    requires(std::is_fundamental_v<T>)
 class vec {
   public:
     constexpr vec() = default;

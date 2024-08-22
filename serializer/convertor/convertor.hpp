@@ -29,7 +29,7 @@ namespace serializer {
 ///        functions.
 /// @param AdditionalTypes External types for which the user can add support.
 template <typename MemT, typename... AdditionalTypes>
-struct Convertor : public Convert<AdditionalTypes>... {
+struct Convertor : Convert<AdditionalTypes>... {
     using mem_type = MemT;
     mem_type &mem;
 
@@ -46,28 +46,25 @@ struct Convertor : public Convert<AdditionalTypes>... {
         return size - 1;
     }
 
-    inline constexpr void append(char chr) {
-        if constexpr (tools::mtf::is_vec_v<tools::mtf::base_t<mem_type>>) {
-            mem.append(pos++, std::bit_cast<const byte_type *>(&chr), 1);
-        } else {
-            if (mem.size() < pos + 1) {
-                mem.resize((mem.size() + 1) * 2);
-            }
-            mem.data()[pos++] = chr;
-        }
-    }
-
     inline constexpr void append(const byte_type *bytes, size_t nb_bytes) {
         if constexpr (tools::mtf::is_vec_v<tools::mtf::base_t<mem_type>>) {
             mem.append(pos, bytes, nb_bytes);
             pos += nb_bytes;
         } else {
-            if (mem.size() < pos + nb_bytes) {
-                mem.resize((mem.size() + nb_bytes) * 2);
+            if (mem.size() < pos + nb_bytes) [[unlikely]] {
+                if constexpr (requires { mem.resize(1); }) {
+                    mem.resize((mem.size() + nb_bytes) * 2);
+                } else {
+                    throw std::out_of_range("error: serialization array too small.");
+                }
             }
             std::memcpy(mem.data() + pos, bytes, nb_bytes);
             pos += nb_bytes;
         }
+    }
+
+    inline constexpr void append(char chr) {
+        append(std::bit_cast<const byte_type *>(&chr), 1);
     }
 
     /* no automatic serialization types (custom convertor) ********************/
@@ -390,7 +387,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
         size_type size = deserialize_size();
 
         if constexpr (requires { elt.clear(); }) {
-          elt.clear();
+            elt.clear();
         }
 
         for (size_t i = 0; i < size; ++i) {

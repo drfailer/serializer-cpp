@@ -1,8 +1,6 @@
 #ifndef MULTIPLE_INHERITANCE_HPP
 #define MULTIPLE_INHERITANCE_HPP
-#include "serializer/convertor/convertor.hpp"
-#include "serializer/serializable.hpp"
-#include "serializer/serializer.hpp"
+#include <serializer/serialize.hpp>
 #include <string>
 #include <vector>
 
@@ -13,12 +11,19 @@ namespace mi {
 /******************************************************************************/
 
 class Mother {
-    SERIALIZABLE_POLYMORPHIC(int, std::string);
-
   public:
     explicit Mother(int _age = 0, std::string name = "")
-        : SERIALIZER(age_, name_), age_(_age), name_(std::move(name)) {}
+        : age_(_age), name_(std::move(name)) {}
     virtual ~Mother() = default;
+
+    virtual constexpr size_t serialize(serializer::default_mem_type &mem, size_t pos = 0) const {
+        return serializer ::serialize<serializer ::Convertor<decltype(mem)>>(
+            mem, pos, age_, name_);
+    }
+    virtual constexpr size_t deserialize(serializer::default_mem_type &mem, size_t pos = 0) {
+        return serializer ::deserialize<serializer ::Convertor<decltype(mem)>>(
+            mem, pos, age_, name_);
+    };
 
     /* accessors **************************************************************/
     void name(std::string name) { this->name_ = std::move(name); }
@@ -41,11 +46,18 @@ class Mother {
 /******************************************************************************/
 
 class Daughter1 : public Mother {
-    SERIALIZABLE_SUPER(Mother, double);
-
   public:
     explicit Daughter1(int age = 0, std::string name = "", double money = 0)
-        : Mother(age, std::move(name)), SERIALIZER(money_), money_(money) {}
+        : Mother(age, std::move(name)), money_(money) {}
+
+    constexpr size_t serialize(serializer::default_mem_type &mem, size_t pos = 0) const override {
+        return serializer ::serialize<serializer ::Convertor<decltype(mem)>>(
+            mem, pos, serializer ::super<Mother>(this), money_);
+    }
+    constexpr size_t deserialize(serializer::default_mem_type &mem, size_t pos = 0) override {
+        return serializer ::deserialize<serializer ::Convertor<decltype(mem)>>(
+            mem, pos, serializer ::super<Mother>(this), money_);
+    }
 
     /* accessors **************************************************************/
     void money(double money) { this->money_ = money; }
@@ -68,13 +80,20 @@ class Daughter1 : public Mother {
 /******************************************************************************/
 
 class Daughter2 : public Daughter1 {
-    SERIALIZABLE_SUPER(Daughter1, std::string);
-
   public:
     explicit Daughter2(int age = 0, const std::string &name = "",
                        double money = 0, std::string jobName = "")
-        : Daughter1(age, name, money), SERIALIZER(jobName_),
+        : Daughter1(age, name, money),
           jobName_(std::move(jobName)) {}
+
+    constexpr size_t serialize(serializer::default_mem_type &mem, size_t pos = 0) const override {
+        return serializer ::serialize<serializer ::Convertor<decltype(mem)>>(
+            mem, pos, serializer ::super<Daughter1>(this), jobName_);
+    }
+    constexpr size_t deserialize(serializer::default_mem_type &mem, size_t pos = 0) override {
+        return serializer ::deserialize<serializer ::Convertor<decltype(mem)>>(
+            mem, pos, serializer ::super<Daughter1>(this), jobName_);
+    }
 
     /* operator== *************************************************************/
     bool operator==(const Mother *other) const override {
@@ -101,11 +120,8 @@ struct MIConvertor : public serializer::Convertor<POLYMORPHIC_TYPE(Mother)> {
 /******************************************************************************/
 
 class Collection {
-    SERIALIZABLE_WITH_CONVERTOR(MIConvertor, std::vector<Mother *>);
-
   public:
-    Collection() : SERIALIZER(elements_) {}
-    ~Collection() = default;
+    SERIALIZE(elements_);
 
     /* accessors **************************************************************/
     [[nodiscard]] const std::vector<Mother *> &elements() const { return elements_; }

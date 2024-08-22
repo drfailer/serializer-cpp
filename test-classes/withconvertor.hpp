@@ -1,7 +1,6 @@
 #ifndef WITHCONVERTOR_HPP
 #define WITHCONVERTOR_HPP
-#include <serializer/convertor/convertor.hpp>
-#include <serializer/serializable.hpp>
+#include <serializer/serialize.hpp>
 #include <string>
 #include <vector>
 
@@ -31,16 +30,19 @@ inline bool operator==(const Unknown &lhs, const Unknown &rhs) {
 /*                                 convertor                                  */
 /******************************************************************************/
 
-struct UnknownConvertor : public serializer::Convertor<Unknown> {
-    void serialize(const Unknown &u, std::string &str) const override {
+template <typename MemT>
+struct UnknownConvertor : serializer::Convertor<MemT, Unknown> {
+    using serializer::Convertor<MemT, Unknown>::Convertor;
+    using byte_type = serializer::Convertor<MemT, Unknown>::byte_type;
+    constexpr void serialize(const Unknown &u) override {
         int i = u.x();
-        str = str.append(reinterpret_cast<char *>(&i), sizeof(i));
+        this->append(std::bit_cast<const byte_type *>(&i), sizeof(i));
     }
 
-    Unknown deserialize(std::string_view &str, Unknown &elt) override {
-        int x = Convertor::deserialize_(str, x);
-        elt = Unknown(x);
-        return elt;
+    constexpr void deserialize(Unknown &elt) override {
+        int x;
+        this->deserialize_(x);
+        elt.x(x);
     }
 };
 
@@ -49,12 +51,8 @@ struct UnknownConvertor : public serializer::Convertor<Unknown> {
 /******************************************************************************/
 
 class WithConvertor {
-    SERIALIZABLE_WITH_CONVERTOR(UnknownConvertor, std::vector<int>,
-                                std::vector<Unknown>);
-
   public:
-    WithConvertor() : SERIALIZER(ints, unknowns) {}
-    ~WithConvertor() = default;
+    SERIALIZE_CONV(UnknownConvertor, ints, unknowns);
 
     /* accessors **************************************************************/
     [[nodiscard]] const std::vector<Unknown> &getUnknowns() const {

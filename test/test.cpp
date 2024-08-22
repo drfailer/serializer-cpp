@@ -15,7 +15,7 @@
 #define TEST_ENUMS
 #define TEST_PAIR
 #define TEST_TUPLE
-/* #define TEST_CONVERTOR */
+#define TEST_CONVERTOR
 #define TEST_MAP
 #define TEST_SET
 #define TEST_CSTRUCT
@@ -605,7 +605,7 @@ TEST_CASE("tuples") {
 TEST_CASE("serialize unknown type") {
     WithConvertor original;
     WithConvertor other;
-    std::string result;
+    serializer::default_mem_type result;
 
     original.addInt(1);
     original.addInt(2);
@@ -619,7 +619,7 @@ TEST_CASE("serialize unknown type") {
     REQUIRE(other.getInts().empty());
     REQUIRE(other.getUnknowns().empty());
 
-    result = original.serialize();
+    original.serialize(result);
     other.deserialize(result);
 
     REQUIRE(other.getInts().size() == original.getInts().size());

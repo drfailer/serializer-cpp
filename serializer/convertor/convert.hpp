@@ -1,6 +1,5 @@
 #ifndef SERIALIZER_CONVERT_HPP
 #define SERIALIZER_CONVERT_HPP
-#include <string>
 
 namespace serializer {
 
@@ -9,8 +8,8 @@ namespace serializer {
 ///        external types.
 /// @param T Type for which we want to add the convert behavior for.
 template <typename T> struct Convert {
-    virtual void serialize(T const &, std::string &) const = 0;
-    virtual T deserialize(std::string_view &, T &) = 0;
+    constexpr virtual void serialize(T const &) = 0;
+    constexpr virtual void deserialize(T &) = 0;
 };
 
 }

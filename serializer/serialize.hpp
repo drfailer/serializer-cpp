@@ -17,15 +17,14 @@ inline constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
     (
         [&conv, &args] {
             if constexpr (SerializerFunction(args, conv)) {
-                args(Context<Phases::Serialization, decltype(conv)>(
-                    conv));
+                args(Context<Phases::Serialization, decltype(conv)>(conv));
             } else {
                 conv.serialize_(args);
             }
         }(),
         ...);
     if constexpr (!tools::mtf::is_vec_v<tools::mtf::base_t<decltype(mem)>>) {
-        if (first_level) {
+        if (first_level) [[unlikely]] {
             mem.resize(conv.pos);
         }
     }
@@ -39,8 +38,7 @@ inline constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
     (
         [&conv, &args] {
             if constexpr (SerializerFunction(args, conv)) {
-                args(Context<Phases::Deserialization, decltype(conv)>(
-                    conv));
+                args(Context<Phases::Deserialization, decltype(conv)>(conv));
             } else {
                 conv.deserialize_(args);
             }
@@ -86,7 +84,11 @@ using default_mem_type = tools::vec<uint8_t>;
 /* using default_mem_type = std::vector<uint8_t>; */
 
 template <typename Super> inline constexpr Super &super(auto *obj) {
-    return static_cast<Super>(*obj);
+    return *static_cast<Super *>(obj);
+}
+
+template <typename Super> inline constexpr Super const &super(auto const *obj) {
+    return *static_cast<Super const *>(obj);
 }
 
 } // end namespace serializer
@@ -106,7 +108,7 @@ template <typename Super> inline constexpr Super &super(auto *obj) {
         return serializer::serialize<Conv<decltype(mem)>>(mem, pos,            \
                                                           __VA_ARGS__);        \
     }                                                                          \
-    size_t deserialize(auto const &mem, size_t pos = 0) {                      \
+    size_t deserialize(auto &mem, size_t pos = 0) {                            \
         return serializer::deserialize<Conv<decltype(mem)>>(mem, pos,          \
                                                             __VA_ARGS__);      \
     }

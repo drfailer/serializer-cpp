@@ -42,7 +42,7 @@ template <typename Conv, typename... Args> struct serializer {
             ...);
         if constexpr (!tools::mtf::is_vec_v<
                           tools::mtf::base_t<decltype(mem)>>) {
-            if (first_level) {
+            if (first_level) [[unlikely]] {
                 mem.resize(conv.pos);
             }
         }
