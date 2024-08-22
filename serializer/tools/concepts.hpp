@@ -45,8 +45,8 @@ concept Array = mtf::is_std_array_v<mtf::base_t<T>>;
 
 /// @brief Trivial types that can be cast directly
 template <typename T>
-concept Trivial = !std::is_pointer_v<mtf::base_t<T>> &&
-                  !Array<mtf::base_t<T>> &&
+concept Trivial = !std::is_pointer_v<mtf::base_t<T>> && !Array<T> &&
+                  !StaticArray<T> && !Serializable<T> && !Deserializable<T> &&
                   std::is_copy_assignable_v<tools::mtf::base_t<T>> &&
                   std::is_trivially_copyable_v<tools::mtf::base_t<T>>;
 
