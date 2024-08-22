@@ -375,8 +375,9 @@ struct Convertor : Convert<AdditionalTypes>... {
         // if the type is trivial, the memory is serialized directly
         if constexpr (std::contiguous_iterator<IterType> &&
                       tools::concepts::Trivial<ValueType>) {
-            append(std::bit_cast<const byte_type *>(elts.data()),
-                   sizeof(ValueType) * std::size(elts));
+            append(
+                std::bit_cast<const byte_type *>(std::to_address(elts.begin())),
+                sizeof(ValueType) * std::size(elts));
         } else {
             for (auto &elt : elts) {
                 serialize_(elt);
@@ -435,9 +436,17 @@ struct Convertor : Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::StaticArray T>
         requires(!tools::concepts::Trivial<T>)
     inline constexpr void serialize_(T &&elt) {
+        using SubType = std::remove_extent_t<tools::mtf::base_t<T>>;
         size_t size = std::extent_v<tools::mtf::base_t<T>>;
-        for (size_t i = 0; i < size; ++i) {
-            serialize_(elt[i]);
+
+        if constexpr (!std::is_array_v<SubType> &&
+                      tools::concepts::Trivial<SubType>) {
+            append(std::bit_cast<const byte_type *>(std::to_address(elt)),
+                   sizeof(SubType) * size);
+        } else {
+            for (size_t i = 0; i < size; ++i) {
+                serialize_(elt[i]);
+            }
         }
     }
 
@@ -447,9 +456,18 @@ struct Convertor : Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::StaticArray T>
         requires(!tools::concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
+        using SubType = std::remove_extent_t<tools::mtf::base_t<T>>;
         size_t size = std::extent_v<tools::mtf::base_t<T>>;
-        for (size_t i = 0; i < size; ++i) {
-            deserialize_(elt[i]);
+
+        if constexpr (!std::is_array_v<SubType> &&
+                      tools::concepts::Trivial<SubType>) {
+            std::memcpy(std::to_address(elt), mem.data() + pos,
+                        sizeof(SubType) * size);
+            pos += sizeof(SubType) * size;
+        } else {
+            for (size_t i = 0; i < size; ++i) {
+                deserialize_(elt[i]);
+            }
         }
     }
 
