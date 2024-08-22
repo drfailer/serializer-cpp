@@ -55,7 +55,8 @@ struct Convertor : Convert<AdditionalTypes>... {
                 if constexpr (requires { mem.resize(1); }) {
                     mem.resize((mem.size() + nb_bytes) * 2);
                 } else {
-                    throw std::out_of_range("error: serialization array too small.");
+                    throw std::out_of_range(
+                        "error: serialization array too small.");
                 }
             }
             std::memcpy(mem.data() + pos, bytes, nb_bytes);
@@ -363,10 +364,23 @@ struct Convertor : Convert<AdditionalTypes>... {
     template <serializer::tools::concepts::NonStringIterable T>
         requires(!tools::concepts::Trivial<T>)
     inline constexpr void serialize_(T &&elts) {
+        using ValueType = tools::concepts::remove_const_t<
+            serializer::tools::mtf::iter_value_t<tools::mtf::base_t<T>>>;
+        using IterType = decltype(elts.begin());
+
+        // append the size
         auto size = std::size(elts) + 1;
         append(std::bit_cast<const byte_type *>(&size), sizeof(size));
-        for (auto &&elt : elts) {
-            serialize_(elt);
+
+        // if the type is trivial, the memory is serialized directly
+        if constexpr (std::contiguous_iterator<IterType> &&
+                      tools::concepts::Trivial<ValueType>) {
+            append(std::bit_cast<const byte_type *>(elts.data()),
+                   sizeof(ValueType) * std::size(elts));
+        } else {
+            for (auto &elt : elts) {
+                serialize_(elt);
+            }
         }
     }
 
@@ -379,27 +393,36 @@ struct Convertor : Convert<AdditionalTypes>... {
     ///            function.
     template <serializer::tools::concepts::NonStringIterable T>
         requires(!tools::concepts::Trivial<T>)
-    inline constexpr void deserialize_(T &&elt) {
+    inline constexpr void deserialize_(T &&elts) {
         using size_type = decltype(std::size(std::declval<T>()));
         using ValueType = tools::concepts::remove_const_t<
             serializer::tools::mtf::iter_value_t<tools::mtf::base_t<T>>>;
-        size_t idx = 0;
+        using IterType = decltype(elts.begin());
         size_type size = deserialize_size();
 
-        if constexpr (requires { elt.clear(); }) {
-            elt.clear();
-        }
-
-        for (size_t i = 0; i < size; ++i) {
-            ValueType value{};
-            deserialize_(value);
-            if constexpr (serializer::tools::concepts::Insertable<T,
-                                                                  ValueType> ||
-                          serializer::tools::concepts::PushBackable<
-                              T, ValueType>) {
-                serializer::tools::insert(elt, std::move(value));
-            } else {
-                serializer::tools::insert(elt, std::move(value), idx++);
+        if constexpr (std::contiguous_iterator<IterType> &&
+                      tools::concepts::Trivial<ValueType>) {
+            if constexpr (requires { elts.resize(1); }) {
+                elts.resize(size);
+            }
+            std::memcpy(std::to_address(elts.begin()), mem.data() + pos,
+                        sizeof(ValueType) * size);
+            pos += sizeof(ValueType) * size;
+        } else {
+            if constexpr (requires { elts.clear(); }) {
+                elts.clear();
+            }
+            for (size_t i = 0; i < size; ++i) {
+                ValueType value{};
+                deserialize_(value);
+                if constexpr (serializer::tools::concepts::Insertable<
+                                  T, ValueType> ||
+                              serializer::tools::concepts::PushBackable<
+                                  T, ValueType>) {
+                    serializer::tools::insert(elts, std::move(value));
+                } else {
+                    serializer::tools::insert(elts, std::move(value), i);
+                }
             }
         }
     }
