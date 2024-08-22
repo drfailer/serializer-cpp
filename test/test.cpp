@@ -212,6 +212,12 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
         original.addSimple(Simple(i, 2 * i));
         original.addVec(std::vector<int>{1 * i, 2 * i, 3 * i, 4 * i, 5 * i});
         original.addArr(i, i * 2);
+        if (i % 2) {
+          original.addArrPtr(i, nullptr);
+        } else {
+          original.addArrPtr(i, new int{i});
+        }
+        original.addArrSimple(i, Simple(i, i*2, "test"));
     }
 
     REQUIRE(original.getEmptyVec().empty());
@@ -220,11 +226,15 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
     REQUIRE(original.getLst().size() == 10);
     REQUIRE(original.getClassVec().size() == 10);
     REQUIRE(original.getArr().size() == 10);
+    REQUIRE(original.getArrPtr().size() == 10);
+    REQUIRE(original.getArrSimple().size() == 10);
     REQUIRE(other.getVec().empty());
     REQUIRE(other.getLst().empty());
     REQUIRE(other.getClassVec().empty());
     REQUIRE(other.getVec2D().empty());
     REQUIRE(other.getArr().size() == 10);
+    REQUIRE(other.getArrPtr().size() == 10);
+    REQUIRE(other.getArrSimple().size() == 10);
 
     original.serialize(result);
     other.deserialize(result);
@@ -234,6 +244,13 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
         REQUIRE(original.getVec()[i] == other.getVec()[i]);
         REQUIRE(original.getClassVec()[i] == other.getClassVec()[i]);
         REQUIRE(original.getArr()[i] == other.getArr()[i]);
+        if (i % 2) {
+          REQUIRE(original.getArrPtr()[i] == other.getArrPtr()[i]);
+        } else {
+          REQUIRE(other.getArrPtr()[i] != nullptr);
+          REQUIRE(*original.getArrPtr()[i] == *other.getArrPtr()[i]);
+        }
+        REQUIRE(original.getArrSimple()[i] == other.getArrSimple()[i]);
         for (int j = 0; j < 5; ++j) {
             REQUIRE(original.getVec2D().at(i).at(j) ==
                     original.getVec2D().at(i).at(j));
@@ -244,6 +261,12 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
     for (double d : other.getLst()) {
         REQUIRE(d == *it++);
     }
+
+    REQUIRE(original.getArr().data() != other.getArr().data());
+    REQUIRE(original.getVec().data() != other.getVec().data());
+    REQUIRE(original.getVec2D().data() != other.getVec2D().data());
+    REQUIRE(original.getClassVec().data() != other.getClassVec().data());
+    REQUIRE(original.getLst().begin() != other.getLst().begin());
 }
 #endif
 

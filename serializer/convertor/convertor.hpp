@@ -394,7 +394,7 @@ struct Convertor : public Convert<AdditionalTypes>... {
         }
 
         for (size_t i = 0; i < size; ++i) {
-            ValueType value;
+            ValueType value{};
             deserialize_(value);
             if constexpr (serializer::tools::concepts::Insertable<T,
                                                                   ValueType> ||

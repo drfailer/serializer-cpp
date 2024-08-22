@@ -39,8 +39,14 @@ concept Pointer = std::is_pointer_v<mtf::base_t<T>>;
 template <typename T>
 concept StaticArray = std::is_array_v<mtf::base_t<T>>;
 
+/// @brief Match std::array.
+template <typename T>
+concept Array = mtf::is_std_array_v<mtf::base_t<T>>;
+
+/// @brief Trivial types that can be cast directly
 template <typename T>
 concept Trivial = !std::is_pointer_v<mtf::base_t<T>> &&
+                  !Array<mtf::base_t<T>> &&
                   std::is_copy_assignable_v<tools::mtf::base_t<T>> &&
                   std::is_trivially_copyable_v<tools::mtf::base_t<T>>;
 
@@ -71,7 +77,7 @@ concept TupleLike = requires(mtf::base_t<T> obj) {
     std::get<0>(obj);
     typename std::tuple_element_t<0, mtf::base_t<T>>;
     std::tuple_size_v<mtf::base_t<T>>;
-};
+} && !Array<T>;
 
 /// @brief Remove const on all types
 /// TODO: move this elsewhere
@@ -79,15 +85,11 @@ template <typename T> struct remove_const {
     using type = std::remove_const_t<T>;
 };
 
+template <typename T> using remove_const_t = typename remove_const<T>::type;
+
 template <TupleLike T> struct remove_const<T> {
     using type = mtf::remove_const_tuple_t<T>;
 };
-
-template <typename T> using remove_const_t = typename remove_const<T>::type;
-
-/// @brief Match std::array.
-template <typename T>
-concept Array = mtf::is_std_array_v<mtf::base_t<T>>;
 
 /// @brief Match types on which we can use std::forward
 template <typename T>
