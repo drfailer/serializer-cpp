@@ -1,6 +1,5 @@
 #ifndef METAFUNCTIONS_HPP
 #define METAFUNCTIONS_HPP
-#include "../types.hpp"
 #include "../tools/vec.hpp"
 #include <memory>
 #include <string>

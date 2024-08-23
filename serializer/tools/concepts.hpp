@@ -1,5 +1,6 @@
 #ifndef CONCEPTS_HPP
 #define CONCEPTS_HPP
+#include "context.hpp"
 #include "../tools/vec.hpp"
 #include "metafunctions.hpp"
 #include <type_traits>

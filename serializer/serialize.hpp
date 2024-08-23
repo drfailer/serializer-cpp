@@ -3,7 +3,6 @@
 #include "convertor/convertor.hpp"
 #include "tools/concepts.hpp"
 #include "tools/vec.hpp"
-#include "types.hpp"
 
 // TODO: use always inline attribute
 
