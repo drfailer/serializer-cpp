@@ -42,6 +42,9 @@ template <typename T> struct is_dynamic_array : std::false_type {};
 template <typename T, typename... Sizes>
 struct is_dynamic_array<tools::DynamicArray<T, Sizes...>> : std::true_type {};
 
+template <typename T>
+constexpr bool is_dynamic_array_v = is_dynamic_array<base_t<T>>::value;
+
 } // namespace serializer::mtf
 
 /******************************************************************************/

@@ -3,6 +3,7 @@
 #include "convertor/convertor.hpp"
 #include "meta/concepts.hpp"
 #include "tools/context.hpp"
+#include "tools/id_table.hpp"
 #include "tools/vec.hpp"
 
 // TODO: use always inline attribute
@@ -65,12 +66,28 @@ inline constexpr size_t deserialize_struct(auto &mem, size_t pos, T const obj) {
 using default_mem_type = tools::vec<uint8_t>;
 /* using default_mem_type = std::vector<uint8_t>; */
 
-template <typename Super> inline constexpr Super &super(auto *obj) {
-    return *static_cast<Super *>(obj);
+// TODO: move this in a file
+template <typename Type> struct Super {
+    Type *obj;
+
+    constexpr Super(Type *obj) : obj(obj) {}
+
+    constexpr size_t serialize(auto &mem, size_t pos = 0) const {
+        return obj->Type::serialize(mem, pos);
+    }
+    constexpr size_t deserialize(auto &mem, size_t pos = 0) {
+        return obj->Type::deserialize(mem, pos);
+    }
+};
+
+template <typename T>
+inline constexpr auto super(auto *obj) {
+  return Super<T>(static_cast<T*>(obj));
 }
 
-template <typename Super> inline constexpr Super const &super(auto const *obj) {
-    return *static_cast<Super const *>(obj);
+template <typename T>
+inline constexpr auto super(auto const*obj) {
+  return Super<const T>(static_cast<T const*>(obj));
 }
 
 } // end namespace serializer

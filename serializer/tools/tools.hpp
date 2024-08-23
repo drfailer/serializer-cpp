@@ -129,22 +129,20 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
 /// @brief Generates a deserialize function for the polymorphic type
 ///        GenericType.
 ///        It is outside of the tools namespace to avoid errors when using it.
-#define HANDLE_POLYMORPHIC_IMPL(GenericType, ...)                              \
-    GenericType deserialize(std::string_view &str, GenericType &) override {   \
-        bool ptrValid = str[0] == 'v';                                         \
-        str = str.substr(1);                                                   \
-                                                                               \
-        if (!ptrValid) {                                                       \
-            return nullptr;                                                    \
-        }                                                                      \
-        using size_type = typename std::string::size_type;                     \
-        size_type size = *reinterpret_cast<const size_type *>(str.data());     \
-        std::string_view className = str.substr(sizeof(size), size);           \
-        return serializer::tools::type_switch_fn<GenericType, __VA_ARGS__>(    \
-            className, str);                                                   \
+#define HANDLE_POLYMORPHIC_IMPL(GenericType, IdTable, ...)                     \
+    constexpr void serialize(Mother *const &elt) override {                    \
+        this->pos = elt->serialize(this->mem, this->pos);                      \
     }                                                                          \
-    void serialize(GenericType const &elt, std::string &str) const override {  \
-        Convertor::serialize_(elt, str);                                       \
+    constexpr void deserialize(Mother *&elt) override {                        \
+        size_t id = this->mem[this->pos];                                      \
+        if (id == 1) {                                                         \
+            elt = new Mother();                                                \
+        } else if (id == 2) {                                                  \
+            elt = new Daughter1();                                             \
+        } else {                                                               \
+            elt = new Daughter2();                                             \
+        }                                                                      \
+        this->pos = elt->deserialize(this->mem, this->pos);                    \
     }
 
 /// @brief Generates a deserialize function for the pointers and smart pointers

@@ -37,6 +37,8 @@ struct Convertor : Convert<AdditionalTypes>... {
 
     constexpr Convertor(MemT &mem, size_t pos = 0) : mem(mem), pos(pos) {}
 
+    /* helper functions *******************************************************/
+
     inline constexpr size_t deserialize_size() {
         size_t size = *std::bit_cast<const size_t *>(mem.data() + pos);
         pos += sizeof(size);
@@ -75,14 +77,16 @@ struct Convertor : Convert<AdditionalTypes>... {
     ///        lost in the hole compiler error output.
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
-    template <serializer::concepts::NonSerializable T>
-        requires(!mtf::is_dynamic_array<mtf::base_t<T>>::value)
+    template <typename T>
+        requires(mtf::contains_v<T, AdditionalTypes...>
+            || (concepts::NonSerializable<T> && !mtf::is_dynamic_array_v<T>))
     inline constexpr void serialize_(T &&elt) {
         if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
-            static_cast<const Convert<T> *>(this)->serialize(elt, mem);
+            static_cast<Convert<mtf::base_t<T>> *>(this)->serialize(elt);
         } else {
+            static_assert(concepts::Serializable<T>);
             throw serializer::exceptions::UnsupportedTypeError<
                 mtf::base_t<T>>();
         }
@@ -96,15 +100,17 @@ struct Convertor : Convert<AdditionalTypes>... {
     ///        lost in the hole compiler error output.
     /// @param str String view of the data.
     /// @param elt Reference to the element that we want to deserialize.
-    template <serializer::concepts::NonDeserializable T>
-        requires(!mtf::is_dynamic_array<mtf::base_t<T>>::value)
+    template <typename T>
+        requires(mtf::contains_v<T, AdditionalTypes...>
+            || (concepts::NonDeserializable<T> && !mtf::is_dynamic_array_v<T>))
     inline constexpr void deserialize_(T &&elt) {
         if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
             // TODO: rework convert functions
-            static_cast<Convert<T> *>(this)->deserialize(elt);
+            static_cast<Convert<mtf::base_t<T>> *>(this)->deserialize(elt);
         } else {
+            static_assert(mtf::contains_v<T, AdditionalTypes...>);
             throw serializer::exceptions::UnsupportedTypeError<
                 mtf::base_t<T>>();
         }
@@ -117,6 +123,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::concepts::Serializable T>
+      requires (!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void serialize_(T &&elt) {
         pos = elt.serialize(mem, pos);
     }
@@ -128,6 +135,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     ///            just used for creating an overload of the deserialize
     ///            function.
     template <serializer::concepts::Deserializable T>
+      requires (!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
         pos = elt.deserialize(mem, pos);
     }
@@ -160,15 +168,17 @@ struct Convertor : Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::concepts::Pointer T>
+      requires (!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void serialize_(T &&elt) {
         if (elt == nullptr) {
             append('n');
             return;
         }
         append('v');
-        if constexpr (std::is_abstract_v<std::remove_pointer_t<T>>) {
+        if constexpr (requires { elt->serialize(mem, pos); }) {
             pos = elt->serialize(mem, pos);
         } else {
+          std::cout << "not working" << std::endl;
             serialize_(*elt);
         }
     }
@@ -181,6 +191,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     ///            just used for creating an overload of the deserialize
     ///            function.
     template <serializer::concepts::ConcretePtr T>
+      requires (!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
         bool ptrValid = mem[pos++] == 'v';
 

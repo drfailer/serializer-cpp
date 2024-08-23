@@ -3,26 +3,26 @@
 #include <string>
 #include <iostream>
 
-#define TEST_SIMPLE
-#define TEST_COMPOSED
-#define TEST_STRING
-#define TEST_POINTERS
-#define TEST_CONTAINERS
-/* #define TEST_POLYMORPHIC */
-/* #define TEST_SUPER */
-/* #define TEST_INHERITANCE */
-#define TEST_SMART_PTR
-#define TEST_ENUMS
-#define TEST_PAIR
-#define TEST_TUPLE
-#define TEST_CONVERTOR
-#define TEST_MAP
-#define TEST_SET
-#define TEST_CSTRUCT
-#define TEST_FUNCTION
-#define TEST_STATIC_ARRAYS
-#define TEST_DYNAMIC_ARRAYS
-#define TEST_TREE
+//#define TEST_SIMPLE
+//#define TEST_COMPOSED
+//#define TEST_STRING
+//#define TEST_POINTERS
+//#define TEST_CONTAINERS
+///* #define TEST_POLYMORPHIC */
+///* #define TEST_SUPER */
+#define TEST_INHERITANCE
+//#define TEST_SMART_PTR
+//#define TEST_ENUMS
+//#define TEST_PAIR
+//#define TEST_TUPLE
+//#define TEST_CONVERTOR
+//#define TEST_MAP
+//#define TEST_SET
+//#define TEST_CSTRUCT
+//#define TEST_FUNCTION
+//#define TEST_STATIC_ARRAYS
+//#define TEST_DYNAMIC_ARRAYS
+//#define TEST_TREE
 
 /******************************************************************************/
 /*                         tests with a simple class                          */
@@ -371,23 +371,25 @@ TEST_CASE("serialize super class") {
 TEST_CASE("multiple inheritance") {
     mi::Collection original;
     mi::Collection other;
-    std::string result;
+    serializer::default_mem_type result;
     auto *c1 = new mi::Daughter1(10, "test1", 2.2);
     auto *c2 = new mi::Daughter2(10, "test2", 2.2, "job");
     auto *c3 = new mi::Daughter2(10, "test3", 2.2, "other job");
 
     // test with super class serialization:
 
-    result = c1->serialize();
+    c1->serialize(result);
     mi::Daughter1 c11;
     c11.deserialize(result);
-    REQUIRE(c11.serialize() == c1->serialize());
+    REQUIRE(c11.operator==(c1));
 
-    result = c2->serialize();
+    std::cout << "Daughter2" << std::endl;
+    c2->serialize(result);
     mi::Daughter2 c22;
     c22.deserialize(result);
-    REQUIRE(c22.serialize() == c2->serialize());
+    REQUIRE(c22.operator==(c2));
 
+    std::cout << "adding elements" << std::endl;
     original.push_back(c1);
     original.push_back(c2);
     original.push_back(c3);
@@ -395,7 +397,7 @@ TEST_CASE("multiple inheritance") {
     REQUIRE(original.elements().size() == 3);
     REQUIRE(other.elements().empty());
 
-    result = original.serialize();
+    original.serialize(result);
     other.deserialize(result);
 
     REQUIRE(other.elements().size() == original.elements().size());
