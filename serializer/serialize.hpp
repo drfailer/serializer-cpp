@@ -2,17 +2,18 @@
 #define SERIALIZE_H
 #include "convertor/convertor.hpp"
 #include "meta/concepts.hpp"
-#include "tools/vec.hpp"
 #include "tools/context.hpp"
+#include "tools/vec.hpp"
 
 // TODO: use always inline attribute
 
 namespace serializer {
 
 template <typename Conv>
-inline constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
-                                  auto &&...args) {
+inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
+    using mem_t = decltype(mem);
     [[maybe_unused]] bool first_level = pos == 0;
+
     Conv conv(mem, pos);
     (
         [&conv, &args] {
@@ -23,8 +24,7 @@ inline constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
             }
         }(),
         ...);
-    if constexpr (!mtf::is_vec_v<mtf::base_t<decltype(mem)>> &&
-                  requires { mem.resize(1); }) {
+    if constexpr (!mtf::is_vec_v<mem_t> && concepts::Resizeable<mem_t>) {
         if (first_level) [[unlikely]] {
             mem.resize(conv.pos);
         }
@@ -33,8 +33,7 @@ inline constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
 }
 
 template <typename Conv>
-inline constexpr size_t deserialize(typename Conv::mem_type &mem, size_t pos,
-                                    auto &&...args) {
+inline constexpr size_t deserialize(auto &mem, size_t pos, auto &&...args) {
     Conv conv(mem, pos);
     (
         [&conv, &args] {
@@ -63,24 +62,6 @@ inline constexpr size_t deserialize_struct(auto &mem, size_t pos, T const obj) {
     return pos + sizeof(*obj);
 }
 
-template <typename Conv, typename T, typename... Supers>
-inline constexpr size_t
-serialize_super(T const self, typename Conv::mem_type &mem, size_t pos) {
-    ([&self, &mem,
-      &pos] { pos = dynamic_cast<Supers>(self).serialize(mem, pos); }(),
-     ...);
-    return pos;
-}
-
-template <typename Conv, typename T, typename... Supers>
-inline constexpr size_t deserialize_super(T self, typename Conv::mem_type &mem,
-                                          size_t pos) {
-    ([&self, &mem,
-      &pos] { pos = dynamic_cast<Supers>(self).deserialize(mem, pos); }(),
-     ...);
-    return pos;
-}
-
 using default_mem_type = tools::vec<uint8_t>;
 /* using default_mem_type = std::vector<uint8_t>; */
 
@@ -94,33 +75,42 @@ template <typename Super> inline constexpr Super const &super(auto const *obj) {
 
 } // end namespace serializer
 
-#define SERIALIZE(...)                                                         \
-    constexpr size_t serialize(auto &mem, size_t pos = 0) const {              \
-        return serializer::serialize<serializer::Convertor<decltype(mem)>>(    \
-            mem, pos, __VA_ARGS__);                                            \
-    }                                                                          \
-    constexpr size_t deserialize(auto &mem, size_t pos = 0) {                  \
-        return serializer::deserialize<serializer::Convertor<decltype(mem)>>(  \
-            mem, pos, __VA_ARGS__);                                            \
-    }
-
 #define SERIALIZE_CONV(Conv, ...)                                              \
-    size_t serialize(auto &mem, size_t pos = 0) const {                        \
+    constexpr size_t serialize(auto &mem, size_t pos = 0) const {              \
         return serializer::serialize<Conv<decltype(mem)>>(mem, pos,            \
                                                           __VA_ARGS__);        \
     }                                                                          \
-    size_t deserialize(auto &mem, size_t pos = 0) {                            \
+    constexpr size_t deserialize(auto &mem, size_t pos = 0) {                  \
         return serializer::deserialize<Conv<decltype(mem)>>(mem, pos,          \
                                                             __VA_ARGS__);      \
     }
 
-#define SERIALIZE_SUPER()
+#define SERIALIZE(...) SERIALIZE_CONV(serializer::Convertor, __VA_ARGS__)
+
+#define __SERIALIZE__(Conv, virt, over, ...)                                   \
+    constexpr virt size_t serialize(typename Conv::mem_type &mem,              \
+                                    size_t pos = 0) const over {               \
+        return serializer::serialize<Conv>(mem, pos, __VA_ARGS__);             \
+    }                                                                          \
+    constexpr virt size_t deserialize(typename Conv::mem_type &mem,            \
+                                      size_t pos = 0) over {                   \
+        return serializer::deserialize<Conv>(mem, pos, __VA_ARGS__);           \
+    }
+
+#define VIRTUAL_SERIALIZE(Conv, ...)                                           \
+    __SERIALIZE__(Conv, virtual, /* over */, __VA_ARGS__)
+
+#define SERIALIZE_OVERRIDE(Conv, ...)                                          \
+    __SERIALIZE__(Conv, /* virt */, override, __VA_ARGS__)
 
 #define SERIALIZE_EMPTY()                                                      \
-    size_t serialize(auto &, size_t = 0) const { return 0; }                   \
-    size_t deserialize(auto const &, size_t = 0) { return 0; }
+    constexpr virtual size_t serialize(auto &, size_t = 0) const { return 0; } \
+    constexpr virtual size_t deserialize(auto const &, size_t = 0) { return 0; }
 
-// TODO: move this in a proper function and update the macro
+#define SERIALIZE_ABSTRACT()                                                   \
+    constexpr virtual size_t serialize(auto &, size_t = 0) const = 0;          \
+    constexpr virtual size_t deserialize(auto const &, size_t = 0) = 0;
+
 #define SERIALIZE_STRUCT()                                                     \
     constexpr size_t serialize(auto &mem, size_t pos = 0) const {              \
         return serializer::serialize_struct(mem, pos, this);                   \

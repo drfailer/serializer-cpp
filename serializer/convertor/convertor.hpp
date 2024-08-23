@@ -28,12 +28,11 @@ namespace serializer {
 /// @param AdditionalTypes External types for which the user can add support.
 template <typename MemT, typename... AdditionalTypes>
 struct Convertor : Convert<AdditionalTypes>... {
-    using mem_type = MemT;
-    mem_type &mem;
-
-    using byte_type = std::remove_cvref_t<decltype(mem[0])>;
-
+    MemT &mem;
     size_t pos = 0;
+
+    using mem_type = MemT;
+    using byte_type = std::remove_cvref_t<decltype(mem[0])>;
 
     constexpr Convertor(MemT &mem, size_t pos = 0) : mem(mem), pos(pos) {}
 
@@ -54,7 +53,7 @@ struct Convertor : Convert<AdditionalTypes>... {
             pos += nb_bytes;
         } else {
             if (mem.size() < pos + nb_bytes) [[unlikely]] {
-                if constexpr (requires { mem.resize(1); }) {
+                if constexpr (concepts::Resizeable<mem_type>) {
                     mem.resize((mem.size() + nb_bytes) * 2);
                 } else {
                     throw std::out_of_range(
@@ -215,11 +214,10 @@ struct Convertor : Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <serializer::concepts::SmartPtr T>
     inline constexpr void serialize_(T &&elt) {
-        using SP = mtf::base_t<T>;
         if (elt != nullptr) {
             append('v');
             if constexpr (serializer::concepts::Serializable<
-                              typename SP::element_type>) {
+                              mtf::element_type_t<T>>) {
                 elt->serialize(mem, pos);
             } else {
                 serialize_(*elt);
@@ -248,12 +246,12 @@ struct Convertor : Convert<AdditionalTypes>... {
             std::is_default_constructible_v<std::remove_pointer_t<SP>>,
             "The pointer types should be default constructible.");
         if constexpr (serializer::mtf::is_shared_v<SP>) {
-            elt = std::make_shared<typename SP::element_type>();
+            elt = std::make_shared<mtf::element_type_t<T>>();
         } else if constexpr (serializer::mtf::is_unique_v<SP>) {
-            elt = std::make_unique<typename SP::element_type>();
+            elt = std::make_unique<mtf::element_type_t<T>>();
         }
         if constexpr (serializer::concepts::Deserializable<
-                          typename SP::element_type>) {
+            mtf::element_type_t<T>>) {
             elt->deserialize(mem, pos);
         } else {
             deserialize_(*elt);
@@ -404,7 +402,7 @@ struct Convertor : Convert<AdditionalTypes>... {
         size_type size = deserialize_size();
 
         if constexpr (std::contiguous_iterator<IterType>) {
-            if constexpr (requires { elts.resize(1); }) {
+            if constexpr (concepts::Resizeable<T>) {
                 elts.resize(size);
             }
             if constexpr (concepts::Trivial<ValueType>) {
