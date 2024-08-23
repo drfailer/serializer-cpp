@@ -3,26 +3,26 @@
 #include <string>
 #include <iostream>
 
-//#define TEST_SIMPLE
-//#define TEST_COMPOSED
-//#define TEST_STRING
-//#define TEST_POINTERS
-//#define TEST_CONTAINERS
-///* #define TEST_POLYMORPHIC */
-///* #define TEST_SUPER */
+#define TEST_SIMPLE
+#define TEST_COMPOSED
+#define TEST_STRING
+#define TEST_POINTERS
+#define TEST_CONTAINERS
+/* #define TEST_POLYMORPHIC */
+/* #define TEST_SUPER */
 #define TEST_INHERITANCE
-//#define TEST_SMART_PTR
-//#define TEST_ENUMS
-//#define TEST_PAIR
-//#define TEST_TUPLE
-//#define TEST_CONVERTOR
-//#define TEST_MAP
-//#define TEST_SET
-//#define TEST_CSTRUCT
-//#define TEST_FUNCTION
-//#define TEST_STATIC_ARRAYS
-//#define TEST_DYNAMIC_ARRAYS
-//#define TEST_TREE
+#define TEST_SMART_PTR
+#define TEST_ENUMS
+#define TEST_PAIR
+#define TEST_TUPLE
+#define TEST_CONVERTOR
+#define TEST_MAP
+#define TEST_SET
+#define TEST_CSTRUCT
+#define TEST_FUNCTION
+#define TEST_STATIC_ARRAYS
+#define TEST_DYNAMIC_ARRAYS
+#define TEST_TREE
 
 /******************************************************************************/
 /*                         tests with a simple class                          */
@@ -383,13 +383,11 @@ TEST_CASE("multiple inheritance") {
     c11.deserialize(result);
     REQUIRE(c11.operator==(c1));
 
-    std::cout << "Daughter2" << std::endl;
     c2->serialize(result);
     mi::Daughter2 c22;
     c22.deserialize(result);
     REQUIRE(c22.operator==(c2));
 
-    std::cout << "adding elements" << std::endl;
     original.push_back(c1);
     original.push_back(c2);
     original.push_back(c3);

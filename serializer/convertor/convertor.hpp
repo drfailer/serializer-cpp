@@ -178,7 +178,6 @@ struct Convertor : Convert<AdditionalTypes>... {
         if constexpr (requires { elt->serialize(mem, pos); }) {
             pos = elt->serialize(mem, pos);
         } else {
-          std::cout << "not working" << std::endl;
             serialize_(*elt);
         }
     }
