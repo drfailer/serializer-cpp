@@ -11,20 +11,15 @@ template <typename T> struct Node {
         delete right;
     }
 
-    SERIALIZE(
-        serializer::tools::mtf::type_list<T, Node<T> *, Node<T> *,
-                                          serializer::function_t>(),
-        value, left, right, SER_DFUN({
-            if constexpr (!std::is_const_v<
-                              std::remove_pointer_t<decltype(this)>>) {
-                static_assert(
-                    !std::is_const_v<std::remove_pointer_t<decltype(this)>>);
-                if (this->left)
-                    this->left->father = this;
-                if (this->right)
-                    this->right->father = this;
-            }
-        }));
+    SERIALIZE(value, left, right, SER_DFUN({
+                  if constexpr (!std::is_const_v<
+                                    std::remove_pointer_t<decltype(this)>>) {
+                      if (this->left)
+                          this->left->father = this;
+                      if (this->right)
+                          this->right->father = this;
+                  }
+              }));
 
     void print(size_t rank = 0) {
         if (left)

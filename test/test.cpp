@@ -22,7 +22,7 @@
 #define TEST_FUNCTION
 #define TEST_STATIC_ARRAYS
 #define TEST_DYNAMIC_ARRAYS
-/* #define TEST_TREE */
+#define TEST_TREE
 
 /******************************************************************************/
 /*                         tests with a simple class                          */
@@ -712,11 +712,15 @@ TEST_CASE("cstruct") {
     serializer::default_mem_type resultSerializable(40);
     std::string name;
     std::string nameDeserialization;
-    /* size_t size; */
 
     // c like serialization
     auto begin = std::chrono::system_clock::now();
     result.append(0, reinterpret_cast<uint8_t *>(&cs), sizeof(cs));
+    /* if constexpr (serializer::concepts::Resizeable<decltype(result)>) { */
+    /*     result.resize(sizeof(cs)); */
+    /* } */
+    /* std::memcpy(result.data(), reinterpret_cast<uint8_t *>(&cs), */
+    /*             sizeof(cs)); */
     auto end = std::chrono::system_clock::now();
     std::cout << "c serialization time: " << time(end - begin) << std::endl;
 
@@ -892,16 +896,18 @@ TEST_CASE("dynamic arrays") {
 /******************************************************************************/
 
 #ifdef TEST_TREE
+#include <stack>
 #include "test-classes/tree.hpp"
 TEST_CASE("tree") {
     Tree<int> origin;
     Tree<int> other;
-    std::string result;
+    serializer::default_mem_type result;
 
     for (auto elt : {5, 4, 8, 6, 1, 3, 7, 2, 9}) {
         origin.insert(elt);
     }
-    result = origin.serialize();
+
+    origin.serialize(result);
     other.deserialize(result);
 
     Node<int> **currOrigin = &origin.root;

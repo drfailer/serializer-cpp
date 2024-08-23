@@ -1,15 +1,16 @@
 #ifndef HANDLERS_HPP
 #define HANDLERS_HPP
 #include "../exceptions/unsupported_type.hpp"
+#include "../meta/concepts.hpp"
 #include "../meta/type_check.hpp"
 #include "../meta/type_transform.hpp"
-#include "../meta/concepts.hpp"
 #include "../tools/dynamic_array.hpp"
 #include "../tools/tools.hpp"
 #include "convert.hpp"
 #include <algorithm>
 #include <bit>
 #include <cstring>
+#include <iostream>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -40,11 +41,6 @@ struct Convertor : Convert<AdditionalTypes>... {
         size_t size = *std::bit_cast<const size_t *>(mem.data() + pos);
         pos += sizeof(size);
         return size - 1;
-    }
-
-    inline constexpr void deserialize_id(auto id) {
-        id = *std::bit_cast<const decltype(id) *>(mem.data() + pos);
-        pos += sizeof(id);
     }
 
     inline constexpr void append(const byte_type *bytes, size_t nb_bytes) {
@@ -165,15 +161,15 @@ struct Convertor : Convert<AdditionalTypes>... {
     /// @param str String that contains the result.
     template <serializer::concepts::Pointer T>
     inline constexpr void serialize_(T &&elt) {
-        if (elt != nullptr) {
-            append('v');
-            if constexpr (std::is_abstract_v<std::remove_pointer_t<T>>) {
-                elt->serialize(mem, pos);
-            } else {
-                serialize_(*elt);
-            }
-        } else {
+        if (elt == nullptr) {
             append('n');
+            return;
+        }
+        append('v');
+        if constexpr (std::is_abstract_v<std::remove_pointer_t<T>>) {
+            pos = elt->serialize(mem, pos);
+        } else {
+            serialize_(*elt);
         }
     }
 
@@ -199,10 +195,10 @@ struct Convertor : Convert<AdditionalTypes>... {
         if (elt == nullptr) {
             elt = new Type();
         }
-        if constexpr (std::is_fundamental_v<Type>) {
-            deserialize_(*elt);
+        if constexpr (requires { elt->deserialize(mem, pos); }) {
+            pos = elt->deserialize(mem, pos);
         } else {
-            elt->deserialize(mem, pos);
+            deserialize_(*elt);
         }
     }
 
@@ -250,8 +246,7 @@ struct Convertor : Convert<AdditionalTypes>... {
         } else if constexpr (serializer::mtf::is_unique_v<SP>) {
             elt = std::make_unique<mtf::element_type_t<T>>();
         }
-        if constexpr (serializer::concepts::Deserializable<
-            mtf::element_type_t<T>>) {
+        if constexpr (requires { elt->deserialize(mem, pos); }) {
             elt->deserialize(mem, pos);
         } else {
             deserialize_(*elt);
@@ -275,8 +270,9 @@ struct Convertor : Convert<AdditionalTypes>... {
     template <serializer::concepts::TupleLike T>
         requires(!concepts::Trivial<T>)
     inline constexpr void serialize_(T &&tuple) {
-        serializeTuple(tuple, std::make_index_sequence<
-                                  std::tuple_size_v<mtf::base_t<T>>>());
+        serializeTuple(
+            tuple,
+            std::make_index_sequence<std::tuple_size_v<mtf::base_t<T>>>());
     }
 
     /// @brief Helper function for deserializing tuples.
@@ -296,10 +292,8 @@ struct Convertor : Convert<AdditionalTypes>... {
     template <serializer::concepts::TupleLike T>
         requires(!concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
-        elt = deserializeTuple<
-            mtf::remove_const_tuple_t<mtf::base_t<T>>>(
-            std::make_index_sequence<
-                std::tuple_size_v<mtf::base_t<T>>>());
+        elt = deserializeTuple<mtf::remove_const_tuple_t<mtf::base_t<T>>>(
+            std::make_index_sequence<std::tuple_size_v<mtf::base_t<T>>>());
     }
 
     /* enums ******************************************************************/
@@ -325,8 +319,7 @@ struct Convertor : Convert<AdditionalTypes>... {
         requires(!concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
         using Type = std::underlying_type_t<mtf::base_t<T>>;
-        elt = (mtf::base_t<T>)*std::bit_cast<const Type *>(mem.data() +
-                                                                  pos);
+        elt = (mtf::base_t<T>)*std::bit_cast<const Type *>(mem.data() + pos);
         pos += sizeof(Type);
     }
 
@@ -364,8 +357,8 @@ struct Convertor : Convert<AdditionalTypes>... {
     template <serializer::concepts::Container T>
         requires(!concepts::Trivial<T>)
     inline constexpr void serialize_(T &&elts) {
-        using ValueType = mtf::remove_const_t<
-            serializer::mtf::iter_value_t<mtf::base_t<T>>>;
+        using ValueType =
+            mtf::remove_const_t<serializer::mtf::iter_value_t<mtf::base_t<T>>>;
         using IterType = decltype(elts.begin());
 
         // append the size
@@ -396,8 +389,8 @@ struct Convertor : Convert<AdditionalTypes>... {
         requires(!concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elts) {
         using size_type = decltype(std::size(std::declval<T>()));
-        using ValueType = mtf::remove_const_t<
-            serializer::mtf::iter_value_t<mtf::base_t<T>>>;
+        using ValueType =
+            mtf::remove_const_t<serializer::mtf::iter_value_t<mtf::base_t<T>>>;
         using IterType = decltype(elts.begin());
         size_type size = deserialize_size();
 
@@ -422,10 +415,9 @@ struct Convertor : Convert<AdditionalTypes>... {
             for (size_t i = 0; i < size; ++i) {
                 ValueType value{};
                 deserialize_(value);
-                if constexpr (serializer::concepts::Insertable<
-                                  T, ValueType> ||
-                              serializer::concepts::PushBackable<
-                                  T, ValueType>) {
+                if constexpr (serializer::concepts::Insertable<T, ValueType> ||
+                              serializer::concepts::PushBackable<T,
+                                                                 ValueType>) {
                     serializer::tools::insert(elts, std::move(value));
                 } else {
                     serializer::tools::insert(elts, std::move(value), i);
@@ -445,8 +437,7 @@ struct Convertor : Convert<AdditionalTypes>... {
         using SubType = std::remove_extent_t<mtf::base_t<T>>;
         size_t size = std::extent_v<mtf::base_t<T>>;
 
-        if constexpr (!std::is_array_v<SubType> &&
-                      concepts::Trivial<SubType>) {
+        if constexpr (!std::is_array_v<SubType> && concepts::Trivial<SubType>) {
             append(std::bit_cast<const byte_type *>(std::to_address(elt)),
                    sizeof(SubType) * size);
         } else {
@@ -465,8 +456,7 @@ struct Convertor : Convert<AdditionalTypes>... {
         using SubType = std::remove_extent_t<mtf::base_t<T>>;
         size_t size = std::extent_v<mtf::base_t<T>>;
 
-        if constexpr (!std::is_array_v<SubType> &&
-                      concepts::Trivial<SubType>) {
+        if constexpr (!std::is_array_v<SubType> && concepts::Trivial<SubType>) {
             std::memcpy(std::to_address(elt), mem.data() + pos,
                         sizeof(SubType) * size);
             pos += sizeof(SubType) * size;
