@@ -111,8 +111,22 @@ class Daughter2 : public Daughter1 {
 /*                                 convertor                                  */
 /******************************************************************************/
 
-struct MIConvertor : public serializer::Convertor<POLYMORPHIC_TYPE(Mother)> {
-    HANDLE_POLYMORPHIC(Mother, Daughter1, Daughter2)
+template <typename MemT>
+struct MIConvertor : serializer::Convertor<MemT, Mother *> {
+    using serializer::Convertor<MemT, Mother *>::Convertor;
+    using byte_type = serializer::Convertor<MemT, Mother *>::byte_type;
+    // todo: using id_table = ?;
+    // TODO
+    constexpr void deserialize(Mother *&elt) override {
+        // note: we can serialize the id here as well
+        this->serialize(elt);
+    }
+    void serialize(Mother *const &elt) override {
+        // TODO
+        uint8_t id;
+        this->deserialize_id(id);
+        this->deserialize(serializer::polymorphic_cast<id_table>(elt, id));
+    }
 };
 
 /******************************************************************************/

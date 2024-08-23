@@ -1,6 +1,5 @@
 #ifndef WITH_STATIC_ARRAYS_HPP
 #define WITH_STATIC_ARRAYS_HPP
-#include "serializer/tools/ml_arg_type.hpp"
 #include "test-classes/simple.hpp"
 #include <serializer/serialize.hpp>
 
