@@ -1,8 +1,9 @@
 #ifndef SERIALIZE_H
 #define SERIALIZE_H
 #include "convertor/convertor.hpp"
-#include "tools/concepts.hpp"
+#include "meta/concepts.hpp"
 #include "tools/vec.hpp"
+#include "tools/context.hpp"
 
 // TODO: use always inline attribute
 
@@ -22,7 +23,7 @@ inline constexpr size_t serialize(typename Conv::mem_type &mem, size_t pos,
             }
         }(),
         ...);
-    if constexpr (!tools::mtf::is_vec_v<tools::mtf::base_t<decltype(mem)>> &&
+    if constexpr (!mtf::is_vec_v<mtf::base_t<decltype(mem)>> &&
                   requires { mem.resize(1); }) {
         if (first_level) [[unlikely]] {
             mem.resize(conv.pos);

@@ -1,7 +1,7 @@
 #include "catch.hpp"
 #include <chrono>
-#include <stack>
 #include <string>
+#include <iostream>
 
 #define TEST_SIMPLE
 #define TEST_COMPOSED

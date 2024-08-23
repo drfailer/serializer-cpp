@@ -33,7 +33,7 @@ class WithContainer {
     [[nodiscard]] const std::array<int, 10> &getArr() const { return arr; }
     [[nodiscard]] const std::array<int*, 10> &getArrPtr() const { return arrPtr; }
     [[nodiscard]] const std::array<Simple, 10> &getArrSimple() const {
-      static_assert(!serializer::tools::concepts::Trivial<Simple>);
+      static_assert(!serializer::concepts::Trivial<Simple>);
       return arrSimple;
     }
 

@@ -1,6 +1,6 @@
 #ifndef DYNAMIC_ARRAY_HPP
 #define DYNAMIC_ARRAY_HPP
-#include "concepts.hpp"
+#include "../meta/concepts.hpp"
 
 /******************************************************************************/
 /*                               Dynamic Array                                */
@@ -33,15 +33,16 @@ template <concepts::Pointer T, typename... DTs> struct DynamicArray {
     std::tuple<const DTs &...> dimensions; ///< dimensions of the array.
 };
 
-namespace mtf {
+} // end namespace serializer::tools
+
+namespace serializer::mtf {
+
 template <typename T> struct is_dynamic_array : std::false_type {};
 
 template <typename T, typename... Sizes>
-struct is_dynamic_array<DynamicArray<T, Sizes...>> : std::true_type {};
+struct is_dynamic_array<tools::DynamicArray<T, Sizes...>> : std::true_type {};
 
-} // end namespace mtf
-
-} // end namespace serializer::tools
+} // namespace serializer::mtf
 
 /******************************************************************************/
 /*                                   macros                                   */

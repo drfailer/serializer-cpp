@@ -1,7 +1,7 @@
 #ifndef TOOLS_HPP
 #define TOOLS_HPP
 #include "../exceptions/unknown_specialized_type.hpp"
-#include "concepts.hpp"
+#include "../meta/concepts.hpp"
 
 namespace serializer::tools {
 
@@ -20,7 +20,7 @@ namespace serializer::tools {
 
 /// @brief Insert an element into an iterable using the insert member function.
 template <typename Container, typename T>
-    requires serializer::tools::concepts::Insertable<Container, T>
+    requires serializer::concepts::Insertable<Container, T>
 inline constexpr void insert(Container &&container, T &&element) {
     container.insert(element);
 }
@@ -28,7 +28,7 @@ inline constexpr void insert(Container &&container, T &&element) {
 /// @brief Insert an element into an iterable using the add member
 ///        function.
 template <typename Container, typename T>
-    requires serializer::tools::concepts::PushBackable<Container, T>
+    requires serializer::concepts::PushBackable<Container, T>
 inline constexpr void insert(Container &&container, T &&element) {
     container.push_back(element);
 }
