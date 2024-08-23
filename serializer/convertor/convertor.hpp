@@ -40,10 +40,15 @@ struct Convertor : Convert<AdditionalTypes>... {
 
     constexpr Convertor(MemT &mem, size_t pos = 0) : mem(mem), pos(pos) {}
 
-    constexpr size_t deserialize_size() {
+    inline constexpr size_t deserialize_size() {
         size_t size = *std::bit_cast<const size_t *>(mem.data() + pos);
         pos += sizeof(size);
         return size - 1;
+    }
+
+    inline constexpr void deserialize_id(auto id) {
+        id = *std::bit_cast<const decltype(id) *>(mem.data() + pos);
+        pos += sizeof(id);
     }
 
     inline constexpr void append(const byte_type *bytes, size_t nb_bytes) {
@@ -401,14 +406,20 @@ struct Convertor : Convert<AdditionalTypes>... {
         using IterType = decltype(elts.begin());
         size_type size = deserialize_size();
 
-        if constexpr (std::contiguous_iterator<IterType> &&
-                      tools::concepts::Trivial<ValueType>) {
+        if constexpr (std::contiguous_iterator<IterType>) {
             if constexpr (requires { elts.resize(1); }) {
                 elts.resize(size);
             }
-            std::memcpy(std::to_address(elts.begin()), mem.data() + pos,
-                        sizeof(ValueType) * size);
-            pos += sizeof(ValueType) * size;
+            if constexpr (tools::concepts::Trivial<ValueType>) {
+                std::memcpy(
+                    std::bit_cast<byte_type *>(std::to_address(elts.begin())),
+                    mem.data() + pos, sizeof(ValueType) * size);
+                pos += sizeof(ValueType) * size;
+            } else {
+                for (auto &elt : elts) {
+                    deserialize_(elt);
+                }
+            }
         } else {
             if constexpr (requires { elts.clear(); }) {
                 elts.clear();

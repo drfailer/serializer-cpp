@@ -700,6 +700,9 @@ TEST_CASE("set") {
 
 #ifdef TEST_CSTRUCT
 #include "test-classes/cstruct.h"
+#define time(t)                                                                \
+    std::chrono::duration_cast<std::chrono::nanoseconds>(t).count() << "ns"
+
 TEST_CASE("cstruct") {
     CStruct cs = {.c = 'c', .i = 4, .l = 12347890, .f = 3.14, .d = 1.618};
     CStruct otherCS = {};
@@ -713,51 +716,27 @@ TEST_CASE("cstruct") {
 
     // c like serialization
     auto begin = std::chrono::system_clock::now();
-    /* name = typeid(cs).name(); */
-    /* size = name.size(); */
-    /* result.append(reinterpret_cast<char *>(&size), sizeof(size)); */
-    /* result.append(name); */
     result.append(0, reinterpret_cast<uint8_t *>(&cs), sizeof(cs));
     auto end = std::chrono::system_clock::now();
-    std::cout << "c serialization time: "
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
-                                                                      begin)
-                     .count()
-              << "ns" << std::endl;
+    std::cout << "c serialization time: " << time(end - begin) << std::endl;
 
     // serializer serialization
     begin = std::chrono::system_clock::now();
     css.serialize(resultSerializable);
     end = std::chrono::system_clock::now();
-    std::cout << "serializer serialization time: "
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
-                                                                      begin)
-                     .count()
-              << "ns" << std::endl;
+    std::cout << "serializer serialization time: " << time(end - begin) << std::endl;
 
     // c like deserialization
     begin = std::chrono::system_clock::now();
-    /* size = *reinterpret_cast<size_t *>(result.data()); */
-    /* nameDeserialization.append( */
-    /*     reinterpret_cast<char *>(result.data() + sizeof(size)), size); */
-    /* otherCS = *reinterpret_cast<CStruct *>(result.data() + sizeof(size) + size); */
     otherCS = *reinterpret_cast<CStruct *>(result.data());
     end = std::chrono::system_clock::now();
-    std::cout << "c deserialization time: "
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
-                                                                      begin)
-                     .count()
-              << "ns" << std::endl;
+    std::cout << "c deserialization time: " << time(end - begin) << std::endl;
 
     // serializer deserialization
     begin = std::chrono::system_clock::now();
     otherCSS.deserialize(resultSerializable);
     end = std::chrono::system_clock::now();
-    std::cout << "serializer deserialization time: "
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(end -
-                                                                      begin)
-                     .count()
-              << "ns" << std::endl;
+    std::cout << "serializer deserialization time: " << time(end - begin) << std::endl;
 
     // test cs deserialization
     REQUIRE(otherCS.c == cs.c);
@@ -768,11 +747,11 @@ TEST_CASE("cstruct") {
     REQUIRE(nameDeserialization == name);
 
     // test css deserialization
-    REQUIRE(otherCSS.c == css.c);
-    REQUIRE(otherCSS.i == css.i);
-    REQUIRE(otherCSS.l == css.l);
-    REQUIRE(otherCSS.f == css.f);
-    REQUIRE(otherCSS.d == css.d);
+    REQUIRE(otherCSS.c() == css.c());
+    REQUIRE(otherCSS.i() == css.i());
+    REQUIRE(otherCSS.l() == css.l());
+    REQUIRE(otherCSS.f() == css.f());
+    REQUIRE(otherCSS.d() == css.d());
 }
 #endif
 

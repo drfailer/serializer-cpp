@@ -14,14 +14,22 @@ class CStructSerializable {
   public:
     explicit CStructSerializable(char c_ = 0, int i_ = 0, long l_ = 0,
                                  float f_ = 0, double d_ = 0)
-        : c(c_), i(i_), l(l_), f(f_), d(d_) {}
+        : c_(c_), i_(i_), l_(l_), f_(f_), d_(d_) {}
 
-    SERIALIZE(c, i, l, f, d);
-    char c = 0;
-    int i = 0;
-    long l = 0;
-    float f = 0;
-    double d = 0;
+    char c() const { return c_; }
+    int i() const { return i_; }
+    long l() const { return l_; }
+    float f() const { return f_; }
+    double d() const { return d_; }
+
+    SERIALIZE(c_, i_, l_, f_, d_);
+
+  private:
+    char c_ = 0;
+    int i_ = 0;
+    long l_ = 0;
+    float f_ = 0;
+    double d_ = 0;
 };
 
 #endif // SERIALIZER_CSTRUCT_H
