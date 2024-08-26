@@ -6,18 +6,13 @@
 namespace serializer::concepts {
 
 /// @brief Objects that have a serialize member function.
-/// note: this concept is incomplete considering the fact that we can have
-/// several mem types
-template <typename T>
-concept Serializable =
-    requires(T obj, tools::vec<uint8_t> &mem) { obj.serialize(mem, 0); };
+template <typename T, typename MemT>
+concept Serializable = requires(T obj, MemT &mem) { obj.serialize(mem, 0); };
 
 /// @brief Objects that have a deserialize member function.
-template <typename T>
-/// note: this concept is incomplete considering the fact that we can have
-/// several mem types
+template <typename T, typename MemT>
 concept Deserializable =
-    requires(T obj, tools::vec<uint8_t> &mem) { obj.deserialize(mem, 0); };
+    requires(T obj, MemT &mem) { obj.deserialize(mem, 0); };
 
 /// @brief Smart pointers.
 template <typename T>
@@ -46,10 +41,10 @@ concept Array = mtf::is_std_array_v<T>;
 
 /// @brief Trivial types that can be cast directly
 template <typename T>
-concept Trivial = !std::is_pointer_v<mtf::base_t<T>> && !Array<T> &&
-                  !StaticArray<T> && !Serializable<T> && !Deserializable<T> &&
-                  std::is_copy_assignable_v<mtf::base_t<T>> &&
-                  std::is_trivially_copyable_v<mtf::base_t<T>>;
+concept Trivial =
+    !std::is_pointer_v<mtf::base_t<T>> && !Array<T> && !StaticArray<T> &&
+    std::is_copy_assignable_v<mtf::base_t<T>> &&
+    std::is_trivially_copyable_v<mtf::base_t<T>>;
 
 /// @brief Enum types.
 template <typename T>
@@ -105,13 +100,14 @@ concept AutoDeserializationSupported =
     String<T> || Iterable<T> || TupleLike<T> || StaticArray<T>;
 
 /// @brief Detect if a type is serializable.
-template <typename T>
-concept NonSerializable = !Serializable<T> && !AutoSerializationSupported<T>;
+template <typename T, typename MemT>
+concept NonSerializable =
+    !Serializable<T, MemT> && !AutoSerializationSupported<T>;
 
 /// @brief Detect if a type is deserializable.
-template <typename T>
+template <typename T, typename MemT>
 concept NonDeserializable =
-    !Deserializable<T> && !AutoDeserializationSupported<T>;
+    !Deserializable<T, MemT> && !AutoDeserializationSupported<T>;
 
 /* for insert helper function */
 
