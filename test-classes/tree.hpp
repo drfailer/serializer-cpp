@@ -37,6 +37,7 @@ template <typename T> struct Node {
 
 template <typename T> struct Tree {
   public:
+    ~Tree() { delete root; }
     SERIALIZE(root);
 
     void print() {

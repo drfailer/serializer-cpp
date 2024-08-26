@@ -1,13 +1,19 @@
 #ifndef SERIALIZER_ID_TABLE_H
 #define SERIALIZER_ID_TABLE_H
-#include "serializer/meta/concepts.hpp"
-#include "serializer/meta/type_check.hpp"
+#include "../meta/concepts.hpp"
+#include "../meta/type_check.hpp"
 #include <stdexcept>
 #include <type_traits>
 
 namespace serializer::tools {
 
-template <typename IdType, typename... Value> struct IdTable {
+template <typename IdType, typename... Value>
+  requires (requires (IdType id) {
+      id + 1;
+      id - 1;
+      id = 0;
+  })
+struct IdTable {
     using id_type = IdType;
 };
 

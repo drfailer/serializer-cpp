@@ -23,6 +23,7 @@
 #define TEST_STATIC_ARRAYS
 #define TEST_DYNAMIC_ARRAYS
 #define TEST_TREE
+#define TEST_HH
 
 /******************************************************************************/
 /*                         tests with a simple class                          */
@@ -267,6 +268,11 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
     REQUIRE(original.getVec2D().data() != other.getVec2D().data());
     REQUIRE(original.getClassVec().data() != other.getClassVec().data());
     REQUIRE(original.getLst().begin() != other.getLst().begin());
+
+    for (size_t i = 0; i < 10; ++i) {
+      delete original.getArrPtr()[i];
+      delete other.getArrPtr()[i];
+    }
 }
 #endif
 
@@ -402,6 +408,14 @@ TEST_CASE("multiple inheritance") {
     for (mi::Mother *m : original.elements()) {
         REQUIRE(*m == *it++);
     }
+
+    // delete
+    for (mi::Mother *m : other.elements()) {
+      delete m;
+    }
+    delete c1;
+    delete c2;
+    delete c3;
 }
 #endif
 
@@ -939,5 +953,65 @@ TEST_CASE("tree") {
             nodes.pop();
         }
     }
+}
+#endif
+
+/******************************************************************************/
+/*                                  hedgehog                                  */
+/******************************************************************************/
+
+#ifdef TEST_HH
+#include "test-classes/hedgehog.hpp"
+TEST_CASE("hedgehog") {
+    constexpr size_t w = 4, h = 4, bs = 2;
+    auto nm1 = std::make_shared<SumNetworkManager<TypeTable, SplitTask<double>>>();
+    auto nm2 = std::make_shared<SumNetworkManager<TypeTable, ComputeTask<double>>>();
+    auto nm3 = std::make_shared<SumNetworkManager<TypeTable, ResultTask<double>>>();
+    serializer::default_mem_type mem;
+    double *data = new double[h * w];
+    Matrix matrix(h, w, bs, data);
+    double sum = 0;
+
+    // setup the matrix
+    for (size_t i = 0; i < 16; ++i) {
+      matrix.data()[i] = i;
+      sum += (double)i;
+    }
+
+    // setup the network manager
+    SplitTask<double>::nm = nm2;
+    ComputeTask<double>::nm = nm3;
+    ResultTask<double>::nm = nullptr; // no network usage in this task
+    ResultTask<double>::result = 0;
+
+    REQUIRE(SplitTask<double>::nm == nm2);
+    REQUIRE(ComputeTask<double>::nm == nm3);
+
+    REQUIRE(nm1->network.size() == 0);
+    REQUIRE(nm2->network.size() == 0);
+    REQUIRE(nm3->network.size() == 0);
+
+    // serialize the matrix and send it on the network using nm1
+    matrix.serialize(mem);
+    nm1->send(mem);
+
+    REQUIRE(nm1->network.size() > 0);
+
+    nm1->transaction(); // validate the transaction and split the matrix
+
+    REQUIRE(nm1->network.size() == 0);
+    REQUIRE(nm2->network.size() > 0);
+    REQUIRE(nm3->network.size() == 0);
+
+    nm2->transaction(); // compute the partial sum for each block
+
+    REQUIRE(nm2->network.size() == 0);
+    REQUIRE(nm3->network.size() > 0);
+
+    nm3->transaction(); // send partial sums to he result task
+
+    REQUIRE(ResultTask<double>::result == sum);
+
+    delete[] data;
 }
 #endif

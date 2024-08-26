@@ -1,0 +1,195 @@
+#include <serializer/serialize.hpp>
+
+/******************************************************************************/
+/*                                  block id                                  */
+/******************************************************************************/
+
+enum BlockId {
+    Input,
+    Result,
+};
+
+/******************************************************************************/
+/*                                 type table                                 */
+/******************************************************************************/
+
+template <typename T> class Matrix;
+template <typename T> struct PartialSum;
+template <typename T, BlockId Id> class MatrixBlock;
+using TypeTable =
+    serializer::tools::IdTable<size_t, Matrix<double>, PartialSum<double>,
+                               MatrixBlock<double, Input>,
+                               MatrixBlock<double, Result>>;
+
+/******************************************************************************/
+/*                          matrix and matrix blocks                          */
+/******************************************************************************/
+
+template <typename T> class Matrix {
+  public:
+    Matrix() = default;
+    Matrix(size_t width, size_t height, size_t blockSize, T *data)
+        : width_(width), height_(height), blockSize_(blockSize),
+          nbRawBlocks_(height / blockSize + (height % blockSize == 0 ? 0 : 1)),
+          nbColBlocks_(width / blockSize + (width % blockSize == 0 ? 0 : 1)),
+          data_(data) {}
+
+    SERIALIZE(serializer::tools::getId<Matrix<T>>(TypeTable()), width_, height_,
+              blockSize_, nbRawBlocks_, nbColBlocks_,
+              SER_DARR(data_, width_, height_));
+
+    size_t width() const { return width_; }
+    size_t height() const { return height_; }
+    size_t blockSize() const { return blockSize_; }
+    size_t nbRawBlocks() const { return nbRawBlocks_; }
+    size_t nbColBlocks() const { return nbColBlocks_; }
+    T *data() { return data_; }
+    void data(T *data) { data_ = data; }
+
+  private:
+    size_t width_ = 0;
+    size_t height_ = 0;
+    size_t blockSize_ = 0;
+    size_t nbRawBlocks_ = 0;
+    size_t nbColBlocks_ = 0;
+    T *data_ = nullptr;
+};
+
+template <typename T, BlockId Id> class MatrixBlock {
+  public:
+    MatrixBlock() = default;
+    MatrixBlock(size_t x, size_t y, size_t matrixWidth, size_t matrixHeight,
+                size_t blockSize, size_t dataSize, T *data)
+        : x_(x), y_(y), xmax_(std::min(matrixWidth, x + blockSize)),
+          ymax_(std::min(matrixHeight, y + blockSize)),
+          matrixWidth_(matrixWidth), matrixHeight_(matrixHeight),
+          blockSize_(blockSize), dataSize_(dataSize), data_(data) {}
+
+    SERIALIZE(serializer::tools::getId<MatrixBlock<T, Id>>(TypeTable()), x_, y_,
+              xmax_, ymax_, matrixWidth_, matrixHeight_, blockSize_, dataSize_,
+              SER_DARR(data_, dataSize_));
+
+    size_t x() const { return x_; }
+    size_t y() const { return y_; }
+    size_t xmax() const { return xmax_; }
+    size_t ymax() const { return ymax_; }
+    size_t matrixWidth() const { return matrixWidth_; }
+    size_t matrixHeight() const { return matrixHeight_; }
+    size_t blockSize() const { return blockSize_; }
+    T *data() { return data_; }
+    void data(T *data) { data_ = data; }
+
+  private:
+    size_t x_ = 0;
+    size_t y_ = 0;
+    size_t xmax_ = 0;
+    size_t ymax_ = 0;
+    size_t matrixWidth_;
+    size_t matrixHeight_;
+    size_t blockSize_ = 0;
+    size_t dataSize_ = 0;
+    T *data_ = nullptr;
+};
+
+template <typename T> struct PartialSum {
+    SERIALIZE(serializer::tools::getId<PartialSum<T>>(TypeTable()), value);
+    T value = 0;
+};
+
+/******************************************************************************/
+/*                              network manager                               */
+/******************************************************************************/
+struct NetworkManager {
+    serializer::default_mem_type network;
+    virtual void send(serializer::default_mem_type mem) = 0;
+    virtual void transaction() = 0;
+};
+
+template <typename TypeTable, typename... Tasks>
+struct SumNetworkManager : NetworkManager {
+    template <typename T, typename... TS> void execute(auto ptr) {
+        if constexpr (requires { T::execute(ptr); }) {
+            T::execute(ptr);
+        }
+        if constexpr (sizeof...(TS) > 0) {
+            execute<TS...>(ptr);
+        }
+    }
+
+    void send(serializer::default_mem_type mem) override {
+        this->network.append(this->network.size(), mem.data(), mem.size());
+    }
+
+    void transaction() override {
+        size_t pos = 0;
+
+        while (pos < this->network.size()) {
+            auto id = serializer::deserialize_id<typename TypeTable::id_type>(
+                this->network, pos);
+            serializer::tools::applyId(id, TypeTable(), [&]<typename T>() {
+                auto v = std::make_shared<T>();
+                pos = v->deserialize(this->network, pos);
+                execute<Tasks...>(v);
+            });
+        }
+        this->network.clear();
+    }
+};
+
+/******************************************************************************/
+/*                                   tasks                                    */
+/******************************************************************************/
+
+template <typename T>
+struct SplitTask {
+    static void execute(std::shared_ptr<Matrix<T>> matrix) {
+        for (size_t i = 0; i < matrix->nbRawBlocks(); ++i) {
+            for (size_t j = 0; j < matrix->nbColBlocks(); ++j) {
+                auto block = std::make_shared<MatrixBlock<T, Input>>(
+                    i * matrix->blockSize(), j * matrix->blockSize(),
+                    matrix->width(), matrix->height(), matrix->blockSize(),
+                    matrix->height() * matrix->width(), matrix->data());
+                block->serialize(mem);
+                nm->send(mem);
+            }
+        }
+
+        delete[] matrix->data();
+        matrix->data(nullptr);
+    }
+
+    static inline std::shared_ptr<NetworkManager> nm = nullptr;
+    static inline serializer::default_mem_type mem;
+};
+
+template <typename T>
+struct ComputeTask {
+    static void execute(std::shared_ptr<MatrixBlock<T, Input>> block) {
+        PartialSum<T> result;
+
+        for (size_t i = block->y(); i < block->ymax(); ++i) {
+            for (size_t j = block->x(); j < block->xmax(); ++j) {
+                result.value += block->data()[i * block->matrixWidth() + j];
+            }
+        }
+        result.serialize(mem);
+        nm->send(mem);
+
+        // delete the block here since the memory has been allocated during the
+        // deserialzation
+        delete[] block->data();
+        block->data(nullptr);
+    }
+
+    static inline std::shared_ptr<NetworkManager> nm = nullptr;
+    static inline serializer::default_mem_type mem;
+};
+
+template <typename T>
+struct ResultTask {
+    static void execute(std::shared_ptr<PartialSum<T>> ps) {
+        result += ps->value;
+    }
+    static inline size_t result = 0;
+    static inline std::shared_ptr<NetworkManager> nm = nullptr;
+};
