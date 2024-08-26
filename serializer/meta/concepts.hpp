@@ -6,12 +6,16 @@
 namespace serializer::concepts {
 
 /// @brief Objects that have a serialize member function.
+/// note: this concept is incomplete considering the fact that we can have
+/// several mem types
 template <typename T>
 concept Serializable =
     requires(T obj, tools::vec<uint8_t> &mem) { obj.serialize(mem, 0); };
 
 /// @brief Objects that have a deserialize member function.
 template <typename T>
+/// note: this concept is incomplete considering the fact that we can have
+/// several mem types
 concept Deserializable =
     requires(T obj, tools::vec<uint8_t> &mem) { obj.deserialize(mem, 0); };
 

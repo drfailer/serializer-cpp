@@ -45,6 +45,11 @@ struct Convertor : Convert<AdditionalTypes>... {
         return size - 1;
     }
 
+    template <typename T>
+    inline constexpr T deserialize_id() {
+        return *std::bit_cast<const T *>(mem.data() + pos);
+    }
+
     inline constexpr void append(const byte_type *bytes, size_t nb_bytes) {
         if constexpr (mtf::is_vec_v<mtf::base_t<mem_type>>) {
             mem.append(pos, bytes, nb_bytes);

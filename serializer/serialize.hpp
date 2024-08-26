@@ -81,6 +81,12 @@ template <typename Type> struct Super {
 };
 
 template <typename T>
+inline constexpr T deserialize_id(auto &mem, size_t pos = 0) {
+  Convertor<decltype(mem)> conv(mem, pos);
+  return conv.template deserialize_id<T>();
+}
+
+template <typename T>
 inline constexpr auto super(auto *obj) {
   return Super<T>(static_cast<T*>(obj));
 }

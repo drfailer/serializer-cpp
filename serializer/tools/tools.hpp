@@ -129,29 +129,24 @@ RT type_switch_fn(const std::string_view &className, std::string_view &str) {
 /// @brief Generates a deserialize function for the polymorphic type
 ///        GenericType.
 ///        It is outside of the tools namespace to avoid errors when using it.
-#define HANDLE_POLYMORPHIC_IMPL(GenericType, IdTable, ...)                     \
-    constexpr void serialize(Mother *const &elt) override {                    \
+#define HANDLE_POLYMORPHIC_IMPL(IdTable, GenericType, ...)                     \
+    constexpr void serialize(GenericType const &elt) override {                \
         this->pos = elt->serialize(this->mem, this->pos);                      \
     }                                                                          \
-    constexpr void deserialize(Mother *&elt) override {                        \
-        size_t id = this->mem[this->pos];                                      \
-        if (id == 1) {                                                         \
-            elt = new Mother();                                                \
-        } else if (id == 2) {                                                  \
-            elt = new Daughter1();                                             \
-        } else {                                                               \
-            elt = new Daughter2();                                             \
-        }                                                                      \
+    constexpr void deserialize(GenericType &elt) override {                    \
+        auto id = this->template deserialize_id<IdTable::id_type>();           \
+        serializer::tools::createGeneric(id, IdTable(), elt);                  \
         this->pos = elt->deserialize(this->mem, this->pos);                    \
     }
 
 /// @brief Generates a deserialize function for the pointers and smart pointers
 ///        of the polymorphic type GenericType.
 ///        It is outside of the tools namespace to avoid errors when using it.
-#define HANDLE_POLYMORPHIC(GenericType, ...)                                   \
-    HANDLE_POLYMORPHIC_IMPL(GenericType *, __VA_ARGS__)                        \
-    HANDLE_POLYMORPHIC_IMPL(std::shared_ptr<GenericType>, __VA_ARGS__)         \
-    HANDLE_POLYMORPHIC_IMPL(std::unique_ptr<GenericType>, __VA_ARGS__)
+#define HANDLE_POLYMORPHIC(IdTable, GenericType, ...)                          \
+    HANDLE_POLYMORPHIC_IMPL(IdTable, GenericType *, __VA_ARGS__)               \
+    HANDLE_POLYMORPHIC_IMPL(IdTable, std::shared_ptr<GenericType>,             \
+                            __VA_ARGS__)                                       \
+    HANDLE_POLYMORPHIC_IMPL(IdTable, std::unique_ptr<GenericType>, __VA_ARGS__)
 
 /// @brief Helper macro to create a lambdat that is executed during the
 ///        serialization and the deserialization.

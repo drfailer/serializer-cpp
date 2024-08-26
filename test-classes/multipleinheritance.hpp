@@ -6,6 +6,12 @@
 
 namespace mi {
 
+class Mother;
+class Daughter1;
+class Daughter2;
+using id_table =
+    serializer::tools::IdTable<size_t, Mother, Daughter1, Daughter2>;
+
 /******************************************************************************/
 /*                                mother class                                */
 /******************************************************************************/
@@ -16,8 +22,8 @@ class Mother {
         : age_(_age), name_(std::move(name)) {}
     virtual ~Mother() = default;
 
-    VIRTUAL_SERIALIZE(serializer::Convertor<serializer::default_mem_type>, (size_t) 0, age_,
-                      name_)
+    VIRTUAL_SERIALIZE(serializer::Convertor<serializer::default_mem_type>,
+                      getId<Mother>(id_table()), age_, name_)
 
     /* accessors **************************************************************/
     void name(std::string name) { this->name_ = std::move(name); }
@@ -45,7 +51,8 @@ class Daughter1 : public Mother {
         : Mother(age, std::move(name)), money_(money) {}
 
     SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
-                       (size_t) 1, serializer::super<Mother>(this), money_)
+                       getId<Daughter1>(id_table()),
+                       serializer::super<Mother>(this), money_)
 
     /* accessors **************************************************************/
     void money(double money) { this->money_ = money; }
@@ -74,7 +81,12 @@ class Daughter2 : public Daughter1 {
         : Daughter1(age, name, money), jobName_(std::move(jobName)) {}
 
     SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
-                       2, serializer::super<Daughter1>(this), jobName_)
+                       getId<Daughter2>(id_table()),
+                       serializer::super<Daughter1>(this), jobName_)
+
+    /* accessors **************************************************************/
+    void jobName(std::string jobName) { this->jobName_ = std::move(jobName); }
+    [[nodiscard]] std::string const &jobName() const { return jobName_; }
 
     /* operator== *************************************************************/
     bool operator==(const Mother *other) const override {
@@ -93,20 +105,9 @@ class Daughter2 : public Daughter1 {
 /******************************************************************************/
 
 template <typename MemT>
-struct MIConvertor : serializer::Convertor<MemT, Mother *> {
-    using serializer::Convertor<MemT, Mother *>::Convertor;
-    using id_table = serializer::tools::id_table<size_t, Mother, Daughter1, Daughter2>;
-
-    // todo: using id_table = ?;
-    constexpr void serialize(Mother * const&elt) override {
-      this->pos = elt->serialize(this->mem, this->pos);
-    }
-
-    constexpr void deserialize(Mother *&elt) override {
-        size_t id = this->mem[this->pos];
-        serializer::tools::create_with_id(elt, id_table(), id);
-        this->pos = elt->deserialize(this->mem, this->pos);
-    }
+struct MIConvertor : serializer::Convertor<MemT, POLYMORPHIC_TYPE(Mother)> {
+    using serializer::Convertor<MemT, POLYMORPHIC_TYPE(Mother)>::Convertor;
+    HANDLE_POLYMORPHIC(id_table, Mother, Daughter1, Daughter2);
 };
 
 /******************************************************************************/
