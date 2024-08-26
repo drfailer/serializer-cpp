@@ -9,7 +9,7 @@
 #define TEST_POINTERS
 #define TEST_CONTAINERS
 #define TEST_POLYMORPHIC
-/* #define TEST_SUPER */
+#define TEST_SUPER
 #define TEST_INHERITANCE
 #define TEST_SMART_PTR
 #define TEST_ENUMS
@@ -328,22 +328,21 @@ TEST_CASE("implementing a convertor (polymorphic class serialization)") {
 TEST_CASE("serialize super class") {
     SuperCollection original;
     SuperCollection other;
-    std::string result;
+    serializer::default_mem_type result;
     auto *c1 = new Class1("John", 20, 1, 2.9);
     auto *c2 = new Class2("David", 30, "hello world");
 
     // test with super class serialization:
 
-    result = c1->serialize();
+    c1->serialize(result);
     Class1 c11;
     c11.deserialize(result);
-    REQUIRE(c11.serialize() == c1->serialize());
+    REQUIRE(c11 == c1);
 
-    result.clear();
     c2->serialize(result); // test the second method (faster)
     Class2 c22;
     c22.deserialize(result);
-    REQUIRE(c22.serialize() == c2->serialize());
+    REQUIRE(c22 == c2);
 
     original.push_back(c1);
     original.push_back(c2);
@@ -351,7 +350,7 @@ TEST_CASE("serialize super class") {
     REQUIRE(original.getElements().size() == 2);
     REQUIRE(other.getElements().empty());
 
-    result = original.serialize();
+    original.serialize(result);
     other.deserialize(result);
 
     REQUIRE(other.getElements().size() == original.getElements().size());
