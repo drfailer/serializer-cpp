@@ -75,51 +75,11 @@ T tupleProd(std::tuple<Types...> const &tuple) {
 /// @brief Macro that allow to get the name_ of a type using the RTTI.
 #define class_name(Type) typeid(Type).name()
 
+} // namespace serializer::tools
+
 /******************************************************************************/
 /*                          deserialize polymorphic                           */
 /******************************************************************************/
-
-/// @brief Function that is used to deserialize polymorphic types. It iterates
-///        on the types (given threw template parameters) and create the right
-///        object. All the types should derive RT.
-///        This overload is used to end the template recursion. In this case, we
-///        don't know the type so we throw an exception.
-/// @param className Name of the class obtained using typeid.
-/// @param str View of the string to deserialize.
-template <typename RT>
-RT type_switch_fn(const std::string_view &className, std::string_view &) {
-    throw serializer::exceptions::UknownSpecializedTypeError<RT>(className);
-}
-
-/// @brief Function that is used to deserialize polymorphic types. It iterates
-///        on the types (given threw template parameters) and create the right
-///        object. All the types should derive RT.
-/// @param className Name of the class obtained using typeid.
-/// @param str View of the string to deserialize.
-template <typename RT, typename T, typename... Types>
-RT type_switch_fn(const std::string_view &className, std::string_view &str) {
-    static_assert(!std::is_abstract_v<T>, "The type shouldn't be abstract.");
-    static_assert(std::is_default_constructible_v<T>,
-                  "The pointer types should be default constructible.");
-    if (className == class_name(T)) {
-        if constexpr (mtf::is_shared_v<RT>) {
-            auto elt = std::make_shared<T>();
-            elt->deserialize(str);
-            return elt;
-        } else if constexpr (mtf::is_unique_v<RT>) {
-            auto elt = std::make_unique<T>();
-            elt->deserialize(str);
-            return elt;
-        } else {
-            T *elt = new T();
-            elt->deserialize(str);
-            return elt;
-        }
-    }
-    return type_switch_fn<RT, Types...>(className, str);
-}
-
-} // namespace serializer::tools
 
 /// @brief Used to simplify the writing of a custom convertor for polymorphic
 ///        types (allow to add support for all common pointers)

@@ -41,7 +41,7 @@ constexpr void createGeneric(IdType id, IdTable<IdType, Value, Values...>,
         }
     } else {
         if constexpr (sizeof...(Values)) {
-            createGeneric(id - 1, IdTable<IdType, Values...>(), elt);
+            createGeneric(IdType(id - 1), IdTable<IdType, Values...>(), elt);
         } else {
             throw std::logic_error("error: id not found");
         }
@@ -49,15 +49,14 @@ constexpr void createGeneric(IdType id, IdTable<IdType, Value, Values...>,
 }
 
 template <typename IdType, typename T, typename... TS>
-constexpr void applyId(auto id,
-                           serializer::tools::IdTable<IdType, T, TS...>,
-                           auto function) {
+constexpr void applyId(auto id, serializer::tools::IdTable<IdType, T, TS...>,
+                       auto function) {
     if (id == 0) {
         function.template operator()<T>();
     } else {
         if constexpr (sizeof...(TS)) {
-            applyId(id - 1, serializer::tools::IdTable<IdType, TS...>(),
-                        function);
+            applyId(IdType(id - 1), serializer::tools::IdTable<IdType, TS...>(),
+                    function);
         } else {
             throw std::logic_error("error: id not found");
         }

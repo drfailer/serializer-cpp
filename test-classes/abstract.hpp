@@ -5,6 +5,10 @@
 #include <serializer/serialize.hpp>
 #include <vector>
 
+class Concrete1;
+class Concrete2;
+using AbstractTable = serializer::tools::IdTable<uint8_t, Concrete1, Concrete2>;
+
 /******************************************************************************/
 /*                               super abstract                               */
 /******************************************************************************/
@@ -15,8 +19,7 @@ class SuperAbstract {
     virtual ~SuperAbstract() = default;
     using MemT = serializer::default_mem_type;
 
-    virtual size_t serialize(MemT &, size_t = 0) const { return 0; }
-    virtual size_t deserialize(MemT const &, size_t = 0) { return 0; };
+    SERIALIZE_ABSTRACT(serializer::default_mem_type);
 
     virtual void method() = 0;
     virtual bool operator==(const SuperAbstract *) const = 0;
@@ -33,16 +36,9 @@ class Concrete1 : public SuperAbstract {
   public:
     explicit Concrete1(int x = 0, double y = 0) : x_(x), y_(y) {}
 
-    size_t serialize(MemT &mem, size_t pos = 0) const override {
-        pos = SuperAbstract::serialize(mem, pos);
-        return serializer::serialize<serializer::Convertor<MemT>>(mem, pos, x_,
-                                                                  y_);
-    }
-    size_t deserialize(MemT const &mem, size_t pos = 0) override {
-        pos = SuperAbstract::deserialize(mem, pos);
-        return serializer::deserialize<serializer::Convertor<const MemT>>(
-            mem, pos, x_, y_);
-    };
+    SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
+                       serializer::tools::getId<Concrete1>(AbstractTable()), x_,
+                       y_);
 
     /* accessors **************************************************************/
     void x(int x) { this->x_ = x; }
@@ -88,17 +84,11 @@ class Concrete1 : public SuperAbstract {
 
 class Concrete2 : public SuperAbstract {
   public:
-    explicit Concrete2(std::string str = "")
-        : str_(std::move(str)) {}
+    explicit Concrete2(std::string str = "") : str_(std::move(str)) {}
 
-    size_t serialize(MemT &mem, size_t pos = 0) const override {
-        pos = SuperAbstract::serialize(mem, pos);
-        return serializer::serialize<serializer::Convertor<MemT>>(mem, pos, str_);
-    }
-    size_t deserialize(MemT const &mem, size_t pos = 0) override {
-        pos = SuperAbstract::deserialize(mem, pos);
-        return serializer::deserialize<serializer::Convertor<const MemT>>( mem, pos, str_);
-    };
+    SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
+                       serializer::tools::getId<Concrete2>(AbstractTable()),
+                       str_);
 
     /* accessors **************************************************************/
     void str(std::string str) { this->str_ = std::move(str); }
@@ -140,8 +130,12 @@ class Concrete2 : public SuperAbstract {
 /******************************************************************************/
 
 /* we use a custom convertor for handling generics */
-struct Test : public serializer::Convertor<POLYMORPHIC_TYPE(SuperAbstract)> {
-    HANDLE_POLYMORPHIC(SuperAbstract, Concrete1, Concrete2)
+template <typename MemT>
+struct AbstractConvertor
+    : serializer::Convertor<MemT, POLYMORPHIC_TYPE(SuperAbstract)> {
+    using serializer::Convertor<MemT,
+                                POLYMORPHIC_TYPE(SuperAbstract)>::Convertor;
+    HANDLE_POLYMORPHIC(AbstractTable, SuperAbstract, Concrete1, Concrete2)
 };
 
 /******************************************************************************/
@@ -149,18 +143,16 @@ struct Test : public serializer::Convertor<POLYMORPHIC_TYPE(SuperAbstract)> {
 /******************************************************************************/
 
 class AbstractCollection {
-    SERIALIZABLE_WITH_CONVERTOR(Test, std::vector<SuperAbstract *>,
-                                std::vector<std::shared_ptr<SuperAbstract>>,
-                                std::vector<std::unique_ptr<SuperAbstract>>);
-
   public:
-    AbstractCollection()
-        : SERIALIZER(elements_, elementsShared_, elementsUnique_) {}
+    AbstractCollection() = default;
     ~AbstractCollection() {
         for (auto elt : elements_) {
             delete elt;
         }
     }
+
+    SERIALIZE_CONV(AbstractConvertor, elements_, elementsShared_,
+                   elementsUnique_);
 
     /* accessors **************************************************************/
     void push_back(SuperAbstract *element) { elements_.push_back(element); }

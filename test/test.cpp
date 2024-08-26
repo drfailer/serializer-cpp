@@ -8,7 +8,7 @@
 #define TEST_STRING
 #define TEST_POINTERS
 #define TEST_CONTAINERS
-/* #define TEST_POLYMORPHIC */
+#define TEST_POLYMORPHIC
 /* #define TEST_SUPER */
 #define TEST_INHERITANCE
 #define TEST_SMART_PTR
@@ -279,7 +279,7 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
 TEST_CASE("implementing a convertor (polymorphic class serialization)") {
     AbstractCollection original;
     AbstractCollection other;
-    std::string result;
+    serializer::default_mem_type result;
 
     original.push_back(new Concrete1(1, 2.9));
     original.push_back(new Concrete2("hello \"test\" world"));
@@ -293,7 +293,7 @@ TEST_CASE("implementing a convertor (polymorphic class serialization)") {
     REQUIRE(original.elements().size() == 2);
     REQUIRE(other.elements().empty());
 
-    result = original.serialize();
+    original.serialize(result);
     other.deserialize(result);
 
     // pointer vector

@@ -82,18 +82,16 @@ template <typename Type> struct Super {
 
 template <typename T>
 inline constexpr T deserialize_id(auto &mem, size_t pos = 0) {
-  Convertor<decltype(mem)> conv(mem, pos);
-  return conv.template deserialize_id<T>();
+    Convertor<decltype(mem)> conv(mem, pos);
+    return conv.template deserialize_id<T>();
 }
 
-template <typename T>
-inline constexpr auto super(auto *obj) {
-  return Super<T>(static_cast<T*>(obj));
+template <typename T> inline constexpr auto super(auto *obj) {
+    return Super<T>(static_cast<T *>(obj));
 }
 
-template <typename T>
-inline constexpr auto super(auto const*obj) {
-  return Super<const T>(static_cast<T const*>(obj));
+template <typename T> inline constexpr auto super(auto const *obj) {
+    return Super<const T>(static_cast<T const *>(obj));
 }
 
 } // end namespace serializer
@@ -126,13 +124,13 @@ inline constexpr auto super(auto const*obj) {
 #define SERIALIZE_OVERRIDE(Conv, ...)                                          \
     __SERIALIZE__(Conv, /* virt */, override, __VA_ARGS__)
 
-#define SERIALIZE_EMPTY()                                                      \
-    constexpr virtual size_t serialize(auto &, size_t = 0) const { return 0; } \
-    constexpr virtual size_t deserialize(auto const &, size_t = 0) { return 0; }
+#define SERIALIZE_EMPTY(MemT)                                                  \
+    constexpr virtual size_t serialize(MemT &, size_t = 0) const { return 0; } \
+    constexpr virtual size_t deserialize(MemT &, size_t = 0) { return 0; }
 
-#define SERIALIZE_ABSTRACT()                                                   \
-    constexpr virtual size_t serialize(auto &, size_t = 0) const = 0;          \
-    constexpr virtual size_t deserialize(auto const &, size_t = 0) = 0;
+#define SERIALIZE_ABSTRACT(MemT)                                               \
+    constexpr virtual size_t serialize(MemT &, size_t = 0) const = 0;          \
+    constexpr virtual size_t deserialize(MemT &, size_t = 0) = 0;
 
 #define SERIALIZE_STRUCT()                                                     \
     constexpr size_t serialize(auto &mem, size_t pos = 0) const {              \

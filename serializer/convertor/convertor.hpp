@@ -229,6 +229,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     /// @param elt Reference to the element that we want to serialize.
     /// @param str String that contains the result.
     template <serializer::concepts::SmartPtr T>
+        requires(!mtf::contains_v<mtf::base_t<T>, AdditionalTypes...>)
     inline constexpr void serialize_(T &&elt) {
         if (elt != nullptr) {
             append('v');
@@ -250,6 +251,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     ///            just used for creating an overload of the deserialize
     ///            function.
     template <serializer::concepts::ConcreteSmartPtr T>
+        requires(!mtf::contains_v<mtf::base_t<T>, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
         using SP = mtf::base_t<T>;
         bool ptrValid = mem[pos++] == 'v';
