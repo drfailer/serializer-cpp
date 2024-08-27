@@ -4,13 +4,16 @@
 #include <sstream>
 #include <string>
 
+/// @brief namespace serializer exception
 namespace serializer::exceptions {
 
+/// @brief Exception for unsupported types.
+/// @tparam T Unsupported type.
 template <typename T>
 class UnsupportedTypeError : public std::exception {
   public:
+    /// @brief Constructor
     UnsupportedTypeError() {
-//        std::remove_reference<T> *obj;
         T *obj;
         std::ostringstream oss;
         oss << "error: the default convertor doesn't support the type '"
@@ -21,12 +24,13 @@ class UnsupportedTypeError : public std::exception {
         msg = oss.str();
     }
 
+    /// @brief what
     const char* what() const noexcept override {
         return msg.c_str();
     }
 
   private:
-    std::string msg;
+    std::string msg; ///< message for what.
 };
 
 } // end namespace serializer::exception
