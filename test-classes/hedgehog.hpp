@@ -1,3 +1,4 @@
+#include <iostream>
 #include <serializer/serialize.hpp>
 
 /******************************************************************************/
@@ -97,43 +98,95 @@ template <typename T> struct PartialSum {
 };
 
 /******************************************************************************/
-/*                              network manager                               */
+/*                                  network                                   */
 /******************************************************************************/
-struct NetworkManager {
-    serializer::default_mem_type network;
-    virtual void send(serializer::default_mem_type mem) = 0;
-    virtual void transaction() = 0;
+
+struct Network {
+    static inline serializer::default_mem_type data;
+    static void send(serializer::default_mem_type mem) {
+        data.append(data.size(), mem.data(), mem.size());
+    }
 };
 
+/******************************************************************************/
+/*                              abstract classes                              */
+/******************************************************************************/
+
+template <typename... Inputs> struct In {};
+
+template <typename... Outputs> struct Out {};
+
+template <typename T> struct Execute;
+template <typename T> struct Executes;
+template <typename T> struct Send;
+template <typename T> struct Sends;
+
+template <typename... Types>
+struct Executes<In<Types...>> : Execute<Types>... {};
+
+template <typename... Types> struct Sends<Out<Types...>> : Send<Types>... {};
+
+template <typename Input, typename Output>
+struct Task : Executes<Input>, Sends<Output> {};
+
+template <typename T> struct Execute {
+    virtual void execute(std::shared_ptr<T>) = 0;
+};
+
+template <typename T> struct Send {
+    serializer::default_mem_type mem;
+
+    void send(std::shared_ptr<T> elt) {
+        elt->serialize(mem);
+        Network::send(mem);
+    }
+};
+
+template <typename... Tasks> struct RunExecute {
+    RunExecute(std::tuple<std::shared_ptr<Tasks>...> tasks) : tasks(tasks) {}
+
+    template <typename T, typename Task>
+    void runExecute(std::shared_ptr<T> ptr, std::shared_ptr<Task> task) {
+        if constexpr (requires { task->execute(ptr); }) {
+            task->execute(ptr);
+        }
+    }
+
+    template <typename T, size_t... Idx>
+    void runExecute(std::shared_ptr<T> ptr, std::index_sequence<Idx...>) {
+        ([&] { runExecute(ptr, std::get<Idx>(tasks)); }(), ...);
+    }
+
+    template <typename T> void runExecute(std::shared_ptr<T> ptr) {
+        runExecute(ptr, std::make_index_sequence<sizeof...(Tasks)>());
+    }
+
+    std::tuple<std::shared_ptr<Tasks>...> tasks;
+};
+
+/******************************************************************************/
+/*                              network manager                               */
+/******************************************************************************/
+
 template <typename TypeTable, typename... Tasks>
-struct SumNetworkManager : NetworkManager {
-    template <typename T, typename... TS> void execute(auto ptr) {
-        if constexpr (requires { T::execute(ptr); }) {
-            T::execute(ptr);
-        }
-        if constexpr (sizeof...(TS) > 0) {
-            execute<TS...>(ptr);
-        }
-    }
+struct TaskManager : RunExecute<Tasks...> {
+    TaskManager(std::shared_ptr<Tasks>... tasks)
+        : RunExecute<Tasks...>(std::make_tuple(tasks...)) {}
 
-    void send(serializer::default_mem_type mem) override {
-        this->network.append(this->network.size(), mem.data(), mem.size());
-    }
-
-    void transaction() override {
-        size_t pos = 0;
-
-        while (pos < this->network.size()) {
+    void receive() {
+        size_t end = Network::data.size();
+        while (pos < end) {
             auto id = serializer::deserialize_id<typename TypeTable::id_type>(
-                this->network, pos);
+                Network::data, pos);
             serializer::tools::applyId(id, TypeTable(), [&]<typename T>() {
                 auto v = std::make_shared<T>();
-                pos = v->deserialize(this->network, pos);
-                execute<Tasks...>(v);
+                pos = v->deserialize(Network::data, pos);
+                this->runExecute(v);
             });
         }
-        this->network.clear();
     }
+
+    size_t pos = 0;
 };
 
 /******************************************************************************/
@@ -141,55 +194,42 @@ struct SumNetworkManager : NetworkManager {
 /******************************************************************************/
 
 template <typename T>
-struct SplitTask {
-    static void execute(std::shared_ptr<Matrix<T>> matrix) {
+struct SplitTask : Task<In<Matrix<T>>, Out<MatrixBlock<T, Input>>> {
+    void execute(std::shared_ptr<Matrix<T>> matrix) override {
         for (size_t i = 0; i < matrix->nbRawBlocks(); ++i) {
             for (size_t j = 0; j < matrix->nbColBlocks(); ++j) {
                 auto block = std::make_shared<MatrixBlock<T, Input>>(
                     i * matrix->blockSize(), j * matrix->blockSize(),
                     matrix->width(), matrix->height(), matrix->blockSize(),
                     matrix->height() * matrix->width(), matrix->data());
-                block->serialize(mem);
-                nm->send(mem);
+                this->send(block);
             }
         }
-
-        delete[] matrix->data();
-        matrix->data(nullptr);
     }
-
-    static inline std::shared_ptr<NetworkManager> nm = nullptr;
-    static inline serializer::default_mem_type mem;
 };
 
 template <typename T>
-struct ComputeTask {
-    static void execute(std::shared_ptr<MatrixBlock<T, Input>> block) {
-        PartialSum<T> result;
+struct ComputeTask : Task<In<MatrixBlock<T, Input>>, Out<PartialSum<T>>> {
+    void execute(std::shared_ptr<MatrixBlock<T, Input>> block) override {
+        T result = 0;
 
         for (size_t i = block->y(); i < block->ymax(); ++i) {
             for (size_t j = block->x(); j < block->xmax(); ++j) {
-                result.value += block->data()[i * block->matrixWidth() + j];
+                result += block->data()[i * block->matrixWidth() + j];
             }
         }
-        result.serialize(mem);
-        nm->send(mem);
+        this->send(std::make_shared<PartialSum<T>>(result));
 
         // delete the block here since the memory has been allocated during the
         // deserialzation
         delete[] block->data();
         block->data(nullptr);
     }
-
-    static inline std::shared_ptr<NetworkManager> nm = nullptr;
-    static inline serializer::default_mem_type mem;
 };
 
-template <typename T>
-struct ResultTask {
-    static void execute(std::shared_ptr<PartialSum<T>> ps) {
+template <typename T> struct ResultTask : Task<In<PartialSum<T>>, Out<>> {
+    void execute(std::shared_ptr<PartialSum<T>> ps) override {
         result += ps->value;
     }
-    static inline size_t result = 0;
-    static inline std::shared_ptr<NetworkManager> nm = nullptr;
+    size_t result = 0;
 };

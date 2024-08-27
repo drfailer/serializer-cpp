@@ -1,7 +1,7 @@
 #include "catch.hpp"
 #include <chrono>
-#include <string>
 #include <iostream>
+#include <string>
 
 #define TEST_SIMPLE
 #define TEST_COMPOSED
@@ -214,11 +214,11 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
         original.addVec(std::vector<int>{1 * i, 2 * i, 3 * i, 4 * i, 5 * i});
         original.addArr(i, i * 2);
         if (i % 2) {
-          original.addArrPtr(i, nullptr);
+            original.addArrPtr(i, nullptr);
         } else {
-          original.addArrPtr(i, new int{i});
+            original.addArrPtr(i, new int{i});
         }
-        original.addArrSimple(i, Simple(i, i*2, "test"));
+        original.addArrSimple(i, Simple(i, i * 2, "test"));
     }
 
     REQUIRE(original.getEmptyVec().empty());
@@ -246,10 +246,10 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
         REQUIRE(original.getClassVec()[i] == other.getClassVec()[i]);
         REQUIRE(original.getArr()[i] == other.getArr()[i]);
         if (i % 2) {
-          REQUIRE(original.getArrPtr()[i] == other.getArrPtr()[i]);
+            REQUIRE(original.getArrPtr()[i] == other.getArrPtr()[i]);
         } else {
-          REQUIRE(other.getArrPtr()[i] != nullptr);
-          REQUIRE(*original.getArrPtr()[i] == *other.getArrPtr()[i]);
+            REQUIRE(other.getArrPtr()[i] != nullptr);
+            REQUIRE(*original.getArrPtr()[i] == *other.getArrPtr()[i]);
         }
         REQUIRE(original.getArrSimple()[i] == other.getArrSimple()[i]);
         for (int j = 0; j < 5; ++j) {
@@ -270,8 +270,8 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
     REQUIRE(original.getLst().begin() != other.getLst().begin());
 
     for (size_t i = 0; i < 10; ++i) {
-      delete original.getArrPtr()[i];
-      delete other.getArrPtr()[i];
+        delete original.getArrPtr()[i];
+        delete other.getArrPtr()[i];
     }
 }
 #endif
@@ -411,7 +411,7 @@ TEST_CASE("multiple inheritance") {
 
     // delete
     for (mi::Mother *m : other.elements()) {
-      delete m;
+        delete m;
     }
     delete c1;
     delete c2;
@@ -741,7 +741,8 @@ TEST_CASE("cstruct") {
     begin = std::chrono::system_clock::now();
     css.serialize(resultSerializable);
     end = std::chrono::system_clock::now();
-    std::cout << "serializer serialization time: " << time(end - begin) << std::endl;
+    std::cout << "serializer serialization time: " << time(end - begin)
+              << std::endl;
 
     // c like deserialization
     begin = std::chrono::system_clock::now();
@@ -753,7 +754,8 @@ TEST_CASE("cstruct") {
     begin = std::chrono::system_clock::now();
     otherCSS.deserialize(resultSerializable);
     end = std::chrono::system_clock::now();
-    std::cout << "serializer deserialization time: " << time(end - begin) << std::endl;
+    std::cout << "serializer deserialization time: " << time(end - begin)
+              << std::endl;
 
     // test cs deserialization
     REQUIRE(otherCS.c == cs.c);
@@ -856,7 +858,7 @@ TEST_CASE("dynamic arrays") {
     serializer::default_mem_type result;
 
     for (size_t i = 0; i < 10; ++i) {
-        external[i] = (double) i * 3.0;
+        external[i] = (double)i * 3.0;
     }
     origin.borrow(external, 10);
 
@@ -909,8 +911,8 @@ TEST_CASE("dynamic arrays") {
 /******************************************************************************/
 
 #ifdef TEST_TREE
-#include <stack>
 #include "test-classes/tree.hpp"
+#include <stack>
 TEST_CASE("tree") {
     Tree<int> origin;
     Tree<int> other;
@@ -964,53 +966,33 @@ TEST_CASE("tree") {
 #include "test-classes/hedgehog.hpp"
 TEST_CASE("hedgehog") {
     constexpr size_t w = 4, h = 4, bs = 2;
-    auto nm1 = std::make_shared<SumNetworkManager<TypeTable, SplitTask<double>>>();
-    auto nm2 = std::make_shared<SumNetworkManager<TypeTable, ComputeTask<double>>>();
-    auto nm3 = std::make_shared<SumNetworkManager<TypeTable, ResultTask<double>>>();
-    serializer::default_mem_type mem;
-    double *data = new double[h * w];
-    Matrix matrix(h, w, bs, data);
     double sum = 0;
+    double *data = new double[h * w];
+    auto matrix = std::make_shared<Matrix<double>>(h, w, bs, data);
+
+    // Tasks
+    auto st = std::make_shared<SplitTask<double>>();
+    auto ct = std::make_shared<ComputeTask<double>>();
+    auto rt = std::make_shared<ResultTask<double>>();
+
+    TaskManager<TypeTable, SplitTask<double>, ComputeTask<double>,
+                ResultTask<double>>
+        tm(st, ct, rt);
 
     // setup the matrix
     for (size_t i = 0; i < 16; ++i) {
-      matrix.data()[i] = i;
-      sum += (double)i;
+        matrix->data()[i] = i;
+        sum += (double)i;
     }
 
-    // setup the network manager
-    SplitTask<double>::nm = nm2;
-    ComputeTask<double>::nm = nm3;
-    ResultTask<double>::nm = nullptr; // no network usage in this task
-    ResultTask<double>::result = 0;
+    REQUIRE(Network::data.size() == 0);
+    st->execute(matrix);
+    REQUIRE(Network::data.size() > 0);
 
-    REQUIRE(SplitTask<double>::nm == nm2);
-    REQUIRE(ComputeTask<double>::nm == nm3);
+    tm.receive(); // transaction of the blocks to the compute task
+    tm.receive(); // transaction of the partial sums to the result task
 
-    REQUIRE(nm1->network.size() == 0);
-    REQUIRE(nm2->network.size() == 0);
-    REQUIRE(nm3->network.size() == 0);
-
-    // serialize the matrix and send it on the network using nm1
-    matrix.serialize(mem);
-    nm1->send(mem);
-
-    REQUIRE(nm1->network.size() > 0);
-
-    nm1->transaction(); // validate the transaction and split the matrix
-
-    REQUIRE(nm1->network.size() == 0);
-    REQUIRE(nm2->network.size() > 0);
-    REQUIRE(nm3->network.size() == 0);
-
-    nm2->transaction(); // compute the partial sum for each block
-
-    REQUIRE(nm2->network.size() == 0);
-    REQUIRE(nm3->network.size() > 0);
-
-    nm3->transaction(); // send partial sums to he result task
-
-    REQUIRE(ResultTask<double>::result == sum);
+    REQUIRE(rt->result == sum);
 
     delete[] data;
 }
