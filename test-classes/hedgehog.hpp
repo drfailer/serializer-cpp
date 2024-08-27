@@ -16,7 +16,7 @@ template <typename T> class Matrix;
 template <typename T> struct PartialSum;
 template <typename T, BlockId Id> class MatrixBlock;
 template <typename T>
-using TypeTable = serializer::tools::IdTable<size_t, Matrix<T>, PartialSum<T>,
+using TypeTable = serializer::tools::IdTable<char, Matrix<T>, PartialSum<T>,
                                              MatrixBlock<T, Input>>;
 
 /******************************************************************************/
@@ -58,19 +58,15 @@ template <typename T, BlockId Id> class MatrixBlock {
     MatrixBlock() = default;
     MatrixBlock(size_t x, size_t y, size_t matrixWidth, size_t matrixHeight,
                 size_t blockSize, size_t dataSize, T *data)
-        : x_(x), y_(y), xmax_(std::min(matrixWidth, x + blockSize)),
-          ymax_(std::min(matrixHeight, y + blockSize)),
-          matrixWidth_(matrixWidth), matrixHeight_(matrixHeight),
+        : x_(x), y_(y), matrixWidth_(matrixWidth), matrixHeight_(matrixHeight),
           blockSize_(blockSize), dataSize_(dataSize), data_(data) {}
 
     SERIALIZE(serializer::tools::getId<MatrixBlock<T, Id>>(TypeTable<T>()), x_,
-              y_, xmax_, ymax_, matrixWidth_, matrixHeight_, blockSize_,
+              y_, matrixWidth_, matrixHeight_, blockSize_,
               dataSize_, SER_DARR(data_, dataSize_));
 
     size_t x() const { return x_; }
     size_t y() const { return y_; }
-    size_t xmax() const { return xmax_; }
-    size_t ymax() const { return ymax_; }
     size_t matrixWidth() const { return matrixWidth_; }
     size_t matrixHeight() const { return matrixHeight_; }
     size_t blockSize() const { return blockSize_; }
@@ -80,8 +76,6 @@ template <typename T, BlockId Id> class MatrixBlock {
   private:
     size_t x_ = 0;
     size_t y_ = 0;
-    size_t xmax_ = 0;
-    size_t ymax_ = 0;
     size_t matrixWidth_;
     size_t matrixHeight_;
     size_t blockSize_ = 0;
@@ -167,7 +161,7 @@ template <typename... Tasks> struct RunExecute {
 };
 
 /******************************************************************************/
-/*                              network manager                               */
+/*                                task manager                                */
 /******************************************************************************/
 
 template <typename TypeTable, typename... Tasks>
@@ -215,10 +209,12 @@ struct SplitTask : Task<In<Matrix<T>>, Out<MatrixBlock<T, Input>>> {
 template <typename T>
 struct ComputeTask : Task<In<MatrixBlock<T, Input>>, Out<PartialSum<T>>> {
     void execute(std::shared_ptr<MatrixBlock<T, Input>> block) override {
+        size_t jend = std::min(block->matrixWidth(), block->x() + block->blockSize());
+        size_t iend = std::min(block->matrixHeight(), block->y() + block->blockSize());
         T result = 0;
 
-        for (size_t i = block->y(); i < block->ymax(); ++i) {
-            for (size_t j = block->x(); j < block->xmax(); ++j) {
+        for (size_t i = block->y(); i < iend; ++i) {
+            for (size_t j = block->x(); j < jend; ++j) {
                 result += block->data()[i * block->matrixWidth() + j];
             }
         }

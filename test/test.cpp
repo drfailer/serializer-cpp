@@ -988,9 +988,9 @@ TEST_CASE("hedgehog") {
     matrix->serialize(buff);
     Network::send(buff);
 
-    tm.receive(Network::rcv()); // receive the matrix
-    tm.receive(Network::rcv()); // receive the blocks to the compute task
-    tm.receive(Network::rcv()); // receive the partial sums to the result task
+    tm.receive(Network::rcv()); // receive the matrix in the split task
+    tm.receive(Network::rcv()); // receive the blocks in the compute task
+    tm.receive(Network::rcv()); // receive the partial sums in the result task
 
     REQUIRE(rt->result == sum);
 
