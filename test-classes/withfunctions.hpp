@@ -7,7 +7,7 @@ class WithFunctions {
     explicit WithFunctions(int i = 0) : i_(i) {}
 
     SERIALIZE(SER_FUN({
-        if constexpr (Phase == serializer::Phases::Serialization) {
+        if constexpr (Phase == serializer::tools::Phases::Serialization) {
             context.convertor.serialize_(i_);
         } else {
             context.convertor.deserialize_(i_);

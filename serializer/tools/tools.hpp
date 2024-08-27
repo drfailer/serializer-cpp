@@ -1,6 +1,5 @@
 #ifndef TOOLS_HPP
 #define TOOLS_HPP
-#include "../exceptions/unknown_specialized_type.hpp"
 #include "../meta/concepts.hpp"
 
 namespace serializer::tools {
@@ -94,7 +93,7 @@ T tupleProd(std::tuple<Types...> const &tuple) {
         this->pos = elt->serialize(this->mem, this->pos);                      \
     }                                                                          \
     constexpr void deserialize(GenericType &elt) override {                    \
-        auto id = this->template deserialize_id<IdTable::id_type>();           \
+        auto id = this->template getId<IdTable::id_type>();                    \
         serializer::tools::createGeneric(id, IdTable(), elt);                  \
         this->pos = elt->deserialize(this->mem, this->pos);                    \
     }
@@ -112,15 +111,16 @@ T tupleProd(std::tuple<Types...> const &tuple) {
 ///        serialization and the deserialization.
 /// @param code Code to execute.
 #define SER_FUN(code)                                                          \
-    [&]<serializer::Phases Phase, typename Conv>(                              \
-        [[maybe_unused]] serializer::Context<Phase, Conv> &&context) code
+    [&]<serializer::tools::Phases Phase, typename Conv>(                       \
+        [[maybe_unused]] serializer::tools::Context<Phase, Conv> &&context)    \
+        code
 
 /// @brief Helper macro to create a lambdat that is executed during the
 ///        serialization.
 /// @param code Code to execute.
 #define SER_SFUN(code)                                                         \
     SER_FUN({                                                                  \
-        if constexpr (Phase == serializer::Phases::Serialization)              \
+        if constexpr (Phase == serializer::tools::Phases::Serialization)       \
             code;                                                              \
     })
 
@@ -129,7 +129,7 @@ T tupleProd(std::tuple<Types...> const &tuple) {
 /// @param code Code to execute.
 #define SER_DFUN(code)                                                         \
     SER_FUN({                                                                  \
-        if constexpr (Phase == serializer::Phases::Deserialization)            \
+        if constexpr (Phase == serializer::tools::Phases::Deserialization)     \
             code;                                                              \
     })
 
