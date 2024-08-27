@@ -4,20 +4,15 @@
 
 namespace serializer::tools {
 
-/*
- * The convertor contains serialize and deserialize template functions that are
- * used for serializing various types. Here, we use concepts to generate the
- * right implementations for the different types.
- *
- * Implementations of the functions are defined in a macro to allow the user to
- * create its own Convertor class.
- */
-
 /******************************************************************************/
 /*                              helper functions                              */
 /******************************************************************************/
 
 /// @brief Insert an element into an iterable using the insert member function.
+/// @tparam Container Container type.
+/// @tparam T Type of the lement to insert.
+/// @param container
+/// @param element element to insert in the container.
 template <typename Container, typename T>
     requires serializer::concepts::Insertable<Container, T>
 inline constexpr void insert(Container &&container, T &&element) {
@@ -26,6 +21,10 @@ inline constexpr void insert(Container &&container, T &&element) {
 
 /// @brief Insert an element into an iterable using the add member
 ///        function.
+/// @tparam Container Container type.
+/// @tparam T Type of the lement to insert.
+/// @param container
+/// @param element element to insert in the container.
 template <typename Container, typename T>
     requires serializer::concepts::PushBackable<Container, T>
 inline constexpr void insert(Container &&container, T &&element) {
@@ -33,6 +32,11 @@ inline constexpr void insert(Container &&container, T &&element) {
 }
 
 /// @brief Insert an element into an iterable using the operator[].
+/// @tparam Container Container type.
+/// @tparam T Type of the lement to insert.
+/// @param container
+/// @param element element to insert in the container.
+/// @param idx Index where the element should be inserted in the container.
 template <typename Container, typename T>
 inline constexpr void insert(Container &&container, T &&element, size_t idx) {
     container[idx] = element;
@@ -42,17 +46,35 @@ inline constexpr void insert(Container &&container, T &&element, size_t idx) {
 /*                             tuple manipulation                             */
 /******************************************************************************/
 
+/// @brief Remove the first element of a tuple.
+/// @tparam H First type of the tuple.
+/// @tparam Tyes Other types in the tuple.
+/// @tparam Idx  Indicies in the tuple.
+/// @param t Tuple.
+/// @param index_sequence Indicies of the elements of the tuple.
+/// @return Tail of the tuple.
 template <typename H, typename... Types, size_t... Idx>
-std::tuple<Types...> tuplePopFront_(std::tuple<H, Types...> const &t,
+std::tuple<Types...> tuplePopFront_(std::tuple<H, Types...> const &tuple,
                                     std::index_sequence<Idx...>) {
-    return std::tuple<Types...>(std::get<Idx + 1>(t)...);
+    return std::tuple<Types...>(std::get<Idx + 1>(tuple)...);
 }
 
+/// @brief Remove the first element of a tuple.
+/// @tparam H First type of the tuple.
+/// @tparam Tyes Other types in the tuple.
+/// @param t Tuple.
+/// @return Tail of the tuple.
 template <typename H, typename... Types>
-std::tuple<Types...> tuplePopFront(std::tuple<H, Types...> const &t) {
-    return tuplePopFront_(t, std::make_index_sequence<sizeof...(Types)>());
+std::tuple<Types...> tuplePopFront(std::tuple<H, Types...> const &tuple) {
+    return tuplePopFront_(tuple, std::make_index_sequence<sizeof...(Types)>());
 }
 
+/// @brief Multiply the elements in a tuple.
+/// @tparam T Output type.
+/// @tparam Types Types in the tuple.
+/// @tparma Idx Index sequence
+/// @param tuple Tuple.
+/// @param index_sequence
 template <typename T, typename... Types, size_t... Idx>
 T tupleProd_(std::tuple<Types...> const &tuple, std::index_sequence<Idx...>) {
     if constexpr (sizeof...(Types) == 0) {
@@ -62,17 +84,14 @@ T tupleProd_(std::tuple<Types...> const &tuple, std::index_sequence<Idx...>) {
     }
 }
 
+/// @brief Multiply the elements in a tuple.
+/// @tparam T Output type.
+/// @tparam Types Types in the tuple.
+/// @param tuple Tuple.
 template <typename T, typename... Types>
 T tupleProd(std::tuple<Types...> const &tuple) {
     return tupleProd_<T>(tuple, std::make_index_sequence<sizeof...(Types)>());
 }
-
-/******************************************************************************/
-/*                               helper macros                                */
-/******************************************************************************/
-
-/// @brief Macro that allow to get the name_ of a type using the RTTI.
-#define class_name(Type) typeid(Type).name()
 
 } // namespace serializer::tools
 
@@ -85,9 +104,11 @@ T tupleProd(std::tuple<Types...> const &tuple) {
 #define POLYMORPHIC_TYPE(Class)                                                \
     Class *, std::shared_ptr<Class>, std::unique_ptr<Class>
 
-/// @brief Generates a deserialize function for the polymorphic type
-///        GenericType.
-///        It is outside of the tools namespace to avoid errors when using it.
+/// @brief Generates serialize and deserialize functions for the polymorphic
+///        type GenericType.
+/// @param IdTable Table to have the identifiers of the serialized types.
+/// @param GenericType Type of the super class.
+/// @param ... Subtypes.
 #define HANDLE_POLYMORPHIC_IMPL(IdTable, GenericType, ...)                     \
     constexpr void serialize(GenericType const &elt) override {                \
         this->pos = elt->serialize(this->mem, this->pos);                      \
@@ -100,14 +121,16 @@ T tupleProd(std::tuple<Types...> const &tuple) {
 
 /// @brief Generates a deserialize function for the pointers and smart pointers
 ///        of the polymorphic type GenericType.
-///        It is outside of the tools namespace to avoid errors when using it.
+/// @param IdTable Table to have the identifiers of the serialized types.
+/// @param GenericType Type of the super class.
+/// @param ... Subtypes.
 #define HANDLE_POLYMORPHIC(IdTable, GenericType, ...)                          \
     HANDLE_POLYMORPHIC_IMPL(IdTable, GenericType *, __VA_ARGS__)               \
     HANDLE_POLYMORPHIC_IMPL(IdTable, std::shared_ptr<GenericType>,             \
                             __VA_ARGS__)                                       \
     HANDLE_POLYMORPHIC_IMPL(IdTable, std::unique_ptr<GenericType>, __VA_ARGS__)
 
-/// @brief Helper macro to create a lambdat that is executed during the
+/// @brief Helper macro to create a lambda that is executed during the
 ///        serialization and the deserialization.
 /// @param code Code to execute.
 #define SER_FUN(code)                                                          \
@@ -115,7 +138,7 @@ T tupleProd(std::tuple<Types...> const &tuple) {
         [[maybe_unused]] serializer::tools::Context<Phase, Conv> &&context)    \
         code
 
-/// @brief Helper macro to create a lambdat that is executed during the
+/// @brief Helper macro to create a lambda that is executed during the
 ///        serialization.
 /// @param code Code to execute.
 #define SER_SFUN(code)                                                         \
@@ -124,7 +147,7 @@ T tupleProd(std::tuple<Types...> const &tuple) {
             code;                                                              \
     })
 
-/// @brief Helper macro to create a lambdat that is executed during the
+/// @brief Helper macro to create a lambda that is executed during the
 ///        deserialization.
 /// @param code Code to execute.
 #define SER_DFUN(code)                                                         \
