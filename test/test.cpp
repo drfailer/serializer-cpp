@@ -989,8 +989,15 @@ TEST_CASE("hedgehog") {
     st->execute(matrix);
     REQUIRE(Network::data.size() > 0);
 
-    tm.receive(); // transaction of the blocks to the compute task
-    tm.receive(); // transaction of the partial sums to the result task
+    serializer::default_mem_type buff = Network::data;
+    Network::data.clear();
+
+    tm.receive(buff); // transaction of the blocks to the compute task
+
+    buff = Network::data;
+    Network::data.clear();
+
+    tm.receive(buff); // transaction of the partial sums to the result task
 
     REQUIRE(rt->result == sum);
 

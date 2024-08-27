@@ -173,20 +173,19 @@ struct TaskManager : RunExecute<Tasks...> {
     TaskManager(std::shared_ptr<Tasks>... tasks)
         : RunExecute<Tasks...>(std::make_tuple(tasks...)) {}
 
-    void receive() {
-        size_t end = Network::data.size();
-        while (pos < end) {
+    void receive(serializer::default_mem_type buff) {
+        size_t pos = 0;
+
+        while (pos < buff.size()) {
             auto id = serializer::deserialize_id<typename TypeTable::id_type>(
-                Network::data, pos);
+                buff, pos);
             serializer::tools::applyId(id, TypeTable(), [&]<typename T>() {
                 auto v = std::make_shared<T>();
-                pos = v->deserialize(Network::data, pos);
+                pos = v->deserialize(buff, pos);
                 this->runExecute(v);
             });
         }
     }
-
-    size_t pos = 0;
 };
 
 /******************************************************************************/
