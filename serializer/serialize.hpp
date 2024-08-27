@@ -8,8 +8,14 @@
 
 // TODO: use always inline attribute
 
+/// @brief serializer namespace
 namespace serializer {
 
+/// @brief Serialize the arguments into the memory buffer at the given position.
+/// @tparam Conv Convertor type.
+/// @param mem  Buffer in which the serialized data will be stored.
+/// @param pos  Start position in the buffer for serializing the data.
+/// @param args Values to serialize
 template <typename Conv>
 inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
     using mem_t = decltype(mem);
@@ -19,7 +25,8 @@ inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
     (
         [&conv, &args] {
             if constexpr (SerializerFunction(args, conv)) {
-                args(Context<Phases::Serialization, decltype(conv)>(conv));
+                args(tools::Context<tools::Phases::Serialization,
+                                    decltype(conv)>(conv));
             } else {
                 conv.serialize_(args);
             }
@@ -33,13 +40,20 @@ inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
     return conv.pos;
 }
 
+/// @brief Deserialize the arguments from the memory buffer at the given
+///        position.
+/// @tparam Conv Convertor type.
+/// @param mem  Buffer in which the serialized data is be stored.
+/// @param pos  Start position in the buffer for deserializing the data.
+/// @param args references to the variables that are deserialized.
 template <typename Conv>
 inline constexpr size_t deserialize(auto &mem, size_t pos, auto &&...args) {
     Conv conv(mem, pos);
     (
         [&conv, &args] {
             if constexpr (SerializerFunction(args, conv)) {
-                args(Context<Phases::Deserialization, decltype(conv)>(conv));
+                args(tools::Context<tools::Phases::Deserialization,
+                                    decltype(conv)>(conv));
             } else {
                 conv.deserialize_(args);
             }
@@ -48,8 +62,15 @@ inline constexpr size_t deserialize(auto &mem, size_t pos, auto &&...args) {
     return conv.pos;
 }
 
+/// @brief Serialize obj into mem at pos using a bit_cast.
+/// @tparam T Object type (this).
+/// @param mem Buffer in which the serialized data is be stored.
+/// @param pos Start position in the buffer for serializing the data.
+/// @param obj Pointer to the object that is serialized.
 template <typename T>
-inline constexpr size_t serialize_struct(auto &mem, size_t pos, T const obj) {
+    requires(std::is_trivially_copyable_v<T> &&
+             std::is_trivially_copy_assignable_v<T>)
+inline constexpr size_t serializeStruct(auto &mem, size_t pos, T const *obj) {
     constexpr size_t nb_bytes = sizeof(*obj);
     Convertor<decltype(mem)> conv(mem, pos);
     using byte_type = std::remove_cvref_t<decltype(mem[0])>;
@@ -57,45 +78,75 @@ inline constexpr size_t serialize_struct(auto &mem, size_t pos, T const obj) {
     return conv.pos;
 }
 
+/// @brief Deserialize obj from mem at pos using a bit_cast.
+/// @tparam T Object type (this).
+/// @param mem Buffer in which the serialized data is be stored.
+/// @param pos Start position in the buffer for deserializing the data.
+/// @param obj Pointer to the object that is deserialized.
 template <typename T>
-inline constexpr size_t deserialize_struct(auto &mem, size_t pos, T const obj) {
+inline constexpr size_t deserializeStruct(auto &mem, size_t pos, T *obj) {
     *obj = *std::bit_cast<const decltype(obj)>(mem.data() + pos);
     return pos + sizeof(*obj);
 }
 
+// TODO: change this
 using default_mem_type = tools::vec<uint8_t>;
 /* using default_mem_type = std::vector<uint8_t>; */
 
 // TODO: move this in a file
-template <typename Type> struct Super {
-    Type *obj;
+/// @brief Wrapper class for serializing the mother class of polymorphic
+///        objects.
+/// @tparm SuperType Type of the mother class.
+template <typename SuperType> struct Super {
+    SuperType *obj;
 
-    constexpr Super(Type *obj) : obj(obj) {}
+    /// @brief Constructor from object.
+    /// @param obj Pointer to `this` of the serialized class.
+    constexpr Super(SuperType *obj) : obj(obj) {}
 
+    /// @brief Call the serialize method of the super class.
+    /// @param mem Buffer in which the serialized data is be stored.
+    /// @param pos Start position in the buffer for serializing the data.
     constexpr size_t serialize(auto &mem, size_t pos = 0) const {
-        return obj->Type::serialize(mem, pos);
+        return obj->SuperType::serialize(mem, pos);
     }
+
+    /// @brief Call the deserialize method of the super class.
+    /// @param mem Buffer in which the serialized data is be stored.
+    /// @param pos Start position in the buffer for deserializing the data.
     constexpr size_t deserialize(auto &mem, size_t pos = 0) {
-        return obj->Type::deserialize(mem, pos);
+        return obj->SuperType::deserialize(mem, pos);
     }
 };
 
-template <typename T>
-inline constexpr T deserialize_id(auto &mem, size_t pos = 0) {
+// TODO: move this elsewhere
+/// @brief Get the id of a type from mem at pos.
+/// @tparam T Type of the id.
+/// @param mem Buffer containing the serialized data.
+/// @param pos Start position in the buffer where the id is serialized.
+template <typename T> inline constexpr T getId(auto &mem, size_t pos = 0) {
     Convertor<decltype(mem)> conv(mem, pos);
-    return conv.template deserialize_id<T>();
+    return conv.template getId<T>();
 }
 
+/// @brief Helper function for creating a Super from an object.
+/// @param obj Pointer to the object (this).
 template <typename T> inline constexpr auto super(auto *obj) {
     return Super<T>(static_cast<T *>(obj));
 }
 
+/// @brief Helper function for creating a Super from an const object.
+/// @param obj Pointer to the object (this).
 template <typename T> inline constexpr auto super(auto const *obj) {
     return Super<const T>(static_cast<T const *>(obj));
 }
 
 } // end namespace serializer
 
+/// @brief Generate the serialze and deserialize methods with the specified
+///        convertor.
+/// @param Conv Convertor.
+/// @param ... Members to serialize.
 #define SERIALIZE_CONV(Conv, ...)                                              \
     constexpr size_t serialize(auto &mem, size_t pos = 0) const {              \
         return serializer::serialize<Conv<decltype(mem)>>(mem, pos,            \
@@ -106,8 +157,17 @@ template <typename T> inline constexpr auto super(auto const *obj) {
                                                             __VA_ARGS__);      \
     }
 
+/// @brief Generate the serialize and deserialize methods with the default
+///        convertor.
+/// @param ... Members to serialize.
 #define SERIALIZE(...) SERIALIZE_CONV(serializer::Convertor, __VA_ARGS__)
 
+/// @brief Generate the serialize and deserialize methods with the specified
+///        convertor. The keywords virtual and override can be added.
+/// @param Conv Convertor.
+/// @param virt Virtual keyworkd.
+/// @param over Override keyworkd.
+/// @param ... Members to serialize.
 #define __SERIALIZE__(Conv, virt, over, ...)                                   \
     constexpr virt size_t serialize(typename Conv::mem_type &mem,              \
                                     size_t pos = 0) const over {               \
@@ -118,26 +178,41 @@ template <typename T> inline constexpr auto super(auto const *obj) {
         return serializer::deserialize<Conv>(mem, pos, __VA_ARGS__);           \
     }
 
+/// @brief Generate the serialze and deserialize virtual methods using the
+///        specified convertor.
+/// @param Conv Convertor
+/// @param ... Members to serialize
 #define VIRTUAL_SERIALIZE(Conv, ...)                                           \
     __SERIALIZE__(Conv, virtual, /* over */, __VA_ARGS__)
 
+/// @brief Generate the serialze and deserialize override methods using the
+///        specified convertor.
+/// @param Conv Convertor
+/// @param ... Members to serialize
 #define SERIALIZE_OVERRIDE(Conv, ...)                                          \
     __SERIALIZE__(Conv, /* virt */, override, __VA_ARGS__)
 
+/// @brief Generate empty serialize and deserialize virtual methods (useful
+///        whithin a concrete super class).
+/// @param MemT Type of the buffer (virtual methods cannot be template).
 #define SERIALIZE_EMPTY(MemT)                                                  \
     constexpr virtual size_t serialize(MemT &, size_t = 0) const { return 0; } \
     constexpr virtual size_t deserialize(MemT &, size_t = 0) { return 0; }
 
+/// @brief Generate abstract serialize and deserialize virtual methods.
+/// @param MemT Type of the buffer (virtual methods cannot be template).
 #define SERIALIZE_ABSTRACT(MemT)                                               \
     constexpr virtual size_t serialize(MemT &, size_t = 0) const = 0;          \
     constexpr virtual size_t deserialize(MemT &, size_t = 0) = 0;
 
+/// @brief Generate the serialize and deserialize methods that use the
+///        (de)serialize functions.
 #define SERIALIZE_STRUCT()                                                     \
     constexpr size_t serialize(auto &mem, size_t pos = 0) const {              \
-        return serializer::serialize_struct(mem, pos, this);                   \
+        return serializer::serializeStruct(mem, pos, this);                    \
     }                                                                          \
     constexpr size_t deserialize(auto const &mem, size_t pos = 0) {            \
-        return serializer::deserialize_struct(mem, pos, this);                 \
+        return serializer::deserializeStruct(mem, pos, this);                  \
     }
 
 #endif
