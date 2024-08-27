@@ -968,6 +968,7 @@ TEST_CASE("hedgehog") {
     constexpr size_t w = 4, h = 4, bs = 2;
     double sum = 0;
     double *data = new double[h * w];
+    serializer::default_mem_type buff;
     auto matrix = std::make_shared<Matrix<double>>(h, w, bs, data);
 
     // Tasks
@@ -984,20 +985,12 @@ TEST_CASE("hedgehog") {
         matrix->data()[i] = i;
         sum += (double)i;
     }
+    matrix->serialize(buff);
+    Network::send(buff);
 
-    REQUIRE(Network::data.size() == 0);
-    st->execute(matrix);
-    REQUIRE(Network::data.size() > 0);
-
-    serializer::default_mem_type buff = Network::data;
-    Network::data.clear();
-
-    tm.receive(buff); // transaction of the blocks to the compute task
-
-    buff = Network::data;
-    Network::data.clear();
-
-    tm.receive(buff); // transaction of the partial sums to the result task
+    tm.receive(Network::rcv()); // receive the matrix
+    tm.receive(Network::rcv()); // receive the blocks to the compute task
+    tm.receive(Network::rcv()); // receive the partial sums to the result task
 
     REQUIRE(rt->result == sum);
 

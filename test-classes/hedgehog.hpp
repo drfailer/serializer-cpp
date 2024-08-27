@@ -103,6 +103,11 @@ struct Network {
     static void send(serializer::default_mem_type mem) {
         data.append(data.size(), mem.data(), mem.size());
     }
+    static serializer::default_mem_type rcv() {
+        serializer::default_mem_type result = data;
+        data.clear();
+        return result;
+    }
 };
 
 /******************************************************************************/
@@ -201,6 +206,9 @@ struct SplitTask : Task<In<Matrix<T>>, Out<MatrixBlock<T, Input>>> {
                 this->send(block);
             }
         }
+
+        delete[] matrix->data();
+        matrix->data(nullptr);
     }
 };
 
