@@ -25,47 +25,67 @@ namespace serializer {
 ///        deserializing types from the standard library. It inherits from the
 ///        convert behavior for additional types so the user can add its own
 ///        functions.
-/// @param AdditionalTypes External types for which the user can add support.
+/// @tparam MemT Type of the memory buffer.
+/// @tparam AdditionalTypes External types for which the user can add support.
 template <typename MemT, typename... AdditionalTypes>
 struct Convertor : Convert<AdditionalTypes>... {
-    MemT &mem;
-    size_t pos = 0;
+    MemT &mem;      ///< memory buffer in which the serialized data are stored
+    size_t pos = 0; ///< position in the memory buffer.
 
-    using mem_type = MemT;
-    using byte_type = std::remove_cvref_t<decltype(mem[0])>;
+    using mem_type = MemT; ///< alias to the type of the momory buffer
+    using byte_type =
+        std::remove_cvref_t<decltype(mem[0])>; ///< alias to the byte type
 
+    /* Constructor ************************************************************/
+
+    /// @brief Constructor from memory buffer reference and position.
+    /// @param mem Memory buffer in which the data is serialized.
+    /// @param pos Position in the memory buffer.
     constexpr Convertor(MemT &mem, size_t pos = 0) : mem(mem), pos(pos) {}
 
     /* helper functions *******************************************************/
 
-    inline constexpr size_t deserialize_size() {
+    /// @brief Helper function for deserializing the size of containers.
+    /// @return Deserialized size.
+    // TODO: should be template
+    inline constexpr size_t deserializeSize() {
         size_t size = *std::bit_cast<const size_t *>(mem.data() + pos);
         pos += sizeof(size);
         return size - 1;
     }
 
-    template <typename T> inline constexpr T deserialize_id() {
+    /// @brief Helper function for getting the id of a type. The id should be
+    ///        stored at pos. Do not change the memory or the pos.
+    /// @tparam T Type of the identifier.
+    /// @return Type identifier.
+    template <typename T> inline constexpr T getId() const {
         return *std::bit_cast<const T *>(mem.data() + pos);
     }
 
-    inline constexpr void append(const byte_type *bytes, size_t nb_bytes) {
+    /// @brief Append a buffer of byptes to the memory (mem and pos are changed)
+    /// @param bytes Buffer of bytes.
+    /// @param nbBytes Size of the buffer.
+    inline constexpr void append(const byte_type *bytes, size_t nbBytes) {
         if constexpr (mtf::is_vec_v<mtf::base_t<mem_type>>) {
-            mem.append(pos, bytes, nb_bytes);
-            pos += nb_bytes;
+            mem.append(pos, bytes, nbBytes);
+            pos += nbBytes;
         } else {
-            if (mem.size() < pos + nb_bytes) [[unlikely]] {
+            if (mem.size() < pos + nbBytes) [[unlikely]] {
                 if constexpr (concepts::Resizeable<mem_type>) {
-                    mem.resize((mem.size() + nb_bytes) * 2);
+                    mem.resize((mem.size() + nbBytes) * 2);
                 } else {
                     throw std::out_of_range(
-                        "error: serialization array too small.");
+                        "error: the serialization array is too small.");
                 }
             }
-            std::memcpy(mem.data() + pos, bytes, nb_bytes);
-            pos += nb_bytes;
+            std::memcpy(mem.data() + pos, bytes, nbBytes);
+            pos += nbBytes;
         }
     }
 
+    /// @brief Helper function for appending a char to the memory buffer (used
+    ///        when serializing pointer types).
+    /// @param chr Character to append.
     inline constexpr void append(char chr) {
         append(std::bit_cast<const byte_type *>(&chr), 1);
     }
@@ -78,8 +98,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     ///        Note: exceptions are a way to control the display of the error
     ///        message. We could use a static assert but the message will be
     ///        lost in the hole compiler error output.
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @param elt Element that is serialized.
     template <typename T>
         requires(mtf::contains_v<T, AdditionalTypes...> ||
                  (concepts::NonSerializable<T, MemT> &&
@@ -90,7 +109,6 @@ struct Convertor : Convert<AdditionalTypes>... {
             // pointer to shared_ptr)
             static_cast<Convert<mtf::base_t<T>> *>(this)->serialize(elt);
         } else {
-            static_assert(concepts::Serializable<T, MemT>);
             throw serializer::exceptions::UnsupportedTypeError<
                 mtf::base_t<T>>();
         }
@@ -102,8 +120,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     ///        Note: exceptions are a way to control the display of the error
     ///        message. We could use a static assert but the message will be
     ///        lost in the hole compiler error output.
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize.
+    /// @param elt Element that is deserialized.
     template <typename T>
         requires(mtf::contains_v<T, AdditionalTypes...> ||
                  (concepts::NonDeserializable<T, MemT> &&
@@ -115,7 +132,6 @@ struct Convertor : Convert<AdditionalTypes>... {
             // TODO: rework convert functions
             static_cast<Convert<mtf::base_t<T>> *>(this)->deserialize(elt);
         } else {
-            static_assert(mtf::contains_v<T, AdditionalTypes...>);
             throw serializer::exceptions::UnsupportedTypeError<
                 mtf::base_t<T>>();
         }
@@ -125,8 +141,7 @@ struct Convertor : Convert<AdditionalTypes>... {
 
     /// @brief Serialize function for the serializable types (they have a
     ///        serialize method).
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @param elt Element that is serialized.
     template <typename T>
         requires(concepts::Serializable<T, MemT> &&
                  !mtf::contains_v<T, AdditionalTypes...>)
@@ -136,10 +151,7 @@ struct Convertor : Convert<AdditionalTypes>... {
 
     /// @brief Deserialize function for the deserializable types (they have a
     ///        deserialize method).
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize. It it
-    ///            just used for creating an overload of the deserialize
-    ///            function.
+    /// @param elt Element that is deserialized.
     template <typename T>
         requires(serializer::concepts::Deserializable<T, MemT> &&
                  !mtf::contains_v<T, AdditionalTypes...>)
@@ -147,22 +159,18 @@ struct Convertor : Convert<AdditionalTypes>... {
         pos = elt.deserialize(mem, pos);
     }
 
-    /* fundamental types ******************************************************/
+    /* trivial types **********************************************************/
 
-    /// @brief Serialize function for the fundamental types.
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @brief Serialize function for the trivial types.
+    /// @param elt Element that is serialized.
     template <serializer::concepts::Trivial T>
         requires(!concepts::Serializable<T, MemT>)
     inline constexpr void serialize_(T &&elt) {
         append(std::bit_cast<const byte_type *>(&elt), sizeof(elt));
     }
 
-    /// @brief Deserialize function for the deserializable fundamental types.
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize. It it
-    ///            just used for creating an overload of the deserialize
-    ///            function.
+    /// @brief Deserialize function for the trivial types.
+    /// @param elt Element that is deserialized.
     template <serializer::concepts::Trivial T>
         requires(!concepts::Deserializable<T, MemT>)
     inline constexpr void deserialize_(T &&elt) {
@@ -174,8 +182,7 @@ struct Convertor : Convert<AdditionalTypes>... {
 
     /// @brief Serialize function for the pointer types.
     ///        The pointer should be valid (nullptr or value).
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @param elt Element that is serialized.
     template <serializer::concepts::Pointer T>
         requires(!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void serialize_(T &&elt) {
@@ -194,10 +201,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     /// @brief Deserialize function for the pointer types. If the pointer is not
     ///        null, a dynamic allocation is performed before deserializing the
     ///        result. This memory should be handled by the user.
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize. It it
-    ///            just used for creating an overload of the deserialize
-    ///            function.
+    /// @param elt Element that is deserialized.
     template <serializer::concepts::ConcretePtr T>
         requires(!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
@@ -225,8 +229,7 @@ struct Convertor : Convert<AdditionalTypes>... {
 
     /// @brief Serialize function for smart pointers (unique and shared).
     ///        The pointer should be valid (nullptr or value).
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @param elt Element that is serialized.
     template <serializer::concepts::SmartPtr T>
         requires(!mtf::contains_v<mtf::base_t<T>, AdditionalTypes...>)
     inline constexpr void serialize_(T &&elt) {
@@ -245,10 +248,7 @@ struct Convertor : Convert<AdditionalTypes>... {
 
     /// @brief Deserialize function for smart pointers (unique and shared). A
     ///        pointer is allocated if required.
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize. It it
-    ///            just used for creating an overload of the deserialize
-    ///            function.
+    /// @param elt Element that is deserialized.
     template <serializer::concepts::ConcreteSmartPtr T>
         requires(!mtf::contains_v<mtf::base_t<T>, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
@@ -277,8 +277,8 @@ struct Convertor : Convert<AdditionalTypes>... {
     /* tuples *****************************************************************/
 
     /// @brief Helper function used to serialize tuples.
-    /// @param tuple Tuple to serialize
-    /// @param str String that will contain the result.
+    /// @param tuple Tuple to serialize.
+    /// @param index_sequence Indicies of the tuple elements.
     template <class T, size_t... Idx>
     inline constexpr void serializeTuple(T &&tuple,
                                          std::index_sequence<Idx...>) {
@@ -286,8 +286,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     }
 
     /// @brief Serialize function for tuples (std::tuple and std::pair).
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @param elt Element that is serialized.
     template <serializer::concepts::TupleLike T>
         requires(!concepts::Trivial<T>)
     inline constexpr void serialize_(T &&tuple) {
@@ -297,7 +296,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     }
 
     /// @brief Helper function for deserializing tuples.
-    /// @param str String that contains the data.
+    /// @param index_sequence Indicies of the tuple elements.
     template <class T, size_t... Idx>
     constexpr T deserializeTuple(std::index_sequence<Idx...>) {
         T tuple;
@@ -306,10 +305,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     }
 
     /// @brief Deserialize function tuples (std::tuple and std::pair).
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize. It it
-    ///            just used for creating an overload of the deserialize
-    ///            function.
+    /// @param elt Element that is deserialized.
     template <serializer::concepts::TupleLike T>
         requires(!concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
@@ -321,8 +317,7 @@ struct Convertor : Convert<AdditionalTypes>... {
 
     /// @brief Serialize function for the enum types. The underlying type is
     ///        used to store the data.
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @param elt Element that is serialized.
     template <serializer::concepts::Enum T>
         requires(!concepts::Trivial<T>)
     inline constexpr void serialize_(T &&elt) {
@@ -332,10 +327,7 @@ struct Convertor : Convert<AdditionalTypes>... {
 
     /// @brief Deserialize function for enum types. The data is stored using the
     ///        underlying type.
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize. It it
-    ///            just used for creating an overload of the deserialize
-    ///            function.
+    /// @param elt Element that is deserialized.
     template <serializer::concepts::Enum T>
         requires(!concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
@@ -347,8 +339,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     /* strings ****************************************************************/
 
     /// @brief Serialize function for strings.
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @param elt Element that is serialized.
     template <serializer::concepts::String T>
     inline constexpr void serialize_(T &&elt) {
         using size_type = typename mtf::base_t<T>::size_type;
@@ -358,14 +349,11 @@ struct Convertor : Convert<AdditionalTypes>... {
     }
 
     /// @brief Deserialize function for strings.
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize. It it
-    ///            just used for creating an overload of the deserialize
-    ///            function.
+    /// @param elt Element that is deserialized.
     template <serializer::concepts::String T>
     inline constexpr void deserialize_(T &&str) {
         using size_type = typename mtf::base_t<T>::size_type;
-        size_type size = deserialize_size();
+        size_type size = deserializeSize();
         str.assign(std::bit_cast<const char *>(mem.data() + pos), size);
         pos += size;
     }
@@ -373,8 +361,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     /* iterable containers ****************************************************/
 
     /// @brief Serialize function for containers. They must be iterable.
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @param elt Element that is serialized.
     template <serializer::concepts::Container T>
         requires(!concepts::Trivial<T> && !concepts::Serializable<T, MemT>)
     inline constexpr void serialize_(T &&elts) {
@@ -388,7 +375,8 @@ struct Convertor : Convert<AdditionalTypes>... {
 
         // if the type is trivial, the memory is serialized directly
         if constexpr (std::contiguous_iterator<IterType> &&
-                      concepts::Trivial<ValueType>) {
+                      concepts::Trivial<ValueType> &&
+                      !concepts::Serializable<ValueType, MemT>) {
             append(
                 std::bit_cast<const byte_type *>(std::to_address(elts.begin())),
                 sizeof(ValueType) * std::size(elts));
@@ -399,13 +387,8 @@ struct Convertor : Convert<AdditionalTypes>... {
         }
     }
 
-    /// @brief Deserialize function for containers. They must be iterable and
-    ///        insertable (implements insert, add methods or usable with
-    ///        std::insert).
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize. It it
-    ///            just used for creating an overload of the deserialize
-    ///            function.
+    /// @brief Deserialize function for containers..
+    /// @param elt Element that is deserialized.
     template <serializer::concepts::Container T>
         requires(!concepts::Trivial<T> && !concepts::Deserializable<T, MemT>)
     inline constexpr void deserialize_(T &&elts) {
@@ -413,13 +396,14 @@ struct Convertor : Convert<AdditionalTypes>... {
         using ValueType =
             mtf::remove_const_t<serializer::mtf::iter_value_t<mtf::base_t<T>>>;
         using IterType = decltype(elts.begin());
-        size_type size = deserialize_size();
+        size_type size = deserializeSize();
 
         if constexpr (std::contiguous_iterator<IterType>) {
             if constexpr (concepts::Resizeable<T>) {
                 elts.resize(size);
             }
-            if constexpr (concepts::Trivial<ValueType>) {
+            if constexpr (concepts::Trivial<ValueType> &&
+                          !concepts::Deserializable<ValueType, MemT>) {
                 std::memcpy(
                     std::bit_cast<byte_type *>(std::to_address(elts.begin())),
                     mem.data() + pos, sizeof(ValueType) * size);
@@ -450,17 +434,17 @@ struct Convertor : Convert<AdditionalTypes>... {
     /* static array ***********************************************************/
 
     /// @brief Serialize function for static arrays.
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @param elt Element that is serialized.
     template <serializer::concepts::StaticArray T>
         requires(!concepts::Trivial<T>)
     inline constexpr void serialize_(T &&elt) {
-        using SubType = std::remove_extent_t<mtf::base_t<T>>;
+        using ST = std::remove_extent_t<mtf::base_t<T>>;
         size_t size = std::extent_v<mtf::base_t<T>>;
 
-        if constexpr (!std::is_array_v<SubType> && concepts::Trivial<SubType>) {
+        if constexpr (!std::is_array_v<ST> && concepts::Trivial<ST> &&
+                      !concepts::Serializable<ST, MemT>) {
             append(std::bit_cast<const byte_type *>(std::to_address(elt)),
-                   sizeof(SubType) * size);
+                   sizeof(ST) * size);
         } else {
             for (size_t i = 0; i < size; ++i) {
                 serialize_(elt[i]);
@@ -469,18 +453,18 @@ struct Convertor : Convert<AdditionalTypes>... {
     }
 
     /// @brief Deserialize function for static arrays.
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize.
+    /// @param elt Element that is deserialized.
     template <serializer::concepts::StaticArray T>
         requires(!concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
-        using SubType = std::remove_extent_t<mtf::base_t<T>>;
+        using ST = std::remove_extent_t<mtf::base_t<T>>;
         size_t size = std::extent_v<mtf::base_t<T>>;
 
-        if constexpr (!std::is_array_v<SubType> && concepts::Trivial<SubType>) {
+        if constexpr (!std::is_array_v<ST> && concepts::Trivial<ST> &&
+                      !concepts::Deserializable<ST, MemT>) {
             std::memcpy(std::to_address(elt), mem.data() + pos,
-                        sizeof(SubType) * size);
-            pos += sizeof(SubType) * size;
+                        sizeof(ST) * size);
+            pos += sizeof(ST) * size;
         } else {
             for (size_t i = 0; i < size; ++i) {
                 deserialize_(elt[i]);
@@ -492,8 +476,7 @@ struct Convertor : Convert<AdditionalTypes>... {
 
     /// @brief Serialize function for dynamic arrays (dynamic arrays should be
     ///        wrap in the DynamicArray type).
-    /// @param elt Reference to the element that we want to serialize.
-    /// @param str String that contains the result.
+    /// @param elt Element that is serialized.
     template <concepts::Pointer T, typename DT, typename... DTs>
     inline constexpr void serialize_(tools::DynamicArray<T, DT, DTs...> elt) {
         using ST = std::remove_pointer_t<mtf::base_t<T>>;
@@ -511,7 +494,8 @@ struct Convertor : Convert<AdditionalTypes>... {
             }
         } else {
             size_t size = tools::tupleProd<size_t>(elt.dimensions);
-            if constexpr (concepts::Trivial<ST>) {
+            if constexpr (concepts::Trivial<ST> &&
+                          !concepts::Serializable<ST, MemT>) {
                 append(std::bit_cast<const byte_type *>(elt.mem),
                        size * sizeof(ST));
             } else {
@@ -527,8 +511,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     ///        Note: memory is allocated if required. If the pointer is not set
     ///        correctly, this function may segfault. To avoid pointer
     ///        management, use the containers of the standard library instead.
-    /// @param str String view of the data.
-    /// @param elt Reference to the element that we want to deserialize.
+    /// @param elt Element that is deserialized.
     template <concepts::Pointer T, typename DT, typename... DTs>
     inline constexpr void deserialize_(tools::DynamicArray<T, DT, DTs...> elt) {
         using ST = std::remove_pointer_t<mtf::base_t<T>>;
@@ -553,7 +536,8 @@ struct Convertor : Convert<AdditionalTypes>... {
             if (elt.mem == nullptr) {
                 elt.mem = new ST[size]();
             }
-            if constexpr (concepts::Trivial<ST>) {
+            if constexpr (concepts::Trivial<ST> &&
+                          !concepts::Deserializable<ST, MemT>) {
                 std::memcpy(elt.mem, mem.data() + pos, size * sizeof(ST));
                 pos += size * sizeof(ST);
             } else {
