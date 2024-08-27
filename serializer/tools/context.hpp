@@ -1,7 +1,8 @@
 #ifndef SERIALIZER_CONTEXT_H
 #define SERIALIZER_CONTEXT_H
 
-namespace serializer {
+/// @brief namespace serializer tools
+namespace serializer::tools {
 
 /// @brief Enum used with the serializer functions to know the stage of the
 ///        serialization.
@@ -11,12 +12,11 @@ enum class Phases { Serialization, Deserialization };
 /// @tparam Phase     Phase of the serialization
 /// @tparam Convertor Convertor that holds the byte array and the serialization
 ///                   functions.
-template <Phases Phase, typename Convertor>
-struct Context {
-  static constexpr Phases phase = Phase;
-  Convertor convertor;
+template <Phases Phase, typename Convertor> struct Context {
+    static constexpr Phases phase = Phase; ///< phase
+    Convertor convertor;                   ///< convertor
 };
 
-} // end namespace serializer
+} // namespace serializer::tools
 
 #endif

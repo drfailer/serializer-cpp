@@ -7,12 +7,13 @@ namespace serializer::concepts {
 
 /// @brief Objects that have a serialize member function.
 template <typename T, typename MemT>
-concept Serializable = requires(T obj, MemT &mem) { obj.serialize(mem, 0); };
+concept Serializable =
+    requires(mtf::base_t<T> obj, MemT &mem) { obj.serialize(mem, 0); };
 
 /// @brief Objects that have a deserialize member function.
 template <typename T, typename MemT>
 concept Deserializable =
-    requires(T obj, MemT &mem) { obj.deserialize(mem, 0); };
+    requires(mtf::base_t<T> obj, MemT &mem) { obj.deserialize(mem, 0); };
 
 /// @brief Smart pointers.
 template <typename T>
@@ -126,6 +127,9 @@ concept PushBackable =
 ///        cannot deduce the type of the lambda.
 ///        TODO: this should not be defined here
 #define SerializerFunction(func, conv)                                         \
-    requires { func(Context<Phases::Serialization, decltype(conv)>(conv)); }
+    requires {                                                                 \
+        func(tools::Context<tools::Phases::Serialization, decltype(conv)>(     \
+            conv));                                                            \
+    }
 
 #endif
