@@ -1,4 +1,3 @@
-#include <iostream>
 #include <serializer/serialize.hpp>
 
 /******************************************************************************/
@@ -7,7 +6,6 @@
 
 enum BlockId {
     Input,
-    Result,
 };
 
 /******************************************************************************/
@@ -17,10 +15,9 @@ enum BlockId {
 template <typename T> class Matrix;
 template <typename T> struct PartialSum;
 template <typename T, BlockId Id> class MatrixBlock;
-using TypeTable =
-    serializer::tools::IdTable<size_t, Matrix<double>, PartialSum<double>,
-                               MatrixBlock<double, Input>,
-                               MatrixBlock<double, Result>>;
+template <typename T>
+using TypeTable = serializer::tools::IdTable<size_t, Matrix<T>, PartialSum<T>,
+                                             MatrixBlock<T, Input>>;
 
 /******************************************************************************/
 /*                          matrix and matrix blocks                          */
@@ -35,8 +32,8 @@ template <typename T> class Matrix {
           nbColBlocks_(width / blockSize + (width % blockSize == 0 ? 0 : 1)),
           data_(data) {}
 
-    SERIALIZE(serializer::tools::getId<Matrix<T>>(TypeTable()), width_, height_,
-              blockSize_, nbRawBlocks_, nbColBlocks_,
+    SERIALIZE(serializer::tools::getId<Matrix<T>>(TypeTable<T>()), width_,
+              height_, blockSize_, nbRawBlocks_, nbColBlocks_,
               SER_DARR(data_, width_, height_));
 
     size_t width() const { return width_; }
@@ -66,9 +63,9 @@ template <typename T, BlockId Id> class MatrixBlock {
           matrixWidth_(matrixWidth), matrixHeight_(matrixHeight),
           blockSize_(blockSize), dataSize_(dataSize), data_(data) {}
 
-    SERIALIZE(serializer::tools::getId<MatrixBlock<T, Id>>(TypeTable()), x_, y_,
-              xmax_, ymax_, matrixWidth_, matrixHeight_, blockSize_, dataSize_,
-              SER_DARR(data_, dataSize_));
+    SERIALIZE(serializer::tools::getId<MatrixBlock<T, Id>>(TypeTable<T>()), x_,
+              y_, xmax_, ymax_, matrixWidth_, matrixHeight_, blockSize_,
+              dataSize_, SER_DARR(data_, dataSize_));
 
     size_t x() const { return x_; }
     size_t y() const { return y_; }
@@ -93,7 +90,7 @@ template <typename T, BlockId Id> class MatrixBlock {
 };
 
 template <typename T> struct PartialSum {
-    SERIALIZE(serializer::tools::getId<PartialSum<T>>(TypeTable()), value);
+    SERIALIZE(serializer::tools::getId<PartialSum<T>>(TypeTable<T>()), value);
     T value = 0;
 };
 

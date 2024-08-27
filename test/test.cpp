@@ -975,7 +975,7 @@ TEST_CASE("hedgehog") {
     auto ct = std::make_shared<ComputeTask<double>>();
     auto rt = std::make_shared<ResultTask<double>>();
 
-    TaskManager<TypeTable, SplitTask<double>, ComputeTask<double>,
+    TaskManager<TypeTable<double>, SplitTask<double>, ComputeTask<double>,
                 ResultTask<double>>
         tm(st, ct, rt);
 
