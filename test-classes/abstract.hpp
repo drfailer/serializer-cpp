@@ -1,8 +1,8 @@
 #ifndef ABSTRACT_HPP
 #define ABSTRACT_HPP
 #include <iostream>
-#include <serializer/convertor/convertor.hpp>
 #include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 #include <vector>
 
 class Concrete1;

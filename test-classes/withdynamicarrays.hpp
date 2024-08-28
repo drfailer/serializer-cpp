@@ -2,6 +2,7 @@
 #define WITH_DYNAMIC_ARRAYS_HPP
 #include "simple.hpp"
 #include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 #include <serializer/tools/dynamic_array.hpp>
 
 class WithDynamicArray {

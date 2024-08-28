@@ -1,6 +1,7 @@
 #ifndef WITH_SET_HPP
 #define WITH_SET_HPP
 #include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 #include <set>
 #include <string>
 

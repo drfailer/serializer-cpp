@@ -1,6 +1,7 @@
 #ifndef MULTIPLE_INHERITANCE_HPP
 #define MULTIPLE_INHERITANCE_HPP
 #include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 #include <string>
 #include <vector>
 

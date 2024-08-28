@@ -1,6 +1,7 @@
 #ifndef TREE_HPP
 #define TREE_HPP
-#include "serializer/serialize.hpp"
+#include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 #include <iostream>
 
 template <typename T> struct Node {

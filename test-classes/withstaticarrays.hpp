@@ -2,6 +2,7 @@
 #define WITH_STATIC_ARRAYS_HPP
 #include "test-classes/simple.hpp"
 #include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 
 class WithStaticArrays {
   public:

@@ -1,5 +1,5 @@
-#ifndef EXCEPTIONS_HPP
-#define EXCEPTIONS_HPP
+#ifndef SERIALIZER_UNSUPPORTED_TYPE_ERROR_HPP
+#define SERIALIZER_UNSUPPORTED_TYPE_ERROR_HPP
 #include <exception>
 #include <sstream>
 #include <string>

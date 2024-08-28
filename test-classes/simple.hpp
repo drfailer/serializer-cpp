@@ -1,6 +1,7 @@
 #ifndef SIMPLE_HPP
 #define SIMPLE_HPP
-#include "serializer/serialize.hpp"
+#include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 
 class Simple {
   public:

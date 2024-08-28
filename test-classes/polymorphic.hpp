@@ -1,6 +1,7 @@
 #ifndef POLYMORPHIC_HPP
 #define POLYMORPHIC_HPP
 #include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 #include <vector>
 
 class SuperClass;

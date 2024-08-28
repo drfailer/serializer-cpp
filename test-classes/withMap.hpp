@@ -1,6 +1,7 @@
 #ifndef WITH_MAP_HPP
 #define WITH_MAP_HPP
 #include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 #include <map>
 #include <string>
 

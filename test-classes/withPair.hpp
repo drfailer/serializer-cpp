@@ -1,6 +1,7 @@
 #ifndef WITH_PAIR_HPP
 #define WITH_PAIR_HPP
 #include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 #include "test-classes/composed.hpp"
 #include "test-classes/simple.hpp"
 #include <set>

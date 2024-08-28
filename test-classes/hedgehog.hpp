@@ -1,4 +1,5 @@
 #include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 
 /******************************************************************************/
 /*                                  block id                                  */

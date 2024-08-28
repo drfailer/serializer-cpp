@@ -4,6 +4,7 @@
 #include "test-classes/simple.hpp"
 #include <map>
 #include <serializer/serialize.hpp>
+#include <serializer/tools/macros.hpp>
 #include <set>
 #include <string>
 #include <tuple>
