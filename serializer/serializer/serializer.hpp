@@ -187,7 +187,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <serializer::concepts::ConcretePtr T>
         requires(!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
-        bool ptrValid = mem[pos++] == 'v';
+        bool ptrValid = char(mem[pos++]) == 'v';
 
         if (!ptrValid) {
             elt = nullptr;
@@ -234,7 +234,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <serializer::concepts::ConcreteSmartPtr T>
         requires(!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
-        bool ptrValid = mem[pos++] == 'v';
+        bool ptrValid = char(mem[pos++]) == 'v';
 
         if (!ptrValid) {
             elt = nullptr;
@@ -484,7 +484,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <concepts::Pointer T, typename DT, typename... DTs>
     inline constexpr void deserialize_(tools::DynamicArray<T, DT, DTs...> elt) {
         using ST = std::remove_pointer_t<mtf::base_t<T>>;
-        bool ptrValid = mem[pos++] == 'v';
+        bool ptrValid = char(mem[pos++]) == 'v';
 
         if (!ptrValid) {
             elt.mem = nullptr;
