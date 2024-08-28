@@ -16,7 +16,7 @@ template <typename T> class Matrix;
 template <typename T> struct PartialSum;
 template <typename T, BlockId Id> class MatrixBlock;
 template <typename T>
-using TypeTable = serializer::tools::IdTable<char, Matrix<T>, PartialSum<T>,
+using TypeTable = serializer::tools::TypeTable<char, Matrix<T>, PartialSum<T>,
                                              MatrixBlock<T, Input>>;
 
 /******************************************************************************/

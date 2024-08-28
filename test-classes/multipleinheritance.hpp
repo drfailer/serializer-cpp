@@ -10,7 +10,7 @@ class Mother;
 class Daughter1;
 class Daughter2;
 using id_table =
-    serializer::tools::IdTable<size_t, Mother, Daughter1, Daughter2>;
+    serializer::tools::TypeTable<size_t, Mother, Daughter1, Daughter2>;
 
 /******************************************************************************/
 /*                                mother class                                */

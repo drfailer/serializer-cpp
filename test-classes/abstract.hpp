@@ -7,7 +7,7 @@
 
 class Concrete1;
 class Concrete2;
-using AbstractTable = serializer::tools::IdTable<uint8_t, Concrete1, Concrete2>;
+using AbstractTable = serializer::tools::TypeTable<uint8_t, Concrete1, Concrete2>;
 
 /******************************************************************************/
 /*                               super abstract                               */

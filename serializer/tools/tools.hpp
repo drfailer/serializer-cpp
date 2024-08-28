@@ -1,5 +1,5 @@
-#ifndef TOOLS_HPP
-#define TOOLS_HPP
+#ifndef SERIALIZER_TOOLS_HPP
+#define SERIALIZER_TOOLS_HPP
 #include "../meta/concepts.hpp"
 
 namespace serializer::tools {
@@ -106,29 +106,30 @@ T tupleProd(std::tuple<Types...> const &tuple) {
 
 /// @brief Generates serialize and deserialize functions for the polymorphic
 ///        type GenericType.
-/// @param IdTable Table to have the identifiers of the serialized types.
+/// @param TypeTable Table to have the identifiers of the serialized types.
 /// @param GenericType Type of the super class.
 /// @param ... Subtypes.
-#define HANDLE_POLYMORPHIC_IMPL(IdTable, GenericType, ...)                     \
+#define HANDLE_POLYMORPHIC_IMPL(TypeTable, GenericType, ...)                   \
     constexpr void serialize(GenericType const &elt) override {                \
         this->pos = elt->serialize(this->mem, this->pos);                      \
     }                                                                          \
     constexpr void deserialize(GenericType &elt) override {                    \
-        auto id = this->template getId<IdTable::id_type>();                    \
-        serializer::tools::createGeneric(id, IdTable(), elt);                  \
+        auto id = this->template getId<TypeTable::id_type>();                  \
+        serializer::tools::createGeneric(id, TypeTable(), elt);                \
         this->pos = elt->deserialize(this->mem, this->pos);                    \
     }
 
 /// @brief Generates a deserialize function for the pointers and smart pointers
 ///        of the polymorphic type GenericType.
-/// @param IdTable Table to have the identifiers of the serialized types.
+/// @param TypeTable Table to have the identifiers of the serialized types.
 /// @param GenericType Type of the super class.
 /// @param ... Subtypes.
-#define HANDLE_POLYMORPHIC(IdTable, GenericType, ...)                          \
-    HANDLE_POLYMORPHIC_IMPL(IdTable, GenericType *, __VA_ARGS__)               \
-    HANDLE_POLYMORPHIC_IMPL(IdTable, std::shared_ptr<GenericType>,             \
+#define HANDLE_POLYMORPHIC(TypeTable, GenericType, ...)                        \
+    HANDLE_POLYMORPHIC_IMPL(TypeTable, GenericType *, __VA_ARGS__)             \
+    HANDLE_POLYMORPHIC_IMPL(TypeTable, std::shared_ptr<GenericType>,           \
                             __VA_ARGS__)                                       \
-    HANDLE_POLYMORPHIC_IMPL(IdTable, std::unique_ptr<GenericType>, __VA_ARGS__)
+    HANDLE_POLYMORPHIC_IMPL(TypeTable, std::unique_ptr<GenericType>,           \
+                            __VA_ARGS__)
 
 /// @brief Helper macro to create a lambda that is executed during the
 ///        serialization and the deserialization.

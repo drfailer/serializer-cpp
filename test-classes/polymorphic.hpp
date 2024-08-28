@@ -6,7 +6,7 @@
 class SuperClass;
 class Class1;
 class Class2;
-using SuperTable = serializer::tools::IdTable<char, SuperClass, Class1, Class2>;
+using SuperTable = serializer::tools::TypeTable<char, SuperClass, Class1, Class2>;
 
 /******************************************************************************/
 /*                               super abstract                               */
