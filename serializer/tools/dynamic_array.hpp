@@ -1,11 +1,12 @@
-#ifndef DYNAMIC_ARRAY_HPP
-#define DYNAMIC_ARRAY_HPP
+#ifndef SERIALIZER_DYNAMIC_ARRAY_HPP
+#define SERIALIZER_DYNAMIC_ARRAY_HPP
 #include "../meta/concepts.hpp"
 
 /******************************************************************************/
 /*                               Dynamic Array                                */
 /******************************************************************************/
 
+/// @brief namespace serializer tools
 namespace serializer::tools {
 
 /// @brief Wrapper object for dynamic arrays (can store references to the
@@ -35,13 +36,16 @@ template <concepts::Pointer T, typename... DTs> struct DynamicArray {
 
 } // end namespace serializer::tools
 
+/// @brief namespace serializer meta-functions
 namespace serializer::mtf {
 
+/// @brief True if T is a DynamicArray, false otherwise
 template <typename T> struct is_dynamic_array : std::false_type {};
 
 template <typename T, typename... Sizes>
 struct is_dynamic_array<tools::DynamicArray<T, Sizes...>> : std::true_type {};
 
+/// @brief True if T is a DynamicArray, false otherwise
 template <typename T>
 constexpr bool is_dynamic_array_v = is_dynamic_array<base_t<T>>::value;
 
