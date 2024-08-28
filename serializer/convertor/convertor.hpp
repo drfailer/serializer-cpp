@@ -19,6 +19,7 @@
 /*                          default convertor class                           */
 /******************************************************************************/
 
+/// @brief namespace serializer
 namespace serializer {
 
 /// @brief Default convertor that contains the functions for serializing and
@@ -52,14 +53,6 @@ struct Convertor : Convert<AdditionalTypes>... {
         size_t size = *std::bit_cast<const size_t *>(mem.data() + pos);
         pos += sizeof(size);
         return size - 1;
-    }
-
-    /// @brief Helper function for getting the id of a type. The id should be
-    ///        stored at pos. Do not change the memory or the pos.
-    /// @tparam T Type of the identifier.
-    /// @return Type identifier.
-    template <typename T> inline constexpr T getId() const {
-        return *std::bit_cast<const T *>(mem.data() + pos);
     }
 
     /// @brief Append a buffer of byptes to the memory (mem and pos are changed)

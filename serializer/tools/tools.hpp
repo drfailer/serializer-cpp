@@ -114,7 +114,8 @@ T tupleProd(std::tuple<Types...> const &tuple) {
         this->pos = elt->serialize(this->mem, this->pos);                      \
     }                                                                          \
     constexpr void deserialize(GenericType &elt) override {                    \
-        auto id = this->template getId<TypeTable::id_type>();                  \
+        auto id = serializer::tools::getId<TypeTable::id_type>(this->mem,      \
+                                                               this->pos);     \
         serializer::tools::createGeneric(id, TypeTable(), elt);                \
         this->pos = elt->deserialize(this->mem, this->pos);                    \
     }

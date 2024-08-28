@@ -116,17 +116,6 @@ auto bindDeserialize(auto &obj, auto &&...accessors) {
 using default_mem_type = tools::Bytes<uint8_t>;
 /* using default_mem_type = std::vector<uint8_t>; */
 
-
-// TODO: move this elsewhere
-/// @brief Get the id of a type from mem at pos.
-/// @tparam T Type of the id.
-/// @param mem Buffer containing the serialized data.
-/// @param pos Start position in the buffer where the id is serialized.
-template <typename T> inline constexpr T getId(auto &mem, size_t pos = 0) {
-    Convertor<decltype(mem)> conv(mem, pos);
-    return conv.template getId<T>();
-}
-
 } // end namespace serializer
 
 /// @brief Generate the serialze and deserialize methods with the specified

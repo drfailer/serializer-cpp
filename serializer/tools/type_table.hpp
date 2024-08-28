@@ -22,13 +22,21 @@ template <concepts::IdType T, typename... Types> struct TypeTable {
 /// @tparam Ts Rest of the types in the table.
 /// @parma _ Type table.
 template <typename Target, concepts::IdType T, typename H, typename... Ts>
-constexpr T getId(TypeTable<T, H, Ts...>) {
+constexpr inline T getId(TypeTable<T, H, Ts...>) {
     if constexpr (std::is_same_v<Target, H>) {
         return 0;
     } else {
         static_assert(sizeof...(Ts) != 0, "error: type not found in id table.");
         return 1 + getId<Target>(TypeTable<T, Ts...>());
     }
+}
+
+/// @brief Get the id of a type from mem at pos.
+/// @tparam T Type of the id.
+/// @param mem Buffer containing the serialized data.
+/// @param pos Start position in the buffer where the id is serialized.
+template <typename T> inline constexpr T getId(auto &mem, size_t pos = 0) {
+    return *std::bit_cast<const T *>(mem.data() + pos);
 }
 
 /// @brief Helper function for deserializing a generic type.
@@ -40,7 +48,7 @@ constexpr T getId(TypeTable<T, H, Ts...>) {
 /// @parma _ Type table.
 /// @parma elt Deserialize element, it will contains the result object.
 template <typename SuperType, concepts::IdType T, typename H, typename... Ts>
-constexpr void createGeneric(T id, TypeTable<T, H, Ts...>, SuperType &elt) {
+constexpr inline void createGeneric(T id, TypeTable<T, H, Ts...>, SuperType &elt) {
     if (id == 0) {
         if constexpr (concepts::Pointer<SuperType>) {
             if (elt != nullptr) {
