@@ -47,10 +47,11 @@ struct Convertor : Convert<AdditionalTypes>... {
     /* helper functions *******************************************************/
 
     /// @brief Helper function for deserializing the size of containers.
+    /// @tparam Type of the size
     /// @return Deserialized size.
-    // TODO: should be template
-    inline constexpr size_t deserializeSize() {
-        size_t size = *std::bit_cast<const size_t *>(mem.data() + pos);
+    template <typename T>
+    inline constexpr T deserializeSize() {
+        auto size = *std::bit_cast<const T *>(mem.data() + pos);
         pos += sizeof(size);
         return size - 1;
     }
@@ -346,7 +347,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     template <serializer::concepts::String T>
     inline constexpr void deserialize_(T &&str) {
         using size_type = typename mtf::base_t<T>::size_type;
-        size_type size = deserializeSize();
+        size_type size = deserializeSize<size_type>();
         str.assign(std::bit_cast<const char *>(mem.data() + pos), size);
         pos += size;
     }
@@ -389,7 +390,7 @@ struct Convertor : Convert<AdditionalTypes>... {
         using ValueType =
             mtf::remove_const_t<serializer::mtf::iter_value_t<mtf::base_t<T>>>;
         using IterType = decltype(elts.begin());
-        size_type size = deserializeSize();
+        size_type size = deserializeSize<size_type>();
 
         if constexpr (std::contiguous_iterator<IterType>) {
             if constexpr (concepts::Resizeable<T>) {
