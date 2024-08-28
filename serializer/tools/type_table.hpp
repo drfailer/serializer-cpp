@@ -5,6 +5,10 @@
 #include <stdexcept>
 #include <type_traits>
 
+/******************************************************************************/
+/*                                 type table                                 */
+/******************************************************************************/
+
 /// @brief namespace serializer tools
 namespace serializer::tools {
 
@@ -14,6 +18,8 @@ namespace serializer::tools {
 template <concepts::IdType T, typename... Types> struct TypeTable {
     using id_type = T;
 };
+
+/* get id *********************************************************************/
 
 /// @brief Get the id of the Target type stored in the given table type.
 /// @tparam Target Target type.
@@ -38,6 +44,8 @@ constexpr inline T getId(TypeTable<T, H, Ts...>) {
 template <typename T> inline constexpr T getId(auto &mem, size_t pos = 0) {
     return *std::bit_cast<const T *>(mem.data() + pos);
 }
+
+/* create generci *************************************************************/
 
 /// @brief Helper function for deserializing a generic type.
 /// @tparam SuperType Type of the super class.
@@ -72,6 +80,18 @@ constexpr inline void createGeneric(T id, TypeTable<T, H, Ts...>, SuperType &elt
     }
 }
 
+/* apply id *******************************************************************/
+
+/// @brief Apply a template lambda to the type with the identifier `id` in the
+///        given type table.
+/// @tparam IdType Type of the identifiers in the type table.
+/// @tparam T First type in the type table.
+/// @tparam Ts Rest of the types in the type table.
+/// @param id       Identifier of the target type.
+/// @param _        Type table.
+/// @param function Template lambda / functor to apply on the type. the
+///                 operator() should be template parametrized with a type T
+///                 that will correspond to the type of identifier id.
 template <typename IdType, typename T, typename... Ts>
 constexpr void applyId(auto id, serializer::tools::TypeTable<IdType, T, Ts...>,
                        auto function) {
