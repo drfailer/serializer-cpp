@@ -77,6 +77,29 @@ template <typename T>
 constexpr bool is_default_constructible_v =
     std::is_default_constructible_v<std::remove_pointer_t<mtf::base_t<T>>>;
 
+/* getter */
+
+/// @brief True if the T is at setter
+template <typename T> struct is_setter : std::false_type {};
+
+template <typename R, class C, typename Arg>
+struct is_setter<R (C::*)(Arg)> : std::true_type {};
+
+template <typename T>
+constexpr bool is_setter_v = is_setter<T>::value;
+
+/// @brief Get type of the attribute corresponding to the setter
+template <typename T> struct setter_arg_type;
+
+template <typename R, class C, typename Arg>
+struct setter_arg_type<R (C::*)(Arg)> {
+    using type = Arg;
+};
+
+/// @brief Get type of the attribute corresponding to the setter
+template <typename T>
+using setter_arg_type_t = typename setter_arg_type<T>::type;
+
 } // end namespace serializer::mtf
 
 #endif

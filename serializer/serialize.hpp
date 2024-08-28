@@ -1,7 +1,7 @@
 #ifndef SERIALIZER_SERIALIZE_H
 #define SERIALIZER_SERIALIZE_H
-#include "serializer/serializer.hpp"
 #include "meta/concepts.hpp"
+#include "serializer/serializer.hpp"
 #include "tools/bytes.hpp"
 #include "tools/context.hpp"
 #include "tools/super.hpp"
@@ -17,6 +17,7 @@ namespace serializer {
 /// @param mem  Buffer in which the serialized data will be stored.
 /// @param pos  Start position in the buffer for serializing the data.
 /// @param args Values to serialize
+/// @return Position of the next element in the buffer.
 template <typename Ser>
 inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
     using mem_t = decltype(mem);
@@ -48,6 +49,7 @@ inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
 /// @param mem  Buffer in which the serialized data is be stored.
 /// @param pos  Start position in the buffer for deserializing the data.
 /// @param args references to the variables that are deserialized.
+/// @return Position of the next element in the buffer.
 template <typename Ser>
 inline constexpr size_t deserialize(auto &mem, size_t pos, auto &&...args) {
     Ser serializer(mem, pos);
@@ -69,6 +71,7 @@ inline constexpr size_t deserialize(auto &mem, size_t pos, auto &&...args) {
 /// @param mem Buffer in which the serialized data is be stored.
 /// @param pos Start position in the buffer for serializing the data.
 /// @param obj Pointer to the object that is serialized.
+/// @return Position of the next element in the buffer.
 template <typename T>
     requires(std::is_trivially_copyable_v<T> &&
              std::is_trivially_copy_assignable_v<T>)
@@ -85,6 +88,7 @@ inline constexpr size_t serializeStruct(auto &mem, size_t pos, T const *obj) {
 /// @param mem Buffer in which the serialized data is be stored.
 /// @param pos Start position in the buffer for deserializing the data.
 /// @param obj Pointer to the object that is deserialized.
+/// @return Position of the next element in the buffer.
 template <typename T>
 inline constexpr size_t deserializeStruct(auto &mem, size_t pos, T *obj) {
     *obj = *std::bit_cast<const decltype(obj)>(mem.data() + pos);
@@ -95,10 +99,12 @@ inline constexpr size_t deserializeStruct(auto &mem, size_t pos, T *obj) {
 ///        accessors.
 /// @param obj       Object to serialize.
 /// @param accessors Accessors to the attributes (or the attributes themselves).
+/// @return Function (void(auto bytes, size_t pos = 0)) that serialize the
+///         attributes accessible via `accessors`
+template <typename Ser>
 constexpr inline auto bindSerialize(auto &obj, auto &&...accessors) {
     return [=, &obj](auto &mem, size_t pos = 0) {
-        serializer::serialize<serializer::Serializer<decltype(mem)>>(
-            mem, pos, std::invoke(accessors, obj)...);
+        return serialize<Ser>(mem, pos, std::invoke(accessors, obj)...);
     };
 }
 
@@ -106,10 +112,12 @@ constexpr inline auto bindSerialize(auto &obj, auto &&...accessors) {
 ///        accessors.
 /// @param obj       Object to deserialize.
 /// @param accessors Accessors to the attributes (or the attributes themselves).
+/// @return Function (void(auto bytes, size_t pos = 0)) that deserialize the
+///         attributes accessible via `accessors`
+template <typename Ser>
 constexpr inline auto bindDeserialize(auto &obj, auto &&...accessors) {
     return [=, &obj](auto &mem, size_t pos = 0) {
-        serializer::deserialize<serializer::Serializer<decltype(mem)>>(
-            mem, pos, std::invoke(accessors, obj)...);
+        return tools::deserializerAccessors<Ser>(mem, pos, obj, accessors...);
     };
 }
 

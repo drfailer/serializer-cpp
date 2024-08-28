@@ -1,11 +1,12 @@
 #ifndef SERIALIZER_TOOLS_HPP
 #define SERIALIZER_TOOLS_HPP
 #include "../meta/concepts.hpp"
+#include "../meta/type_check.hpp"
 
 namespace serializer::tools {
 
 /******************************************************************************/
-/*                              helper functions                              */
+/*                                   insert                                   */
 /******************************************************************************/
 
 /// @brief Insert an element into an iterable using the insert member function.
@@ -91,6 +92,45 @@ T tupleProd_(std::tuple<Types...> const &tuple, std::index_sequence<Idx...>) {
 template <typename T, typename... Types>
 T tupleProd(std::tuple<Types...> const &tuple) {
     return tupleProd_<T>(tuple, std::make_index_sequence<sizeof...(Types)>());
+}
+
+/******************************************************************************/
+/*                         deserialize with accessors                         */
+/******************************************************************************/
+
+/// @brief Deserialize the attribute accessible with `accessor`.
+/// @tparam Ser Serializer
+/// @tparam T Type of the accessor
+/// @param mem Bytes containing the serialized data.
+/// @param pos Position in the byte buffer.
+/// @param obj Object to deserialize.
+/// @param accessor Accessor for the attribute
+template <typename Ser, typename T>
+constexpr inline void deserializerAccessor(Ser &serializer, auto &obj,
+                                           T accessor) {
+    if constexpr (mtf::is_setter<T>::value) {
+        mtf::setter_arg_type_t<T> elt{};
+        serializer.deserialize_(elt);
+        std::invoke(accessor, obj, elt);
+    } else {
+        serializer.deserialize_(std::invoke(accessor, obj));
+    }
+}
+
+/// @brief Deserialize the attributes accessible with the `accessors`.
+/// @tparam Ser Serializer
+/// @param mem Bytes containing the serialized data.
+/// @param pos Position in the byte buffer.
+/// @param obj Object to deserialize.
+/// @param accessors Accessors for the attributes
+/// @return Position of the next object in the byte buffer.
+template <typename Ser>
+constexpr inline size_t deserializerAccessors(auto &mem, size_t pos, auto &obj,
+                                              auto &&...accessors) {
+    Ser serializer(mem, pos);
+    ([&, accessors] { deserializerAccessor(serializer, obj, accessors); }(),
+     ...);
+    return serializer.pos;
 }
 
 } // namespace serializer::tools

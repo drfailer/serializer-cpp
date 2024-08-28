@@ -18,9 +18,14 @@ class Simple {
     [[nodiscard]] int y() const { return y_; }
     [[nodiscard]] int x() const { return x_; }
     [[nodiscard]] std::string const &str() const { return str_; }
-    [[nodiscard]] int &getY() { return y_; }
-    [[nodiscard]] int &getX() { return x_; }
-    [[nodiscard]] std::string &getStr() { return str_; }
+
+    // standard accessors
+    [[nodiscard]] int getY() { return y_; }
+    [[nodiscard]] int getX() { return x_; }
+    [[nodiscard]] std::string const &getStr() { return str_; }
+    void setY(int y) { y_ = y; }
+    void setX(int x) { x_ = x; }
+    void setStr(std::string str) { str_ = std::move(str); }
 
   private:
     int x_;

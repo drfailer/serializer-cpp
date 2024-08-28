@@ -73,8 +73,14 @@ TEST_CASE("bind serialize on a SIMPLE CLASS") {
     Simple other(0, 0);
     serializer::default_mem_type result;
 
-    auto serializeOrigin = serializer::bindSerialize(original, &Simple::getX, &Simple::getY, &Simple::getStr);
-    auto deserializeOther = serializer::bindDeserialize(other, &Simple::getX, &Simple::getY, &Simple::getStr);
+    auto serializeOrigin = serializer::bindSerialize<
+        serializer::Serializer<serializer::default_mem_type>>(
+        original, &Simple::getX, &Simple::getY, &Simple::getStr);
+    auto deserializeOther = serializer::bindDeserialize<
+        serializer::Serializer<serializer::default_mem_type>>(
+        other, &Simple::setX, &Simple::setY, &Simple::setStr);
+
+    static_assert(serializer::mtf::is_setter<decltype(&Simple::setX)>::value);
 
     REQUIRE(original.x() != other.x());
     REQUIRE(original.y() != other.y());
