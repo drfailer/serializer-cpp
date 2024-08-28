@@ -1,4 +1,4 @@
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 
 /******************************************************************************/
@@ -94,12 +94,12 @@ template <typename T> struct PartialSum {
 /******************************************************************************/
 
 struct Network {
-    static inline serializer::default_mem_type data;
-    static void send(serializer::default_mem_type mem) {
+    static inline serializer::Bytes data;
+    static void send(serializer::Bytes mem) {
         data.append(data.size(), mem.data(), mem.size());
     }
-    static serializer::default_mem_type rcv() {
-        serializer::default_mem_type result = data;
+    static serializer::Bytes rcv() {
+        serializer::Bytes result = data;
         data.clear();
         return result;
     }
@@ -131,7 +131,7 @@ template <typename T> struct Execute {
 };
 
 template <typename T> struct Send {
-    serializer::default_mem_type mem;
+    serializer::Bytes mem;
 
     void send(std::shared_ptr<T> elt) {
         elt->serialize(mem);
@@ -170,7 +170,7 @@ struct TaskManager : RunExecute<Tasks...> {
     TaskManager(std::shared_ptr<Tasks>... tasks)
         : RunExecute<Tasks...>(std::make_tuple(tasks...)) {}
 
-    void receive(serializer::default_mem_type buff) {
+    void receive(serializer::Bytes buff) {
         size_t pos = 0;
 
         while (pos < buff.size()) {

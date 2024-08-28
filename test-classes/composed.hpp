@@ -1,6 +1,6 @@
 #ifndef COMPOSED_HPP
 #define COMPOSED_HPP
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 #include "test-classes/simple.hpp"
 

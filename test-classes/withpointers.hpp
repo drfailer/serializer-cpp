@@ -1,7 +1,7 @@
 #ifndef WITH_POINTERS_HPP
 #define WITH_POINTERS_HPP
 #include "test-classes/simple.hpp"
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 
 class WithPointers {

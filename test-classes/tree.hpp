@@ -1,6 +1,6 @@
 #ifndef TREE_HPP
 #define TREE_HPP
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 #include <iostream>
 

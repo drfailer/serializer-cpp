@@ -2,6 +2,7 @@
 #include <chrono>
 #include <iostream>
 #include <string>
+#include <serializer/serializer.hpp>
 
 #define TEST_SIMPLE
 #define TEST_COMPOSED
@@ -34,7 +35,7 @@
 TEST_CASE("serialization/deserialization on a SIMPLE CLASS") {
     Simple original(10, 20, "hello \"world!\\");
     Simple other(0, 0);
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(original.x() != other.x());
     REQUIRE(original.y() != other.y());
@@ -71,13 +72,13 @@ TEST_CASE("serialization/deserialization on a SIMPLE CLASS") {
 TEST_CASE("bind serialize on a SIMPLE CLASS") {
     Simple original(10, 20, "hello \"world!\\");
     Simple other(0, 0);
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     auto serializeOrigin = serializer::bindSerialize<
-        serializer::Serializer<serializer::default_mem_type>>(
+        serializer::Serializer<serializer::Bytes>>(
         original, &Simple::getX, &Simple::getY, &Simple::getStr);
     auto deserializeOther = serializer::bindDeserialize<
-        serializer::Serializer<serializer::default_mem_type>>(
+        serializer::Serializer<serializer::Bytes>>(
         other, &Simple::setX, &Simple::setY, &Simple::setStr);
 
     static_assert(serializer::mtf::is_setter<decltype(&Simple::setX)>::value);
@@ -124,7 +125,7 @@ TEST_CASE("bind serialize on a SIMPLE CLASS") {
 TEST_CASE("serialization/deserialization on a COMPOSED CLASS") {
     Composed original(Simple(10, 20), 3, 3.14);
     Composed other(Simple(0, 0), 0, 0);
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(original.s().x() != other.s().x());
     REQUIRE(original.s().y() != other.s().y());
@@ -167,7 +168,7 @@ TEST_CASE("serialization/deserialization with STRING ATTRIBUTE") {
     WithString original(2, "hello");
     WithString originalEmptyString(3, "");
     WithString other(0, "world");
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(original.x() != other.x());
     REQUIRE(original.str() != other.str());
@@ -208,7 +209,7 @@ TEST_CASE("serialization/deserialization with STRING ATTRIBUTE") {
 TEST_CASE("serialization/deserialization with POINTERS ATTRIBUTE") {
     WithPointers original(new Simple(1, 2));
     WithPointers other(new Simple(0, 0));
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(original.classPointer()->x() != other.classPointer()->x());
     REQUIRE(original.classPointer()->y() != other.classPointer()->y());
@@ -250,7 +251,7 @@ TEST_CASE("serialization/deserialization with POINTERS ATTRIBUTE") {
 TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
     WithContainer original;
     WithContainer other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     // adding elements_ in containers
     for (int i = 0; i < 10; ++i) {
@@ -331,7 +332,7 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
 TEST_CASE("implementing a serializer (polymorphic class serialization)") {
     AbstractCollection original;
     AbstractCollection other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     original.push_back(new Concrete1(1, 2.9));
     original.push_back(new Concrete2("hello \"test\" world"));
@@ -380,7 +381,7 @@ TEST_CASE("implementing a serializer (polymorphic class serialization)") {
 TEST_CASE("serialize super class") {
     SuperCollection original;
     SuperCollection other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
     auto *c1 = new Class1("John", 20, 1, 2.9);
     auto *c2 = new Class2("David", 30, "hello world");
 
@@ -422,7 +423,7 @@ TEST_CASE("serialize super class") {
 TEST_CASE("multiple inheritance") {
     mi::Collection original;
     mi::Collection other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
     auto *c1 = new mi::Daughter1(10, "test1", 2.2);
     auto *c2 = new mi::Daughter2(10, "test2", 2.2, "job");
     auto *c3 = new mi::Daughter2(10, "test3", 2.2, "other job");
@@ -474,7 +475,7 @@ TEST_CASE("multiple inheritance") {
 TEST_CASE("smart pointers") {
     WithSmartPtr original(1, 2.3, "hello");
     WithSmartPtr other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(original.intPtr() != other.intPtr());
     REQUIRE(original.doublePtr() != other.doublePtr());
@@ -498,7 +499,7 @@ TEST_CASE("smart pointers") {
 TEST_CASE("enums") {
     WithEnums original("str_", SUNDAY, VISUAL, DndClasses::ROGUE);
     WithEnums other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(original.getNormalType() != other.getNormalType());
     REQUIRE(original.getDay() != other.getDay());
@@ -527,7 +528,7 @@ TEST_CASE("pairs") {
     WithPair original(1, 2, "hello", "world", Simple(10, 20),
                       Composed(Simple(10, 20), 3, 3.14), v, s);
     WithPair other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(original.intPair().first != other.intPair().first);
     REQUIRE(original.intPair().second != other.intPair().second);
@@ -582,7 +583,7 @@ TEST_CASE("tuples") {
     WithTuple original(1, 2, 1.618, "hello", "world", "!", Simple(10, 20),
                        Composed(Simple(10, 20), 3, 3.14), v, s, m);
     WithTuple other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(std::get<0>(original.numberTuple()) !=
             std::get<0>(other.numberTuple()));
@@ -664,7 +665,7 @@ TEST_CASE("tuples") {
 TEST_CASE("serialize unknown type") {
     WithSerializer original;
     WithSerializer other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     original.addInt(1);
     original.addInt(2);
@@ -703,7 +704,7 @@ TEST_CASE("serialize unknown type") {
 TEST_CASE("map") {
     WithMap original;
     WithMap other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(original.map().empty());
     REQUIRE(other.map().empty());
@@ -731,7 +732,7 @@ TEST_CASE("map") {
 TEST_CASE("set") {
     WithSet original;
     WithSet other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(original.set().empty());
     REQUIRE(other.set().empty());
@@ -767,14 +768,14 @@ TEST_CASE("cstruct") {
     CStruct otherCS = {};
     CStructSerializable css('c', 4, 12347890, 3.14, 1.618);
     CStructSerializable otherCSS;
-    serializer::default_mem_type result(40);
-    serializer::default_mem_type resultSerializable(40);
+    serializer::Bytes result(40);
+    serializer::Bytes resultSerializable(40);
     std::string name;
     std::string nameDeserialization;
 
     // c like serialization
     auto begin = std::chrono::system_clock::now();
-    result.append(0, reinterpret_cast<uint8_t *>(&cs), sizeof(cs));
+    result.append(0, reinterpret_cast<serializer::Bytes::byte_type *>(&cs), sizeof(cs));
     /* if constexpr (serializer::concepts::Resizeable<decltype(result)>) { */
     /*     result.resize(sizeof(cs)); */
     /* } */
@@ -829,7 +830,7 @@ TEST_CASE("cstruct") {
 TEST_CASE("functions") {
     WithFunctions origin(4);
     WithFunctions other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     REQUIRE(origin.i() != other.i());
 
@@ -849,7 +850,7 @@ TEST_CASE("functions") {
 TEST_CASE("static arrays") {
     WithStaticArrays origin;
     WithStaticArrays other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     // filling the arrays
     for (size_t i = 0; i < 10; ++i) {
@@ -901,7 +902,7 @@ TEST_CASE("dynamic arrays") {
     WithDynamicArray origin(2);
     WithDynamicArray other;
     auto *external = new double[10];
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     for (size_t i = 0; i < 10; ++i) {
         external[i] = (double)i * 3.0;
@@ -962,7 +963,7 @@ TEST_CASE("dynamic arrays") {
 TEST_CASE("tree") {
     Tree<int> origin;
     Tree<int> other;
-    serializer::default_mem_type result;
+    serializer::Bytes result;
 
     for (auto elt : {5, 4, 8, 6, 1, 3, 7, 2, 9}) {
         origin.insert(elt);
@@ -1014,7 +1015,7 @@ TEST_CASE("hedgehog") {
     constexpr size_t w = 4, h = 4, bs = 2;
     double sum = 0;
     double *data = new double[h * w];
-    serializer::default_mem_type buff;
+    serializer::Bytes buff;
     auto matrix = std::make_shared<Matrix<double>>(h, w, bs, data);
 
     // Tasks

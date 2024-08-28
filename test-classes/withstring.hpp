@@ -1,6 +1,6 @@
 #ifndef WITH_STRING_HPP
 #define WITH_STRING_HPP
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 #include <string>
 #include <utility>

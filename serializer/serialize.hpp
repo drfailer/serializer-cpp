@@ -2,12 +2,7 @@
 #define SERIALIZER_SERIALIZE_H
 #include "meta/concepts.hpp"
 #include "serializer/serializer.hpp"
-#include "tools/bytes.hpp"
 #include "tools/context.hpp"
-#include "tools/super.hpp"
-#include "tools/type_table.hpp"
-
-// TODO: use always inline attribute
 
 /// @brief serializer namespace
 namespace serializer {
@@ -120,10 +115,6 @@ constexpr inline auto bindDeserialize(auto &obj, auto &&...accessors) {
         return tools::deserializerAccessors<Ser>(mem, pos, obj, accessors...);
     };
 }
-
-// TODO: change this
-using default_mem_type = tools::Bytes<uint8_t>;
-/* using default_mem_type = std::vector<uint8_t>; */
 
 } // end namespace serializer
 

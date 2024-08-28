@@ -1,6 +1,6 @@
 #ifndef WITH_SMART_PTR_HPP
 #define WITH_SMART_PTR_HPP
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 #include <memory>
 #include <string>

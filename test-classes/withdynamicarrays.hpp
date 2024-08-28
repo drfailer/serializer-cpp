@@ -1,7 +1,7 @@
 #ifndef WITH_DYNAMIC_ARRAYS_HPP
 #define WITH_DYNAMIC_ARRAYS_HPP
 #include "simple.hpp"
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 #include <serializer/tools/dynamic_array.hpp>
 

@@ -1,6 +1,6 @@
 #ifndef WITHCONTAINER_HPP
 #define WITHCONTAINER_HPP
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 #include "test-classes/simple.hpp"
 #include <array>

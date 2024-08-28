@@ -1,7 +1,7 @@
 #ifndef ABSTRACT_HPP
 #define ABSTRACT_HPP
 #include <iostream>
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 #include <vector>
 
@@ -17,9 +17,9 @@ class SuperAbstract {
   public:
     SuperAbstract() = default;
     virtual ~SuperAbstract() = default;
-    using MemT = serializer::default_mem_type;
+    using MemT = serializer::Bytes;
 
-    SERIALIZE_ABSTRACT(serializer::default_mem_type);
+    SERIALIZE_ABSTRACT(serializer::Bytes);
 
     virtual void method() = 0;
     virtual bool operator==(const SuperAbstract *) const = 0;
@@ -36,7 +36,7 @@ class Concrete1 : public SuperAbstract {
   public:
     explicit Concrete1(int x = 0, double y = 0) : x_(x), y_(y) {}
 
-    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::default_mem_type>,
+    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::Bytes>,
                        serializer::tools::getId<Concrete1>(AbstractTable()), x_,
                        y_);
 
@@ -86,7 +86,7 @@ class Concrete2 : public SuperAbstract {
   public:
     explicit Concrete2(std::string str = "") : str_(std::move(str)) {}
 
-    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::default_mem_type>,
+    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::Bytes>,
                        serializer::tools::getId<Concrete2>(AbstractTable()),
                        str_);
 

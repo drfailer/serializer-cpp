@@ -1,6 +1,6 @@
 #ifndef POLYMORPHIC_HPP
 #define POLYMORPHIC_HPP
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 #include <vector>
 
@@ -24,7 +24,7 @@ class SuperClass {
         return name_ == other->name_ && age_ == other->age_;
     }
 
-    VIRTUAL_SERIALIZE(serializer::Serializer<serializer::default_mem_type>,
+    VIRTUAL_SERIALIZE(serializer::Serializer<serializer::Bytes>,
                       serializer::tools::getId<SuperClass>(SuperTable()), name_,
                       age_);
 
@@ -50,7 +50,7 @@ class Class1 : public SuperClass {
                     double y = 0)
         : SuperClass(name, age), x_(x), y_(y) {}
 
-    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::default_mem_type>,
+    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::Bytes>,
                        serializer::tools::getId<Class1>(SuperTable()),
                        serializer::tools::super<SuperClass>(this), x_, y_);
 
@@ -83,7 +83,7 @@ class Class2 : public SuperClass {
                     std::string str = "")
         : SuperClass(name, age), str_(std::move(str)) {}
 
-    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::default_mem_type>,
+    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::Bytes>,
                        serializer::tools::getId<Class2>(SuperTable()),
                        serializer::tools::super<SuperClass>(this), str_);
 

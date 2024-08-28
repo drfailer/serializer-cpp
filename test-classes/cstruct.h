@@ -1,6 +1,6 @@
 #ifndef CSTRUCT_H
 #define CSTRUCT_H
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 
 struct CStruct {

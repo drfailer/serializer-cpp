@@ -1,6 +1,5 @@
 #ifndef SERIALIZER_MACROS_H
 #define SERIALIZER_MACROS_H
-#include "../serialize.hpp"
 
 /******************************************************************************/
 /*                                 serialize                                  */

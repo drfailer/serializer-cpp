@@ -3,7 +3,7 @@
 #include "test-classes/composed.hpp"
 #include "test-classes/simple.hpp"
 #include <map>
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 #include <set>
 #include <string>

@@ -1,6 +1,6 @@
 #ifndef WITHFUNCTIONS_HPP
 #define WITHFUNCTIONS_HPP
-#include <serializer/serialize.hpp>
+#include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
 
 class WithFunctions {
