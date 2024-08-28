@@ -67,6 +67,46 @@ TEST_CASE("serialization/deserialization on a SIMPLE CLASS") {
     REQUIRE(original.x() == other.x());
     REQUIRE(original.y() == other.y());
 }
+
+TEST_CASE("bind serialize on a SIMPLE CLASS") {
+    Simple original(10, 20, "hello \"world!\\");
+    Simple other(0, 0);
+    serializer::default_mem_type result;
+
+    auto serializeOrigin = serializer::bindSerialize(original, &Simple::getX, &Simple::getY, &Simple::getStr);
+    auto deserializeOther = serializer::bindDeserialize(other, &Simple::getX, &Simple::getY, &Simple::getStr);
+
+    REQUIRE(original.x() != other.x());
+    REQUIRE(original.y() != other.y());
+    REQUIRE(original.str() != other.str());
+
+    serializeOrigin(result);
+    deserializeOther(result);
+
+    // the serialization and deserialization work
+    REQUIRE(original.x() == other.x());
+    REQUIRE(original.y() == other.y());
+
+    original.x(3); // modify an attribute
+
+    REQUIRE(original.x() != other.x());
+
+    serializeOrigin(result);
+    deserializeOther(result);
+
+    // the modification is taken in count by the serializer (references)
+    REQUIRE(original.x() == other.x());
+
+    original.x(28);
+    original.y(32);
+    Simple copied = original;
+
+    serializeOrigin(result);
+    deserializeOther(result);
+
+    REQUIRE(original.x() == other.x());
+    REQUIRE(original.y() == other.y());
+}
 #endif
 
 /******************************************************************************/

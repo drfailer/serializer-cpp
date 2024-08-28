@@ -1,9 +1,9 @@
-#ifndef SERIALIZE_H
-#define SERIALIZE_H
+#ifndef SERIALIZER_SERIALIZE_H
+#define SERIALIZER_SERIALIZE_H
 #include "convertor/convertor.hpp"
 #include "meta/concepts.hpp"
 #include "tools/context.hpp"
-#include "tools/id_table.hpp"
+#include "tools/type_table.hpp"
 #include "tools/vec.hpp"
 
 // TODO: use always inline attribute
@@ -87,6 +87,28 @@ template <typename T>
 inline constexpr size_t deserializeStruct(auto &mem, size_t pos, T *obj) {
     *obj = *std::bit_cast<const decltype(obj)>(mem.data() + pos);
     return pos + sizeof(*obj);
+}
+
+/// @brief Create a function for serializing the given object using the
+///        accessors.
+/// @param obj       Object to serialize.
+/// @param accessors Accessors to the attributes (or the attributes themselves).
+auto bindSerialize(auto &obj, auto &&...accessors) {
+    return [=, &obj](auto &mem, size_t pos = 0) {
+        serializer::serialize<serializer::Convertor<decltype(mem)>>(
+            mem, pos, std::invoke(accessors, obj)...);
+    };
+}
+
+/// @brief Create a function for deserializing the given object using the
+///        accessors.
+/// @param obj       Object to deserialize.
+/// @param accessors Accessors to the attributes (or the attributes themselves).
+auto bindDeserialize(auto &obj, auto &&...accessors) {
+    return [=, &obj](auto &mem, size_t pos = 0) {
+        serializer::deserialize<serializer::Convertor<decltype(mem)>>(
+            mem, pos, std::invoke(accessors, obj)...);
+    };
 }
 
 // TODO: change this

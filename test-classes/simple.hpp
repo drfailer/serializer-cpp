@@ -17,6 +17,9 @@ class Simple {
     [[nodiscard]] int y() const { return y_; }
     [[nodiscard]] int x() const { return x_; }
     [[nodiscard]] std::string const &str() const { return str_; }
+    [[nodiscard]] int &getY() { return y_; }
+    [[nodiscard]] int &getX() { return x_; }
+    [[nodiscard]] std::string &getStr() { return str_; }
 
   private:
     int x_;
