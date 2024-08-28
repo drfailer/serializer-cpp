@@ -94,7 +94,7 @@ inline constexpr size_t deserializeStruct(auto &mem, size_t pos, T *obj) {
 ///        accessors.
 /// @param obj       Object to serialize.
 /// @param accessors Accessors to the attributes (or the attributes themselves).
-auto bindSerialize(auto &obj, auto &&...accessors) {
+constexpr inline auto bindSerialize(auto &obj, auto &&...accessors) {
     return [=, &obj](auto &mem, size_t pos = 0) {
         serializer::serialize<serializer::Convertor<decltype(mem)>>(
             mem, pos, std::invoke(accessors, obj)...);
@@ -105,7 +105,7 @@ auto bindSerialize(auto &obj, auto &&...accessors) {
 ///        accessors.
 /// @param obj       Object to deserialize.
 /// @param accessors Accessors to the attributes (or the attributes themselves).
-auto bindDeserialize(auto &obj, auto &&...accessors) {
+constexpr inline auto bindDeserialize(auto &obj, auto &&...accessors) {
     return [=, &obj](auto &mem, size_t pos = 0) {
         serializer::deserialize<serializer::Convertor<decltype(mem)>>(
             mem, pos, std::invoke(accessors, obj)...);
