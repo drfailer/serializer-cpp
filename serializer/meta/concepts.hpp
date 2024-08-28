@@ -84,6 +84,14 @@ concept TupleLike = requires(mtf::base_t<T> obj) {
 template <typename T>
 concept Forwardable = requires(T &&obj) { std::forward<T>(obj); };
 
+/// Match the identifier types for the type table
+template <typename T>
+concept IdType = requires(T id) {
+    id + 1;
+    id - 1;
+    id = 0;
+};
+
 /* unsupported types */
 
 /// @brief Used to detect the types for which we do not have an automatic
