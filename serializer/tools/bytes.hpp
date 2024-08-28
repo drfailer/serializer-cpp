@@ -15,8 +15,13 @@ namespace serializer::tools {
 ///        used for the serialization).
 /// @tparam T Byte type (std::byte, uint8_t, char, ...).
 template <typename T>
+  requires (sizeof(T) == sizeof(char))
 class Bytes {
   public:
+    /* type alias *************************************************************/
+
+    using byte_type = T;
+
     /* constructors & destructor **********************************************/
 
     /// @brief Default constructor.
