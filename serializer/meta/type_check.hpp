@@ -1,6 +1,6 @@
 #ifndef SERIALIZER_TYPE_CHECK_H
 #define SERIALIZER_TYPE_CHECK_H
-#include "../tools/vec.hpp"
+#include "../tools/bytes.hpp"
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -62,7 +62,7 @@ constexpr bool is_std_array_v = is_std_array<base_t<T>>::value;
 template <typename T> struct is_vec : std::false_type {};
 
 template <typename T>
-struct is_vec<serializer::tools::vec<T>> : std::true_type {};
+struct is_vec<serializer::tools::Bytes<T>> : std::true_type {};
 
 template <typename T> constexpr bool is_vec_v = is_vec<base_t<T>>::value;
 

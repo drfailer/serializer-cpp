@@ -4,7 +4,7 @@
 #include "meta/concepts.hpp"
 #include "tools/context.hpp"
 #include "tools/type_table.hpp"
-#include "tools/vec.hpp"
+#include "tools/bytes.hpp"
 
 // TODO: use always inline attribute
 
@@ -112,7 +112,7 @@ auto bindDeserialize(auto &obj, auto &&...accessors) {
 }
 
 // TODO: change this
-using default_mem_type = tools::vec<uint8_t>;
+using default_mem_type = tools::Bytes<uint8_t>;
 /* using default_mem_type = std::vector<uint8_t>; */
 
 // TODO: move this in a file
