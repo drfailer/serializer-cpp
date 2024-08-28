@@ -67,6 +67,12 @@ concept Clearable = requires(mtf::base_t<T> obj) { obj.clear(); };
 template <typename T>
 concept Resizeable = requires(mtf::base_t<T> obj) { obj.resize(1); };
 
+/// @brief Contiguous resizeable containers
+template <typename T>
+concept ContiguousResizeable =
+    std::contiguous_iterator<typename mtf::base_t<T>::iterator> &&
+    Resizeable<T>;
+
 /// @brief Iterable types that are not strings (string are handled differently
 ///        for optimization and readability).
 template <typename T>

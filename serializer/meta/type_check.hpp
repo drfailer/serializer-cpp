@@ -58,16 +58,24 @@ struct is_std_array<std::array<T, N>> : std::true_type {};
 template <typename T>
 constexpr bool is_std_array_v = is_std_array<base_t<T>>::value;
 
-/// @brief True if T is a vec
-template <typename T> struct is_vec : std::false_type {};
+/// @brief True if T is a serializer Bytes
+template <typename T> struct is_serializer_bytes : std::false_type {};
 
 template <typename T>
-struct is_vec<serializer::tools::Bytes<T>> : std::true_type {};
+struct is_serializer_bytes<serializer::tools::Bytes<T>> : std::true_type {};
 
-template <typename T> constexpr bool is_vec_v = is_vec<base_t<T>>::value;
+/// @brief True if T is a serializer Bytes
+template <typename T>
+constexpr bool is_serializer_bytes_v = is_serializer_bytes<base_t<T>>::value;
 
+/// @brief get the element type
 template <typename T>
 using element_type_t = typename mtf::base_t<T>::element_type;
+
+/// @brief Helper constexpr for accessing default_constructible_v.
+template <typename T>
+constexpr bool is_default_constructible_v =
+    std::is_default_constructible_v<std::remove_pointer_t<mtf::base_t<T>>>;
 
 } // end namespace serializer::mtf
 

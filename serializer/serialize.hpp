@@ -33,7 +33,7 @@ inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
             }
         }(),
         ...);
-    if constexpr (!mtf::is_vec_v<mem_t> && concepts::Resizeable<mem_t>) {
+    if constexpr (!mtf::is_serializer_bytes_v<mem_t> && concepts::Resizeable<mem_t>) {
         if (first_level) [[unlikely]] {
             mem.resize(conv.pos);
         }

@@ -36,21 +36,6 @@ template <concepts::Pointer T, typename... DTs> struct DynamicArray {
 
 } // end namespace serializer::tools
 
-/// @brief namespace serializer meta-functions
-namespace serializer::mtf {
-
-/// @brief True if T is a DynamicArray, false otherwise
-template <typename T> struct is_dynamic_array : std::false_type {};
-
-template <typename T, typename... Sizes>
-struct is_dynamic_array<tools::DynamicArray<T, Sizes...>> : std::true_type {};
-
-/// @brief True if T is a DynamicArray, false otherwise
-template <typename T>
-constexpr bool is_dynamic_array_v = is_dynamic_array<base_t<T>>::value;
-
-} // namespace serializer::mtf
-
 /******************************************************************************/
 /*                                   macros                                   */
 /******************************************************************************/
