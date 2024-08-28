@@ -1,11 +1,11 @@
 #ifndef SERIALIZER_SERIALIZE_H
 #define SERIALIZER_SERIALIZE_H
-#include "convertor/convertor.hpp"
+#include "serializer/serializer.hpp"
 #include "meta/concepts.hpp"
-#include "tools/context.hpp"
-#include "tools/type_table.hpp"
 #include "tools/bytes.hpp"
+#include "tools/context.hpp"
 #include "tools/super.hpp"
+#include "tools/type_table.hpp"
 
 // TODO: use always inline attribute
 
@@ -13,54 +13,55 @@
 namespace serializer {
 
 /// @brief Serialize the arguments into the memory buffer at the given position.
-/// @tparam Conv Convertor type.
+/// @tparam Ser Serializer type.
 /// @param mem  Buffer in which the serialized data will be stored.
 /// @param pos  Start position in the buffer for serializing the data.
 /// @param args Values to serialize
-template <typename Conv>
+template <typename Ser>
 inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
     using mem_t = decltype(mem);
     [[maybe_unused]] bool first_level = pos == 0;
 
-    Conv conv(mem, pos);
+    Ser serializer(mem, pos);
     (
-        [&conv, &args] {
-            if constexpr (SerializerFunction(args, conv)) {
+        [&serializer, &args] {
+            if constexpr (SerializerFunction(args, serializer)) {
                 args(tools::Context<tools::Phases::Serialization,
-                                    decltype(conv)>(conv));
+                                    decltype(serializer)>(serializer));
             } else {
-                conv.serialize_(args);
+                serializer.serialize_(args);
             }
         }(),
         ...);
-    if constexpr (!mtf::is_serializer_bytes_v<mem_t> && concepts::Resizeable<mem_t>) {
+    if constexpr (!mtf::is_serializer_bytes_v<mem_t> &&
+                  concepts::Resizeable<mem_t>) {
         if (first_level) [[unlikely]] {
-            mem.resize(conv.pos);
+            mem.resize(serializer.pos);
         }
     }
-    return conv.pos;
+    return serializer.pos;
 }
 
 /// @brief Deserialize the arguments from the memory buffer at the given
 ///        position.
-/// @tparam Conv Convertor type.
+/// @tparam Ser Serializer type.
 /// @param mem  Buffer in which the serialized data is be stored.
 /// @param pos  Start position in the buffer for deserializing the data.
 /// @param args references to the variables that are deserialized.
-template <typename Conv>
+template <typename Ser>
 inline constexpr size_t deserialize(auto &mem, size_t pos, auto &&...args) {
-    Conv conv(mem, pos);
+    Ser serializer(mem, pos);
     (
-        [&conv, &args] {
-            if constexpr (SerializerFunction(args, conv)) {
+        [&serializer, &args] {
+            if constexpr (SerializerFunction(args, serializer)) {
                 args(tools::Context<tools::Phases::Deserialization,
-                                    decltype(conv)>(conv));
+                                    decltype(serializer)>(serializer));
             } else {
-                conv.deserialize_(args);
+                serializer.deserialize_(args);
             }
         }(),
         ...);
-    return conv.pos;
+    return serializer.pos;
 }
 
 /// @brief Serialize obj into mem at pos using a bit_cast.
@@ -73,10 +74,10 @@ template <typename T>
              std::is_trivially_copy_assignable_v<T>)
 inline constexpr size_t serializeStruct(auto &mem, size_t pos, T const *obj) {
     constexpr size_t nb_bytes = sizeof(*obj);
-    Convertor<decltype(mem)> conv(mem, pos);
+    Serializer<decltype(mem)> serializer(mem, pos);
     using byte_type = std::remove_cvref_t<decltype(mem[0])>;
-    conv.append(std::bit_cast<const byte_type *>(obj), nb_bytes);
-    return conv.pos;
+    serializer.append(std::bit_cast<const byte_type *>(obj), nb_bytes);
+    return serializer.pos;
 }
 
 /// @brief Deserialize obj from mem at pos using a bit_cast.
@@ -96,7 +97,7 @@ inline constexpr size_t deserializeStruct(auto &mem, size_t pos, T *obj) {
 /// @param accessors Accessors to the attributes (or the attributes themselves).
 constexpr inline auto bindSerialize(auto &obj, auto &&...accessors) {
     return [=, &obj](auto &mem, size_t pos = 0) {
-        serializer::serialize<serializer::Convertor<decltype(mem)>>(
+        serializer::serialize<serializer::Serializer<decltype(mem)>>(
             mem, pos, std::invoke(accessors, obj)...);
     };
 }
@@ -107,7 +108,7 @@ constexpr inline auto bindSerialize(auto &obj, auto &&...accessors) {
 /// @param accessors Accessors to the attributes (or the attributes themselves).
 constexpr inline auto bindDeserialize(auto &obj, auto &&...accessors) {
     return [=, &obj](auto &mem, size_t pos = 0) {
-        serializer::deserialize<serializer::Convertor<decltype(mem)>>(
+        serializer::deserialize<serializer::Serializer<decltype(mem)>>(
             mem, pos, std::invoke(accessors, obj)...);
     };
 }

@@ -23,7 +23,7 @@ class Mother {
         : age_(_age), name_(std::move(name)) {}
     virtual ~Mother() = default;
 
-    VIRTUAL_SERIALIZE(serializer::Convertor<serializer::default_mem_type>,
+    VIRTUAL_SERIALIZE(serializer::Serializer<serializer::default_mem_type>,
                       getId<Mother>(id_table()), age_, name_)
 
     /* accessors **************************************************************/
@@ -51,7 +51,7 @@ class Daughter1 : public Mother {
     explicit Daughter1(int age = 0, std::string name = "", double money = 0)
         : Mother(age, std::move(name)), money_(money) {}
 
-    SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
+    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::default_mem_type>,
                        getId<Daughter1>(id_table()),
                        serializer::tools::super<Mother>(this), money_)
 
@@ -81,7 +81,7 @@ class Daughter2 : public Daughter1 {
                        double money = 0, std::string jobName = "")
         : Daughter1(age, name, money), jobName_(std::move(jobName)) {}
 
-    SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
+    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::default_mem_type>,
                        getId<Daughter2>(id_table()),
                        serializer::tools::super<Daughter1>(this), jobName_)
 
@@ -106,8 +106,8 @@ class Daughter2 : public Daughter1 {
 /******************************************************************************/
 
 template <typename MemT>
-struct MIConvertor : serializer::Convertor<MemT, POLYMORPHIC_TYPE(Mother)> {
-    using serializer::Convertor<MemT, POLYMORPHIC_TYPE(Mother)>::Convertor;
+struct MISerializer : serializer::Serializer<MemT, POLYMORPHIC_TYPE(Mother)> {
+    using serializer::Serializer<MemT, POLYMORPHIC_TYPE(Mother)>::Serializer;
     HANDLE_POLYMORPHIC(id_table, Mother, Daughter1, Daughter2);
 };
 
@@ -117,7 +117,7 @@ struct MIConvertor : serializer::Convertor<MemT, POLYMORPHIC_TYPE(Mother)> {
 
 class Collection {
   public:
-    SERIALIZE_CONV(MIConvertor, elements_);
+    SERIALIZE_CONV(MISerializer, elements_);
 
     /* accessors **************************************************************/
     [[nodiscard]] const std::vector<Mother *> &elements() const {

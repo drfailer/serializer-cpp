@@ -7,7 +7,8 @@
 class SuperClass;
 class Class1;
 class Class2;
-using SuperTable = serializer::tools::TypeTable<char, SuperClass, Class1, Class2>;
+using SuperTable =
+    serializer::tools::TypeTable<char, SuperClass, Class1, Class2>;
 
 /******************************************************************************/
 /*                               super abstract                               */
@@ -23,7 +24,7 @@ class SuperClass {
         return name_ == other->name_ && age_ == other->age_;
     }
 
-    VIRTUAL_SERIALIZE(serializer::Convertor<serializer::default_mem_type>,
+    VIRTUAL_SERIALIZE(serializer::Serializer<serializer::default_mem_type>,
                       serializer::tools::getId<SuperClass>(SuperTable()), name_,
                       age_);
 
@@ -49,7 +50,7 @@ class Class1 : public SuperClass {
                     double y = 0)
         : SuperClass(name, age), x_(x), y_(y) {}
 
-    SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
+    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::default_mem_type>,
                        serializer::tools::getId<Class1>(SuperTable()),
                        serializer::tools::super<SuperClass>(this), x_, y_);
 
@@ -82,7 +83,7 @@ class Class2 : public SuperClass {
                     std::string str = "")
         : SuperClass(name, age), str_(std::move(str)) {}
 
-    SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
+    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::default_mem_type>,
                        serializer::tools::getId<Class2>(SuperTable()),
                        serializer::tools::super<SuperClass>(this), str_);
 
@@ -107,9 +108,10 @@ class Class2 : public SuperClass {
 /******************************************************************************/
 
 template <typename MemT>
-struct SuperConvertor : serializer::Convertor<MemT, POLYMORPHIC_TYPE(SuperClass)> {
-  using serializer::Convertor<MemT, POLYMORPHIC_TYPE(SuperClass)>::Convertor;
-  HANDLE_POLYMORPHIC(SuperTable, SuperClass, Class1, Class2);
+struct SuperSerializer
+    : serializer::Serializer<MemT, POLYMORPHIC_TYPE(SuperClass)> {
+    using serializer::Serializer<MemT, POLYMORPHIC_TYPE(SuperClass)>::Serializer;
+    HANDLE_POLYMORPHIC(SuperTable, SuperClass, Class1, Class2);
 };
 
 /******************************************************************************/
@@ -125,7 +127,7 @@ class SuperCollection {
         }
     }
 
-    SERIALIZE_CONV(SuperConvertor, elements);
+    SERIALIZE_CONV(SuperSerializer, elements);
 
     void push_back(SuperClass *element) { elements.push_back(element); }
     const std::vector<SuperClass *> &getElements() { return elements; }

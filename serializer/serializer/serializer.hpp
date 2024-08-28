@@ -1,12 +1,12 @@
-#ifndef HANDLERS_HPP
-#define HANDLERS_HPP
+#ifndef SERIALIZER_SERIALIZER_SERIALIZER_HPP
+#define SERIALIZER_SERIALIZER_SERIALIZER_HPP
 #include "../exceptions/unsupported_type.hpp"
 #include "../meta/serializer_meta.hpp"
 #include "../meta/type_check.hpp"
 #include "../meta/type_transform.hpp"
 #include "../tools/dynamic_array.hpp"
 #include "../tools/tools.hpp"
-#include "convert.hpp"
+#include "serialize.hpp"
 #include <algorithm>
 #include <bit>
 #include <cstring>
@@ -15,21 +15,17 @@
 #include <type_traits>
 #include <utility>
 
-/******************************************************************************/
-/*                          default convertor class                           */
-/******************************************************************************/
-
 /// @brief namespace serializer
 namespace serializer {
 
-/// @brief Default convertor that contains the functions for serializing and
+/// @brief Default serializer that contains the functions for serializing and
 ///        deserializing types from the standard library. It inherits from the
 ///        convert behavior for additional types so the user can add its own
 ///        functions.
 /// @tparam MemT Type of the memory buffer.
 /// @tparam AdditionalTypes External types for which the user can add support.
 template <typename MemT, typename... AdditionalTypes>
-struct Convertor : Convert<AdditionalTypes>... {
+struct Serializer : Serialize<AdditionalTypes>... {
     MemT &mem;      ///< memory buffer in which the serialized data are stored
     size_t pos = 0; ///< position in the memory buffer.
 
@@ -42,7 +38,7 @@ struct Convertor : Convert<AdditionalTypes>... {
     /// @brief Constructor from memory buffer reference and position.
     /// @param mem Memory buffer in which the data is serialized.
     /// @param pos Position in the memory buffer.
-    constexpr Convertor(MemT &mem, size_t pos = 0) : mem(mem), pos(pos) {}
+    constexpr Serializer(MemT &mem, size_t pos = 0) : mem(mem), pos(pos) {}
 
     /* helper functions *******************************************************/
 
@@ -98,7 +94,7 @@ struct Convertor : Convert<AdditionalTypes>... {
         if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
-            static_cast<Convert<mtf::base_t<T>> *>(this)->serialize(elt);
+            static_cast<Serialize<mtf::base_t<T>> *>(this)->serialize(elt);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<
                 mtf::base_t<T>>();
@@ -118,7 +114,7 @@ struct Convertor : Convert<AdditionalTypes>... {
         if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
-            static_cast<Convert<mtf::base_t<T>> *>(this)->deserialize(elt);
+            static_cast<Serialize<mtf::base_t<T>> *>(this)->deserialize(elt);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<
                 mtf::base_t<T>>();

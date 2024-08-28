@@ -15,7 +15,7 @@
 #define TEST_ENUMS
 #define TEST_PAIR
 #define TEST_TUPLE
-#define TEST_CONVERTOR
+#define TEST_SERIALIZER
 #define TEST_MAP
 #define TEST_SET
 #define TEST_CSTRUCT
@@ -317,12 +317,12 @@ TEST_CASE("serialization/deserialization with ITERABLES ATTRIBUTE") {
 #endif
 
 /******************************************************************************/
-/*                       implementation of a convertor                        */
+/*                       implementation of a serializer                       */
 /******************************************************************************/
 
 #ifdef TEST_POLYMORPHIC
 #include "test-classes/abstract.hpp"
-TEST_CASE("implementing a convertor (polymorphic class serialization)") {
+TEST_CASE("implementing a serializer (polymorphic class serialization)") {
     AbstractCollection original;
     AbstractCollection other;
     serializer::default_mem_type result;
@@ -464,7 +464,7 @@ TEST_CASE("multiple inheritance") {
 /******************************************************************************/
 
 #ifdef TEST_SMART_PTR
-#include "test-classes/withSmartPtr.hpp"
+#include "test-classes/withsmartptr.hpp"
 TEST_CASE("smart pointers") {
     WithSmartPtr original(1, 2.3, "hello");
     WithSmartPtr other;
@@ -514,7 +514,7 @@ TEST_CASE("enums") {
 /******************************************************************************/
 
 #ifdef TEST_PAIR
-#include "test-classes/withPair.hpp"
+#include "test-classes/withpair.hpp"
 TEST_CASE("pairs") {
     std::vector<int> v = {1, 2, 3, 4};
     std::set<std::string> s = {"hello", "world"};
@@ -650,14 +650,14 @@ TEST_CASE("tuples") {
 #endif
 
 /******************************************************************************/
-/*                                 convertor                                  */
+/*                                 serializer                                 */
 /******************************************************************************/
 
-#ifdef TEST_CONVERTOR
-#include "test-classes/withconvertor.hpp"
+#ifdef TEST_SERIALIZER
+#include "test-classes/withserializer.hpp"
 TEST_CASE("serialize unknown type") {
-    WithConvertor original;
-    WithConvertor other;
+    WithSerializer original;
+    WithSerializer other;
     serializer::default_mem_type result;
 
     original.addInt(1);
@@ -693,7 +693,7 @@ TEST_CASE("serialize unknown type") {
 /******************************************************************************/
 
 #ifdef TEST_MAP
-#include "test-classes/withMap.hpp"
+#include "test-classes/withmap.hpp"
 TEST_CASE("map") {
     WithMap original;
     WithMap other;

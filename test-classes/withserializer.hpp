@@ -32,9 +32,10 @@ inline bool operator==(const Unknown &lhs, const Unknown &rhs) {
 /******************************************************************************/
 
 template <typename MemT>
-struct UnknownConvertor : serializer::Convertor<MemT, Unknown> {
-    using serializer::Convertor<MemT, Unknown>::Convertor;
-    using byte_type = serializer::Convertor<MemT, Unknown>::byte_type;
+struct UnknownSerializer : serializer::Serializer<MemT, Unknown> {
+    using serializer::Serializer<MemT, Unknown>::Serializer;
+    using byte_type = serializer::Serializer<MemT, Unknown>::byte_type;
+
     constexpr void serialize(const Unknown &u) override {
         int i = u.x();
         this->append(std::bit_cast<const byte_type *>(&i), sizeof(i));
@@ -51,9 +52,9 @@ struct UnknownConvertor : serializer::Convertor<MemT, Unknown> {
 /*                               with convertor                               */
 /******************************************************************************/
 
-class WithConvertor {
+class WithSerializer {
   public:
-    SERIALIZE_CONV(UnknownConvertor, ints, unknowns);
+    SERIALIZE_CONV(UnknownSerializer, ints, unknowns);
 
     /* accessors **************************************************************/
     [[nodiscard]] const std::vector<Unknown> &getUnknowns() const {

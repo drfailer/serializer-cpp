@@ -7,53 +7,53 @@
 /******************************************************************************/
 
 /// @brief Generate the serialze and deserialize methods with the specified
-///        convertor.
-/// @param Conv Convertor.
+///        serializer.
+/// @param Ser Serializer.
 /// @param ... Members to serialize.
-#define SERIALIZE_CONV(Conv, ...)                                              \
+#define SERIALIZE_CONV(Ser, ...)                                               \
     constexpr size_t serialize(auto &mem, size_t pos = 0) const {              \
-        return serializer::serialize<Conv<decltype(mem)>>(mem, pos,            \
-                                                          __VA_ARGS__);        \
+        return serializer::serialize<Ser<decltype(mem)>>(mem, pos,             \
+                                                         __VA_ARGS__);         \
     }                                                                          \
     constexpr size_t deserialize(auto &mem, size_t pos = 0) {                  \
-        return serializer::deserialize<Conv<decltype(mem)>>(mem, pos,          \
-                                                            __VA_ARGS__);      \
+        return serializer::deserialize<Ser<decltype(mem)>>(mem, pos,           \
+                                                           __VA_ARGS__);       \
     }
 
 /// @brief Generate the serialize and deserialize methods with the default
-///        convertor.
+///        serializer.
 /// @param ... Members to serialize.
-#define SERIALIZE(...) SERIALIZE_CONV(serializer::Convertor, __VA_ARGS__)
+#define SERIALIZE(...) SERIALIZE_CONV(serializer::Serializer, __VA_ARGS__)
 
 /// @brief Generate the serialize and deserialize methods with the specified
-///        convertor. The keywords virtual and override can be added.
-/// @param Conv Convertor.
+///        serializer. The keywords virtual and override can be added.
+/// @param Ser Serializer.
 /// @param virt Virtual keyworkd.
 /// @param over Override keyworkd.
 /// @param ... Members to serialize.
-#define __SERIALIZE__(Conv, virt, over, ...)                                   \
-    constexpr virt size_t serialize(typename Conv::mem_type &mem,              \
+#define __SERIALIZE__(Ser, virt, over, ...)                                    \
+    constexpr virt size_t serialize(typename Ser::mem_type &mem,               \
                                     size_t pos = 0) const over {               \
-        return serializer::serialize<Conv>(mem, pos, __VA_ARGS__);             \
+        return serializer::serialize<Ser>(mem, pos, __VA_ARGS__);              \
     }                                                                          \
-    constexpr virt size_t deserialize(typename Conv::mem_type &mem,            \
+    constexpr virt size_t deserialize(typename Ser::mem_type &mem,             \
                                       size_t pos = 0) over {                   \
-        return serializer::deserialize<Conv>(mem, pos, __VA_ARGS__);           \
+        return serializer::deserialize<Ser>(mem, pos, __VA_ARGS__);            \
     }
 
 /// @brief Generate the serialze and deserialize virtual methods using the
-///        specified convertor.
-/// @param Conv Convertor
+///        specified serializer.
+/// @param Ser Serializer
 /// @param ... Members to serialize
-#define VIRTUAL_SERIALIZE(Conv, ...)                                           \
-    __SERIALIZE__(Conv, virtual, /* over */, __VA_ARGS__)
+#define VIRTUAL_SERIALIZE(Ser, ...)                                            \
+    __SERIALIZE__(Ser, virtual, /* over */, __VA_ARGS__)
 
 /// @brief Generate the serialze and deserialize override methods using the
-///        specified convertor.
-/// @param Conv Convertor
+///        specified serializer.
+/// @param Ser Serializer
 /// @param ... Members to serialize
-#define SERIALIZE_OVERRIDE(Conv, ...)                                          \
-    __SERIALIZE__(Conv, /* virt */, override, __VA_ARGS__)
+#define SERIALIZE_OVERRIDE(Ser, ...)                                           \
+    __SERIALIZE__(Ser, /* virt */, override, __VA_ARGS__)
 
 /// @brief Generate empty serialize and deserialize virtual methods (useful
 ///        whithin a concrete super class).
@@ -82,7 +82,7 @@
 /*                          deserialize polymorphic                           */
 /******************************************************************************/
 
-/// @brief Used to simplify the writing of a custom convertor for polymorphic
+/// @brief Used to simplify the writing of a custom serializer for polymorphic
 ///        types (allow to add support for all common pointers)
 #define POLYMORPHIC_TYPE(Class)                                                \
     Class *, std::shared_ptr<Class>, std::unique_ptr<Class>
@@ -123,8 +123,8 @@
 ///        serialization and the deserialization.
 /// @param code Code to execute.
 #define SER_FUN(code)                                                          \
-    [&]<serializer::tools::Phases Phase, typename Conv>(                       \
-        [[maybe_unused]] serializer::tools::Context<Phase, Conv> &&context)    \
+    [&]<serializer::tools::Phases Phase, typename Ser>(                        \
+        [[maybe_unused]] serializer::tools::Context<Phase, Ser> &&context)     \
         code
 
 /// @brief Helper macro to create a lambda that is executed during the

@@ -36,7 +36,7 @@ class Concrete1 : public SuperAbstract {
   public:
     explicit Concrete1(int x = 0, double y = 0) : x_(x), y_(y) {}
 
-    SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
+    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::default_mem_type>,
                        serializer::tools::getId<Concrete1>(AbstractTable()), x_,
                        y_);
 
@@ -86,7 +86,7 @@ class Concrete2 : public SuperAbstract {
   public:
     explicit Concrete2(std::string str = "") : str_(std::move(str)) {}
 
-    SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
+    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::default_mem_type>,
                        serializer::tools::getId<Concrete2>(AbstractTable()),
                        str_);
 
@@ -131,10 +131,10 @@ class Concrete2 : public SuperAbstract {
 
 /* we use a custom convertor for handling generics */
 template <typename MemT>
-struct AbstractConvertor
-    : serializer::Convertor<MemT, POLYMORPHIC_TYPE(SuperAbstract)> {
-    using serializer::Convertor<MemT,
-                                POLYMORPHIC_TYPE(SuperAbstract)>::Convertor;
+struct AbstractSerializer
+    : serializer::Serializer<MemT, POLYMORPHIC_TYPE(SuperAbstract)> {
+    using serializer::Serializer<MemT,
+                                POLYMORPHIC_TYPE(SuperAbstract)>::Serializer;
     HANDLE_POLYMORPHIC(AbstractTable, SuperAbstract, Concrete1, Concrete2)
 };
 
@@ -151,7 +151,7 @@ class AbstractCollection {
         }
     }
 
-    SERIALIZE_CONV(AbstractConvertor, elements_, elementsShared_,
+    SERIALIZE_CONV(AbstractSerializer, elements_, elementsShared_,
                    elementsUnique_);
 
     /* accessors **************************************************************/

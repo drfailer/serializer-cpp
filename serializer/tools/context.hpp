@@ -9,12 +9,12 @@ namespace serializer::tools {
 enum class Phases { Serialization, Deserialization };
 
 /// @brief Reporesents the context given the the serializer functions.
-/// @tparam Phase     Phase of the serialization
-/// @tparam Convertor Convertor that holds the byte array and the serialization
-///                   functions.
-template <Phases Phase, typename Convertor> struct Context {
+/// @tparam Phase      Phase of the serialization
+/// @tparam Serializer Serializer that holds the byte array and the
+///                    serialization functions.
+template <Phases Phase, typename Serializer> struct Context {
     static constexpr Phases phase = Phase; ///< phase
-    Convertor convertor;                   ///< convertor
+    Serializer serializer;                 ///< serializer
 };
 
 } // namespace serializer::tools
