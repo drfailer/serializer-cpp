@@ -50,7 +50,7 @@ class Class1 : public SuperClass {
 
     SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
                        serializer::tools::getId<Class1>(SuperTable()),
-                       serializer::super<SuperClass>(this), x_, y_);
+                       serializer::tools::super<SuperClass>(this), x_, y_);
 
     /* accessors **************************************************************/
     void x(int x) { this->x_ = x; }
@@ -83,7 +83,7 @@ class Class2 : public SuperClass {
 
     SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
                        serializer::tools::getId<Class2>(SuperTable()),
-                       serializer::super<SuperClass>(this), str_);
+                       serializer::tools::super<SuperClass>(this), str_);
 
     /* accessors **************************************************************/
     void str(std::string str) { this->str_ = std::move(str); }

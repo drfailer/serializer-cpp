@@ -52,7 +52,7 @@ class Daughter1 : public Mother {
 
     SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
                        getId<Daughter1>(id_table()),
-                       serializer::super<Mother>(this), money_)
+                       serializer::tools::super<Mother>(this), money_)
 
     /* accessors **************************************************************/
     void money(double money) { this->money_ = money; }
@@ -82,7 +82,7 @@ class Daughter2 : public Daughter1 {
 
     SERIALIZE_OVERRIDE(serializer::Convertor<serializer::default_mem_type>,
                        getId<Daughter2>(id_table()),
-                       serializer::super<Daughter1>(this), jobName_)
+                       serializer::tools::super<Daughter1>(this), jobName_)
 
     /* accessors **************************************************************/
     void jobName(std::string jobName) { this->jobName_ = std::move(jobName); }
