@@ -10,8 +10,8 @@ namespace mi {
 class Mother;
 class Daughter1;
 class Daughter2;
-using id_table =
-    serializer::tools::TypeTable<size_t, Mother, Daughter1, Daughter2>;
+using MITable = serializer::tools::TypeTable<Mother, Daughter1, Daughter2>;
+using MISerializer = serializer::Serializer<serializer::Bytes, MITable>;
 
 /******************************************************************************/
 /*                                mother class                                */
@@ -23,8 +23,7 @@ class Mother {
         : age_(_age), name_(std::move(name)) {}
     virtual ~Mother() = default;
 
-    VIRTUAL_SERIALIZE(serializer::Serializer<serializer::Bytes>,
-                      getId<Mother>(id_table()), age_, name_)
+    VIRTUAL_SERIALIZE(MISerializer, age_, name_)
 
     /* accessors **************************************************************/
     void name(std::string name) { this->name_ = std::move(name); }
@@ -51,9 +50,8 @@ class Daughter1 : public Mother {
     explicit Daughter1(int age = 0, std::string name = "", double money = 0)
         : Mother(age, std::move(name)), money_(money) {}
 
-    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::Bytes>,
-                       getId<Daughter1>(id_table()),
-                       serializer::tools::super<Mother>(this), money_)
+    SERIALIZE_OVERRIDE(MISerializer, serializer::tools::super<Mother>(this),
+                       money_)
 
     /* accessors **************************************************************/
     void money(double money) { this->money_ = money; }
@@ -81,9 +79,8 @@ class Daughter2 : public Daughter1 {
                        double money = 0, std::string jobName = "")
         : Daughter1(age, name, money), jobName_(std::move(jobName)) {}
 
-    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::Bytes>,
-                       getId<Daughter2>(id_table()),
-                       serializer::tools::super<Daughter1>(this), jobName_)
+    SERIALIZE_OVERRIDE(MISerializer, serializer::tools::super<Daughter1>(this),
+                       jobName_)
 
     /* accessors **************************************************************/
     void jobName(std::string jobName) { this->jobName_ = std::move(jobName); }
@@ -99,16 +96,6 @@ class Daughter2 : public Daughter1 {
 
   private:
     std::string jobName_;
-};
-
-/******************************************************************************/
-/*                                 convertor                                  */
-/******************************************************************************/
-
-template <typename MemT>
-struct MISerializer : serializer::Serializer<MemT, POLYMORPHIC_TYPE(Mother)> {
-    using serializer::Serializer<MemT, POLYMORPHIC_TYPE(Mother)>::Serializer;
-    HANDLE_POLYMORPHIC(id_table, Mother, Daughter1, Daughter2);
 };
 
 /******************************************************************************/

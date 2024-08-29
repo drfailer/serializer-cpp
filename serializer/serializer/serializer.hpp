@@ -6,6 +6,7 @@
 #include "../meta/type_transform.hpp"
 #include "../tools/dynamic_array.hpp"
 #include "../tools/tools.hpp"
+#include "../tools/type_table.hpp"
 #include "serialize.hpp"
 #include <algorithm>
 #include <bit>
@@ -14,6 +15,8 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+
+// TODO: handle identifier automatically
 
 /// @brief namespace serializer
 namespace serializer {
@@ -24,11 +27,14 @@ namespace serializer {
 ///        functions.
 /// @tparam MemT Type of the memory buffer.
 /// @tparam AdditionalTypes External types for which the user can add support.
-template <typename MemT, typename... AdditionalTypes>
+template <typename MemT, typename TypeTable = tools::TypeTable<>,
+          typename... AdditionalTypes>
 struct Serializer : Serialize<AdditionalTypes>... {
     MemT &mem;      ///< memory buffer in which the serialized data are stored
     size_t pos = 0; ///< position in the memory buffer.
 
+    using type_table = TypeTable;
+    using id_type = typename TypeTable::id_type;
     using mem_type = MemT; ///< alias to the type of the momory buffer
     using byte_type =
         std::remove_cvref_t<decltype(mem[0])>; ///< alias to the byte type
@@ -47,7 +53,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @return Deserialized size.
     template <typename T> inline constexpr T deserializeSize() {
         auto size = *std::bit_cast<const T *>(mem.data() + pos);
-        pos += sizeof(size);
+        pos += sizeof(T);
         return size - 1;
     }
 
@@ -55,7 +61,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param bytes Buffer of bytes.
     /// @param nbBytes Size of the buffer.
     inline constexpr void append(const byte_type *bytes, size_t nbBytes) {
-        if constexpr (mtf::is_serializer_bytes_v<mtf::base_t<mem_type>>) {
+        if constexpr (mtf::is_serializer_bytes_v<mtf::clean_t<mem_type>>) {
             mem.append(pos, bytes, nbBytes);
             pos += nbBytes;
         } else {
@@ -79,6 +85,62 @@ struct Serializer : Serialize<AdditionalTypes>... {
         append(std::bit_cast<const byte_type *>(&chr), 1);
     }
 
+    /// @brief Serialize an identifier using the getId method (if the method is
+    ///        not present, the id is managed manually or in the macros).
+    /// @param elt Element for which the type id is required.
+    inline constexpr void serializeId(auto &&elt) {
+        if constexpr (requires { elt.typeId(); }) {
+            auto id = elt.typeId();
+            append(std::bit_cast<const byte_type *>(&id), sizeof(id));
+        } else if constexpr (requires { elt->typeId(); }) {
+            auto id = elt->typeId();
+            append(std::bit_cast<const byte_type *>(&id), sizeof(id));
+        }
+    }
+
+    /// @brief Deserialize an identifier.
+    /// @param elt Element that is deserialized.
+    /// @return id
+    inline constexpr id_type deserializeId(auto &&elt) {
+        auto id = *std::bit_cast<const id_type *>(mem.data() + pos);
+        // if the id is managed automatically, we have to update the pos,
+        // otherwise, it will be deserialized with the attributes.
+        if constexpr (
+            requires { elt.typeId(); } || requires { elt->typeId(); }) {
+            pos += sizeof(id_type);
+        }
+        return id;
+    }
+
+    /* generic types **********************************************************/
+
+    /// @brief Serialize a generic type registed in the type table
+    /// @param elt Element serialized.
+    template <typename T>
+        requires(tools::has_type_v<T, TypeTable>)
+    inline constexpr void serialize_(T &&elt) {
+        serializeId(elt);
+        if constexpr (requires { elt.serialize(mem, pos); }) {
+            pos = elt.serialize(mem, pos);
+        } else if constexpr (requires { elt->serialize(mem, pos); }) {
+            pos = elt->serialize(mem, pos);
+        }
+    }
+
+    /// @brief Serialize a generic type registed in the type table
+    /// @param elt Element serialized.
+    template <typename T>
+        requires(tools::has_type_v<T, TypeTable>)
+    inline constexpr void deserialize_(T &&elt) {
+        auto id = deserializeId(elt);
+        tools::createGeneric(id, TypeTable(), elt);
+        if constexpr (requires { elt.deserialize(mem, pos); }) {
+            pos = elt.deserialize(mem, pos);
+        } else if constexpr (requires { elt->deserialize(mem, pos); }) {
+            pos = elt->deserialize(mem, pos);
+        }
+    }
+
     /* no automatic serialization types (custom convertor) ********************/
 
     /// @brief Fallback functions for non serializable types. Here either we use
@@ -89,15 +151,16 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        lost in the hole compiler error output.
     /// @param elt Element that is serialized.
     template <typename T>
-        requires(concepts::NonAutomaticSerialize<T, MemT, AdditionalTypes...>)
+        requires(concepts::NonAutomaticSerialize<T, MemT, AdditionalTypes...> &&
+                 !tools::has_type_v<T, TypeTable>)
     inline constexpr void serialize_(T &&elt) {
         if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
-            static_cast<Serialize<mtf::base_t<T>> *>(this)->serialize(elt);
+            static_cast<Serialize<mtf::clean_t<T>> *>(this)->serialize(elt);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<
-                mtf::base_t<T>>();
+                mtf::clean_t<T>>();
         }
     }
 
@@ -109,15 +172,17 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        lost in the hole compiler error output.
     /// @param elt Element that is deserialized.
     template <typename T>
-        requires(concepts::NonAutomaticDeserialize<T, MemT, AdditionalTypes...>)
+        requires(
+            concepts::NonAutomaticDeserialize<T, MemT, AdditionalTypes...> &&
+            !tools::has_type_v<T, TypeTable>)
     inline constexpr void deserialize_(T &&elt) {
         if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
             // pointer to shared_ptr)
-            static_cast<Serialize<mtf::base_t<T>> *>(this)->deserialize(elt);
+            static_cast<Serialize<mtf::clean_t<T>> *>(this)->deserialize(elt);
         } else {
             throw serializer::exceptions::UnsupportedTypeError<
-                mtf::base_t<T>>();
+                mtf::clean_t<T>>();
         }
     }
 
@@ -127,7 +192,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        serialize method).
     /// @param elt Element that is serialized.
     template <typename T>
-        requires(concepts::UseSerialize<T, MemT, AdditionalTypes...>)
+        requires(concepts::UseSerialize<T, MemT, AdditionalTypes...> &&
+                 !tools::has_type_v<T, TypeTable>)
     inline constexpr void serialize_(T &&elt) {
         pos = elt.serialize(mem, pos);
     }
@@ -136,7 +202,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        deserialize method).
     /// @param elt Element that is deserialized.
     template <typename T>
-        requires(concepts::UseDeserialize<T, MemT, AdditionalTypes...>)
+        requires(concepts::UseDeserialize<T, MemT, AdditionalTypes...> &&
+                 !tools::has_type_v<T, TypeTable>)
     inline constexpr void deserialize_(T &&elt) {
         pos = elt.deserialize(mem, pos);
     }
@@ -156,7 +223,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <serializer::concepts::Trivial T>
         requires(!concepts::Deserializable<T, MemT>)
     inline constexpr void deserialize_(T &&elt) {
-        elt = *std::bit_cast<const mtf::base_t<T> *>(mem.data() + pos);
+        elt = *std::bit_cast<const mtf::clean_t<T> *>(mem.data() + pos);
         pos += sizeof(T);
     }
 
@@ -166,7 +233,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        The pointer should be valid (nullptr or value).
     /// @param elt Element that is serialized.
     template <serializer::concepts::Pointer T>
-        requires(!mtf::contains_v<T, AdditionalTypes...>)
+        requires(!mtf::contains_v<T, AdditionalTypes...> &&
+                 !tools::has_type_v<T, TypeTable>)
     inline constexpr void serialize_(T &&elt) {
         if (elt == nullptr) {
             append('n');
@@ -181,11 +249,13 @@ struct Serializer : Serialize<AdditionalTypes>... {
     }
 
     /// @brief Deserialize function for the pointer types. If the pointer is not
-    ///        null, a dynamic allocation is performed before deserializing the
-    ///        result. This memory should be handled by the user.
+    ///        null, a dynamic allocation is perfsset 56973 has been removed
+    ///        Waiver Form PIV LONG TERM Eormed before deserializing the result.
+    ///        This memory should be handled by the user.
     /// @param elt Element that is deserialized.
     template <serializer::concepts::ConcretePtr T>
-        requires(!mtf::contains_v<T, AdditionalTypes...>)
+        requires(!mtf::contains_v<T, AdditionalTypes...> &&
+                 !tools::has_type_v<T, TypeTable>)
     inline constexpr void deserialize_(T &&elt) {
         bool ptrValid = char(mem[pos++]) == 'v';
 
@@ -213,7 +283,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        The pointer should be valid (nullptr or value).
     /// @param elt Element that is serialized.
     template <serializer::concepts::SmartPtr T>
-        requires(!mtf::contains_v<T, AdditionalTypes...>)
+        requires(!mtf::contains_v<T, AdditionalTypes...> &&
+                 !tools::has_type_v<T, TypeTable>)
     inline constexpr void serialize_(T &&elt) {
         using ST = mtf::element_type_t<T>;
         if (elt != nullptr) {
@@ -232,7 +303,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        pointer is allocated if required.
     /// @param elt Element that is deserialized.
     template <serializer::concepts::ConcreteSmartPtr T>
-        requires(!mtf::contains_v<T, AdditionalTypes...>)
+        requires(!mtf::contains_v<T, AdditionalTypes...> &&
+                 !tools::has_type_v<T, TypeTable>)
     inline constexpr void deserialize_(T &&elt) {
         bool ptrValid = char(mem[pos++]) == 'v';
 
@@ -272,7 +344,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     inline constexpr void serialize_(T &&tuple) {
         serializeTuple(
             tuple,
-            std::make_index_sequence<std::tuple_size_v<mtf::base_t<T>>>());
+            std::make_index_sequence<std::tuple_size_v<mtf::clean_t<T>>>());
     }
 
     /// @brief Helper function for deserializing tuples.
@@ -289,8 +361,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <serializer::concepts::TupleLike T>
         requires(!concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
-        elt = deserializeTuple<mtf::remove_const_tuple_t<mtf::base_t<T>>>(
-            std::make_index_sequence<std::tuple_size_v<mtf::base_t<T>>>());
+        elt = deserializeTuple<mtf::remove_const_tuple_t<mtf::clean_t<T>>>(
+            std::make_index_sequence<std::tuple_size_v<mtf::clean_t<T>>>());
     }
 
     /* enums ******************************************************************/
@@ -301,7 +373,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <serializer::concepts::Enum T>
         requires(!concepts::Trivial<T>)
     inline constexpr void serialize_(T &&elt) {
-        auto value = (std::underlying_type_t<mtf::base_t<T>>)elt;
+        auto value = (std::underlying_type_t<mtf::clean_t<T>>)elt;
         append(std::bit_cast<const byte_type *>(&value), sizeof(value));
     }
 
@@ -311,8 +383,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <serializer::concepts::Enum T>
         requires(!concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
-        using Type = std::underlying_type_t<mtf::base_t<T>>;
-        elt = (mtf::base_t<T>)*std::bit_cast<const Type *>(mem.data() + pos);
+        using Type = std::underlying_type_t<mtf::clean_t<T>>;
+        elt = (mtf::clean_t<T>)*std::bit_cast<const Type *>(mem.data() + pos);
         pos += sizeof(Type);
     }
 
@@ -322,7 +394,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param elt Element that is serialized.
     template <serializer::concepts::String T>
     inline constexpr void serialize_(T &&elt) {
-        using size_type = typename mtf::base_t<T>::size_type;
+        using size_type = typename mtf::clean_t<T>::size_type;
         size_type size = elt.size() + 1;
         append(std::bit_cast<const byte_type *>(&size), sizeof(size));
         append(std::bit_cast<const byte_type *>(elt.data()), elt.size());
@@ -332,7 +404,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param elt Element that is deserialized.
     template <serializer::concepts::String T>
     inline constexpr void deserialize_(T &&str) {
-        using size_type = typename mtf::base_t<T>::size_type;
+        using size_type = typename mtf::clean_t<T>::size_type;
         size_type size = deserializeSize<size_type>();
         str.assign(std::bit_cast<const char *>(mem.data() + pos), size);
         pos += size;
@@ -346,7 +418,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
         requires(!concepts::Trivial<T> && !concepts::Serializable<T, MemT>)
     inline constexpr void serialize_(T &&elts) {
         using ValueType =
-            mtf::remove_const_t<mtf::iter_value_t<mtf::base_t<T>>>;
+            mtf::remove_const_t<mtf::iter_value_t<mtf::clean_t<T>>>;
 
         // append the size
         auto size = std::size(elts) + 1;
@@ -371,14 +443,14 @@ struct Serializer : Serialize<AdditionalTypes>... {
     inline constexpr void deserialize_(T &&elts) {
         using size_type = decltype(std::size(std::declval<T>()));
         using ValueType =
-            mtf::remove_const_t<mtf::iter_value_t<mtf::base_t<T>>>;
+            mtf::remove_const_t<mtf::iter_value_t<mtf::clean_t<T>>>;
         using IterType = decltype(elts.begin());
         size_type size = deserializeSize<size_type>();
 
         if constexpr (concepts::ContiguousResizeable<T>) {
-          elts.resize(size);
+            elts.resize(size);
         } else if constexpr (concepts::Clearable<T>) {
-          elts.clear();
+            elts.clear();
         }
 
         if constexpr (concepts::ContiguousTrivial<T, MemT>) {
@@ -411,7 +483,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param elt Element that is serialized.
     template <serializer::concepts::StaticArray T>
     inline constexpr void serialize_(T &&elt) {
-        size_t size = std::extent_v<mtf::base_t<T>>;
+        size_t size = std::extent_v<mtf::clean_t<T>>;
 
         if constexpr (concepts::TrivialySerializableStaticArray<T, MemT>) {
             append(std::bit_cast<const byte_type *>(std::to_address(elt)),
@@ -427,8 +499,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param elt Element that is deserialized.
     template <serializer::concepts::StaticArray T>
     inline constexpr void deserialize_(T &&elt) {
-        using ST = std::remove_extent_t<mtf::base_t<T>>;
-        size_t size = std::extent_v<mtf::base_t<T>>;
+        using ST = std::remove_extent_t<mtf::clean_t<T>>;
+        size_t size = std::extent_v<mtf::clean_t<T>>;
 
         if constexpr (concepts::TrivialyDeserializableStaticArray<T, MemT>) {
             std::memcpy(std::to_address(elt), mem.data() + pos,
@@ -448,7 +520,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param elt Element that is serialized.
     template <concepts::Pointer T, typename DT, typename... DTs>
     inline constexpr void serialize_(tools::DynamicArray<T, DT, DTs...> elt) {
-        using ST = std::remove_pointer_t<mtf::base_t<T>>;
+        using ST = std::remove_pointer_t<mtf::clean_t<T>>;
         if (elt.mem == nullptr) {
             append('n');
             return;
@@ -483,7 +555,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param elt Element that is deserialized.
     template <concepts::Pointer T, typename DT, typename... DTs>
     inline constexpr void deserialize_(tools::DynamicArray<T, DT, DTs...> elt) {
-        using ST = std::remove_pointer_t<mtf::base_t<T>>;
+        using ST = std::remove_pointer_t<mtf::clean_t<T>>;
         bool ptrValid = char(mem[pos++]) == 'v';
 
         if (!ptrValid) {

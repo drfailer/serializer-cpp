@@ -7,8 +7,8 @@
 class SuperClass;
 class Class1;
 class Class2;
-using SuperTable =
-    serializer::tools::TypeTable<char, SuperClass, Class1, Class2>;
+using SuperTable = serializer::tools::TypeTable<SuperClass, Class1, Class2>;
+using SuperSerializer = serializer::Serializer<serializer::Bytes, SuperTable>;
 
 /******************************************************************************/
 /*                               super abstract                               */
@@ -24,9 +24,7 @@ class SuperClass {
         return name_ == other->name_ && age_ == other->age_;
     }
 
-    VIRTUAL_SERIALIZE(serializer::Serializer<serializer::Bytes>,
-                      serializer::tools::getId<SuperClass>(SuperTable()), name_,
-                      age_);
+    VIRTUAL_SERIALIZE(SuperSerializer, name_, age_);
 
     /* accessors **************************************************************/
     void age(int age) { this->age_ = age; }
@@ -50,8 +48,7 @@ class Class1 : public SuperClass {
                     double y = 0)
         : SuperClass(name, age), x_(x), y_(y) {}
 
-    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::Bytes>,
-                       serializer::tools::getId<Class1>(SuperTable()),
+    SERIALIZE_OVERRIDE(SuperSerializer,
                        serializer::tools::super<SuperClass>(this), x_, y_);
 
     /* accessors **************************************************************/
@@ -83,8 +80,7 @@ class Class2 : public SuperClass {
                     std::string str = "")
         : SuperClass(name, age), str_(std::move(str)) {}
 
-    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::Bytes>,
-                       serializer::tools::getId<Class2>(SuperTable()),
+    SERIALIZE_OVERRIDE(SuperSerializer,
                        serializer::tools::super<SuperClass>(this), str_);
 
     /* accessors **************************************************************/
@@ -101,17 +97,6 @@ class Class2 : public SuperClass {
 
   private:
     std::string str_;
-};
-
-/******************************************************************************/
-/*                                 convertor                                  */
-/******************************************************************************/
-
-template <typename MemT>
-struct SuperSerializer
-    : serializer::Serializer<MemT, POLYMORPHIC_TYPE(SuperClass)> {
-    using serializer::Serializer<MemT, POLYMORPHIC_TYPE(SuperClass)>::Serializer;
-    HANDLE_POLYMORPHIC(SuperTable, SuperClass, Class1, Class2);
 };
 
 /******************************************************************************/

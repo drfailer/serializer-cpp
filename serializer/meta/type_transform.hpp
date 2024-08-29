@@ -12,7 +12,7 @@ namespace serializer::mtf {
 ///        We don't use value_type directly in case of a not well implemented
 ///        members_. Though, we assume that the iterator respects the standard.
 template <typename T> struct iter_value {
-    using type = typename base_t<T>::iterator::value_type;
+    using type = typename clean_t<T>::iterator::value_type;
 };
 
 /// @brief Specific case for std::array (it is iterable using pointers and not
@@ -23,22 +23,6 @@ template <typename T, size_t N> struct iter_value<std::array<T, N>> {
 
 /// @brief iter_value shorthand.
 template <typename T> using iter_value_t = iter_value<T>::type;
-
-/// @brief Check if a type T is in the parameter pac Types. value is true if T
-///        is in Types.
-template <typename T, typename... Types> struct contains;
-template <typename T> struct contains<T> {
-    static constexpr bool value = false;
-};
-template <typename T, typename H, typename... Tail>
-struct contains<T, H, Tail...> {
-    static constexpr bool value =
-        std::is_same_v<T, H> || contains<T, Tail...>::value;
-};
-
-/// @brief Shorthand for contains.
-template <typename T, typename... Types>
-constexpr bool contains_v = contains<base_t<T>, Types...>::value;
 
 /// @brief Put the type H at the beginning of the tuple T
 template <typename H, typename T> struct tuple_push_front;
@@ -74,7 +58,6 @@ template <typename T>
 using remove_const_tuple_t = typename remove_const_tuple<T>::type;
 
 /// @brief Remove const on all types
-/// TODO: move this elsewhere
 template <typename T> struct remove_const {
     using type = std::remove_const_t<T>;
 };
@@ -84,6 +67,26 @@ template <typename T> using remove_const_t = typename remove_const<T>::type;
 template <concepts::TupleLike T> struct remove_const<T> {
     using type = mtf::remove_const_tuple_t<T>;
 };
+
+/// @brief remove all specifiers and pointers (pointer / smart pointer / const)
+template <typename T>
+struct base {
+  using type = mtf::clean_t<std::remove_pointer_t<T>>;
+};
+
+template <typename T>
+struct base<std::shared_ptr<T>> {
+  using type = mtf::clean_t<T>;
+};
+
+template <typename T>
+struct base<std::unique_ptr<T>> {
+  using type = mtf::clean_t<T>;
+};
+
+/// @brief remove all specifiers and pointers (pointer / smart pointer / const)
+template <typename T>
+using base_t = typename base<mtf::clean_t<T>>::type;
 
 } // end namespace serializer::mtf
 

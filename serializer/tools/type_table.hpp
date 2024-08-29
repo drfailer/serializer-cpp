@@ -2,6 +2,7 @@
 #define SERIALIZER_TYPE_TABLE_H
 #include "../meta/concepts.hpp"
 #include "../meta/type_check.hpp"
+#include "../meta/type_transform.hpp"
 #include <stdexcept>
 #include <type_traits>
 
@@ -13,27 +14,48 @@
 namespace serializer::tools {
 
 /// @brief Table that is used to get the identifiers of the serialized types.
-/// @tparam T Type of the identifier (positivie number).
 /// @tparam Tyes Registers types.
-template <concepts::IdType T, typename... Types> struct TypeTable {
-    using id_type = T;
+template <typename... Types> struct TypeTable {
+    using id_type = unsigned int; // TODO
+    static constexpr size_t size = sizeof...(Types);
 };
+
+/* contains *******************************************************************/
+
+/// @brief True if `T` is in `Table`
+template <typename T, typename Table> struct has_type;
+
+template <typename T, typename... Types>
+struct has_type<T, TypeTable<Types...>> {
+    static constexpr bool value = mtf::contains_v<T, Types...>;
+};
+
+/// @brief True if `T` is in `Table`
+template <typename T, typename Table>
+constexpr bool has_type_v = has_type<mtf::base_t<T>, Table>::value;
+
+/* has id *********************************************************************/
+
+/// @brief True if `id` is in `Table`
+template <typename... Types>
+constexpr bool hasId(size_t id, TypeTable<Types...>) {
+    return id < TypeTable<Types...>::size;
+}
 
 /* get id *********************************************************************/
 
 /// @brief Get the id of the Target type stored in the given table type.
 /// @tparam Target Target type.
-/// @tparam T Types of the identifier.
-/// @tparam H Firt type in the table.
+/// @tparam T Firt type in the table.
 /// @tparam Ts Rest of the types in the table.
 /// @parma _ Type table.
-template <typename Target, concepts::IdType T, typename H, typename... Ts>
-constexpr inline T getId(TypeTable<T, H, Ts...>) {
-    if constexpr (std::is_same_v<Target, H>) {
+template <typename Target, typename T, typename... Ts>
+constexpr inline TypeTable<T, Ts...>::id_type getId(TypeTable<T, Ts...>) {
+    if constexpr (std::is_same_v<mtf::base_t<Target>, T>) {
         return 0;
     } else {
         static_assert(sizeof...(Ts) != 0, "error: type not found in id table.");
-        return 1 + getId<Target>(TypeTable<T, Ts...>());
+        return 1 + getId<Target>(TypeTable<Ts...>());
     }
 }
 
@@ -45,35 +67,39 @@ template <typename T> inline constexpr T getId(auto &mem, size_t pos = 0) {
     return *std::bit_cast<const T *>(mem.data() + pos);
 }
 
-/* create generci *************************************************************/
+/* create generic *************************************************************/
 
 /// @brief Helper function for deserializing a generic type.
 /// @tparam SuperType Type of the super class.
-/// @tparam T Types of the identifier.
-/// @tparam H Firt type in the table.
+/// @tparam T Firt type in the table.
 /// @tparam Ts Rest of the types in the table.
 /// @param id Identifier of the target type.
 /// @parma _ Type table.
 /// @parma elt Deserialize element, it will contains the result object.
-template <typename SuperType, concepts::IdType T, typename H, typename... Ts>
-constexpr inline void createGeneric(T id, TypeTable<T, H, Ts...>, SuperType &elt) {
+template <typename SuperType, typename IdType, typename T, typename... Ts>
+constexpr inline void createGeneric(IdType id, TypeTable<T, Ts...>,
+                                    SuperType &elt) {
     if (id == 0) {
-        if constexpr (concepts::Pointer<SuperType>) {
-            if (elt != nullptr) {
-                delete elt;
+        if constexpr (!std::is_abstract_v<T>) {
+            if constexpr (concepts::Pointer<SuperType>) {
+                if (elt != nullptr) {
+                    delete elt;
+                }
+                elt = new T();
+            } else if constexpr (mtf::is_shared_v<SuperType>) {
+                elt = std::make_shared<T>();
+            } else if constexpr (mtf::is_unique_v<SuperType>) {
+                elt = std::make_unique<T>();
+            } else {
+                static_assert(std::is_copy_assignable_v<SuperType>);
+                elt = T();
             }
-            elt = new H();
-        } else if constexpr (mtf::is_shared_v<SuperType>) {
-            elt = std::make_shared<H>();
-        } else if constexpr (mtf::is_unique_v<SuperType>) {
-            elt = std::make_unique<H>();
         } else {
-            static_assert(std::is_copy_assignable_v<SuperType>);
-            elt = H();
+            throw std::string("error");
         }
     } else {
         if constexpr (sizeof...(Ts)) {
-            createGeneric(T(id - 1), TypeTable<T, Ts...>(), elt);
+            createGeneric(IdType(id - 1), TypeTable<Ts...>(), elt);
         } else {
             throw std::logic_error("error: id not found");
         }
@@ -84,7 +110,6 @@ constexpr inline void createGeneric(T id, TypeTable<T, H, Ts...>, SuperType &elt
 
 /// @brief Apply a template lambda to the type with the identifier `id` in the
 ///        given type table.
-/// @tparam IdType Type of the identifiers in the type table.
 /// @tparam T First type in the type table.
 /// @tparam Ts Rest of the types in the type table.
 /// @param id       Identifier of the target type.
@@ -92,15 +117,14 @@ constexpr inline void createGeneric(T id, TypeTable<T, H, Ts...>, SuperType &elt
 /// @param function Template lambda / functor to apply on the type. the
 ///                 operator() should be template parametrized with a type T
 ///                 that will correspond to the type of identifier id.
-template <typename IdType, typename T, typename... Ts>
-constexpr void applyId(auto id, serializer::tools::TypeTable<IdType, T, Ts...>,
-                       auto function) {
+template <typename T, typename... Ts>
+constexpr void applyId(auto id, TypeTable<T, Ts...>, auto function) {
     if (id == 0) {
         function.template operator()<T>();
     } else {
         if constexpr (sizeof...(Ts)) {
-            applyId(IdType(id - 1),
-                    serializer::tools::TypeTable<IdType, Ts...>(), function);
+            applyId(typename TypeTable<T, Ts...>::id_type(id - 1),
+                    TypeTable<Ts...>(), function);
         } else {
             throw std::logic_error("error: id not found");
         }

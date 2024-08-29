@@ -7,7 +7,11 @@
 
 class Concrete1;
 class Concrete2;
-using AbstractTable = serializer::tools::TypeTable<uint8_t, Concrete1, Concrete2>;
+class SuperAbstract;
+using AbstractTable =
+    serializer::tools::TypeTable<SuperAbstract, Concrete1, Concrete2>;
+using AbstractSerializer =
+    serializer::Serializer<serializer::Bytes, AbstractTable>;
 
 /******************************************************************************/
 /*                               super abstract                               */
@@ -19,7 +23,7 @@ class SuperAbstract {
     virtual ~SuperAbstract() = default;
     using MemT = serializer::Bytes;
 
-    SERIALIZE_ABSTRACT(serializer::Bytes);
+    SERIALIZE_ABSTRACT(AbstractSerializer);
 
     virtual void method() = 0;
     virtual bool operator==(const SuperAbstract *) const = 0;
@@ -36,9 +40,7 @@ class Concrete1 : public SuperAbstract {
   public:
     explicit Concrete1(int x = 0, double y = 0) : x_(x), y_(y) {}
 
-    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::Bytes>,
-                       serializer::tools::getId<Concrete1>(AbstractTable()), x_,
-                       y_);
+    SERIALIZE_OVERRIDE(AbstractSerializer, x_, y_);
 
     /* accessors **************************************************************/
     void x(int x) { this->x_ = x; }
@@ -86,9 +88,7 @@ class Concrete2 : public SuperAbstract {
   public:
     explicit Concrete2(std::string str = "") : str_(std::move(str)) {}
 
-    SERIALIZE_OVERRIDE(serializer::Serializer<serializer::Bytes>,
-                       serializer::tools::getId<Concrete2>(AbstractTable()),
-                       str_);
+    SERIALIZE_OVERRIDE(AbstractSerializer, str_);
 
     /* accessors **************************************************************/
     void str(std::string str) { this->str_ = std::move(str); }
@@ -123,19 +123,6 @@ class Concrete2 : public SuperAbstract {
 
   private:
     std::string str_;
-};
-
-/******************************************************************************/
-/*                                 convertor                                  */
-/******************************************************************************/
-
-/* we use a custom convertor for handling generics */
-template <typename MemT>
-struct AbstractSerializer
-    : serializer::Serializer<MemT, POLYMORPHIC_TYPE(SuperAbstract)> {
-    using serializer::Serializer<MemT,
-                                POLYMORPHIC_TYPE(SuperAbstract)>::Serializer;
-    HANDLE_POLYMORPHIC(AbstractTable, SuperAbstract, Concrete1, Concrete2)
 };
 
 /******************************************************************************/

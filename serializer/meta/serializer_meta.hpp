@@ -22,7 +22,7 @@ struct is_dynamic_array<tools::DynamicArray<T, Sizes...>> : std::true_type {};
 
 /// @brief True if T is a DynamicArray, false otherwise
 template <typename T>
-constexpr bool is_dynamic_array_v = is_dynamic_array<base_t<T>>::value;
+constexpr bool is_dynamic_array_v = is_dynamic_array<clean_t<T>>::value;
 
 } // end namespace mtf
 
@@ -56,24 +56,24 @@ concept UseDeserialize = serializer::concepts::Deserializable<T, MemT> &&
 /// @brief Container types that are contiguous and stored a trivial type
 template <typename T, typename MemT>
 concept ContiguousTrivial =
-    std::contiguous_iterator<typename mtf::base_t<T>::iterator> &&
-    concepts::Trivial<mtf::remove_const_t<mtf::iter_value_t<mtf::base_t<T>>>> &&
+    std::contiguous_iterator<typename mtf::clean_t<T>::iterator> &&
+    concepts::Trivial<mtf::remove_const_t<mtf::iter_value_t<mtf::clean_t<T>>>> &&
     !concepts::Serializable<
-        mtf::remove_const_t<mtf::iter_value_t<mtf::base_t<T>>>, MemT>;
+        mtf::remove_const_t<mtf::iter_value_t<mtf::clean_t<T>>>, MemT>;
 
 /// @brief Trivialy serializable static arrays
 template <typename T, typename MemT>
 concept TrivialySerializableStaticArray =
-    !std::is_array_v<std::remove_extent_t<mtf::base_t<T>>> &&
-    concepts::Trivial<std::remove_extent_t<mtf::base_t<T>>> &&
-    !concepts::Serializable<std::remove_extent_t<mtf::base_t<T>>, MemT>;
+    !std::is_array_v<std::remove_extent_t<mtf::clean_t<T>>> &&
+    concepts::Trivial<std::remove_extent_t<mtf::clean_t<T>>> &&
+    !concepts::Serializable<std::remove_extent_t<mtf::clean_t<T>>, MemT>;
 
 /// @brief Trivialy deserializable static arrays
 template <typename T, typename MemT>
 concept TrivialyDeserializableStaticArray =
-    !std::is_array_v<std::remove_extent_t<mtf::base_t<T>>> &&
-    concepts::Trivial<std::remove_extent_t<mtf::base_t<T>>> &&
-    !concepts::Deserializable<std::remove_extent_t<mtf::base_t<T>>, MemT>;
+    !std::is_array_v<std::remove_extent_t<mtf::clean_t<T>>> &&
+    concepts::Trivial<std::remove_extent_t<mtf::clean_t<T>>> &&
+    !concepts::Deserializable<std::remove_extent_t<mtf::clean_t<T>>, MemT>;
 
 } // end namespace concepts
 

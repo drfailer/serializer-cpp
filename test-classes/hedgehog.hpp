@@ -17,8 +17,8 @@ template <typename T> class Matrix;
 template <typename T> struct PartialSum;
 template <typename T, BlockId Id> class MatrixBlock;
 template <typename T>
-using TypeTable = serializer::tools::TypeTable<char, Matrix<T>, PartialSum<T>,
-                                             MatrixBlock<T, Input>>;
+using TypeTable = serializer::tools::TypeTable<Matrix<T>, PartialSum<T>,
+                                               MatrixBlock<T, Input>>;
 
 /******************************************************************************/
 /*                          matrix and matrix blocks                          */
@@ -63,8 +63,8 @@ template <typename T, BlockId Id> class MatrixBlock {
           blockSize_(blockSize), dataSize_(dataSize), data_(data) {}
 
     SERIALIZE(serializer::tools::getId<MatrixBlock<T, Id>>(TypeTable<T>()), x_,
-              y_, matrixWidth_, matrixHeight_, blockSize_,
-              dataSize_, SER_DARR(data_, dataSize_));
+              y_, matrixWidth_, matrixHeight_, blockSize_, dataSize_,
+              SER_DARR(data_, dataSize_));
 
     size_t x() const { return x_; }
     size_t y() const { return y_; }
@@ -210,8 +210,10 @@ struct SplitTask : Task<In<Matrix<T>>, Out<MatrixBlock<T, Input>>> {
 template <typename T>
 struct ComputeTask : Task<In<MatrixBlock<T, Input>>, Out<PartialSum<T>>> {
     void execute(std::shared_ptr<MatrixBlock<T, Input>> block) override {
-        size_t jend = std::min(block->matrixWidth(), block->x() + block->blockSize());
-        size_t iend = std::min(block->matrixHeight(), block->y() + block->blockSize());
+        size_t jend =
+            std::min(block->matrixWidth(), block->x() + block->blockSize());
+        size_t iend =
+            std::min(block->matrixHeight(), block->y() + block->blockSize());
         T result = 0;
 
         for (size_t i = block->y(); i < iend; ++i) {

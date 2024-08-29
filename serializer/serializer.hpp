@@ -17,6 +17,7 @@ namespace serializer {
 
 /// @breif alias for bytes
 using Bytes = serializer::tools::Bytes<std::byte>;
+
 }
 
 #endif
