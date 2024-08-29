@@ -17,12 +17,15 @@ class WithTuple {
         const std::string &str2 = "", const std::string &str3 = "",
         const Simple &simple = Simple(), const Composed &composed = Composed(),
         const std::vector<int> &v = {}, const std::set<std::string> &s = {},
-        std::map<std::string, std::string> m = {})
+        std::map<std::string, std::string> m = {}, int *ptr1 = nullptr,
+        double *ptr2 = nullptr)
         : numberTuple_(i1, i2, d1), stringTuple_(str1, str2, str3),
-          objTuple_(simple, composed), containerTuple_(v, s, m) {}
+          objTuple_(simple, composed), containerTuple_(v, s, m),
+          pointerTuple_(ptr1, ptr2) {}
     ~WithTuple() = default;
 
-    SERIALIZE(numberTuple_, stringTuple_, objTuple_, containerTuple_);
+    SERIALIZE(numberTuple_, stringTuple_, objTuple_, containerTuple_,
+              pointerTuple_);
 
     /* accessors **************************************************************/
     [[nodiscard]] const std::tuple<std::string, std::string, std::string> &
@@ -40,6 +43,9 @@ class WithTuple {
     containerTuple() const {
         return containerTuple_;
     }
+    [[nodiscard]] const std::tuple<int *, double *> pointerTuple() const {
+        return pointerTuple_;
+    }
 
   private:
     std::tuple<int, int, double> numberTuple_;
@@ -48,6 +54,7 @@ class WithTuple {
     std::tuple<std::vector<int>, std::set<std::string>,
                std::map<std::string, std::string>>
         containerTuple_;
+    std::tuple<int *, double *> pointerTuple_ = {nullptr, nullptr};
 };
 
 #endif

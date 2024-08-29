@@ -581,7 +581,8 @@ TEST_CASE("tuples") {
     std::map<std::string, std::string> m = {{"foo", "barr"},
                                             {"hello", "world"}};
     WithTuple original(1, 2, 1.618, "hello", "world", "!", Simple(10, 20),
-                       Composed(Simple(10, 20), 3, 3.14), v, s, m);
+                       Composed(Simple(10, 20), 3, 3.14), v, s, m, new int(4),
+                       nullptr);
     WithTuple other;
     serializer::Bytes result;
 
@@ -609,6 +610,12 @@ TEST_CASE("tuples") {
     REQUIRE(std::get<2>(original.containerTuple()).size() !=
             std::get<2>(other.containerTuple()).size());
 
+    REQUIRE(std::get<0>(original.pointerTuple()) !=
+            std::get<0>(other.pointerTuple()));
+    // nullptr
+    REQUIRE(std::get<1>(original.pointerTuple()) ==
+            std::get<1>(other.pointerTuple()));
+
     original.serialize(result);
     other.deserialize(result);
 
@@ -635,6 +642,16 @@ TEST_CASE("tuples") {
             std::get<1>(other.containerTuple()).size());
     REQUIRE(std::get<2>(original.containerTuple()).size() ==
             std::get<2>(other.containerTuple()).size());
+
+    // different pointers
+    REQUIRE(std::get<0>(original.pointerTuple()) !=
+            std::get<0>(other.pointerTuple()));
+    // same value
+    REQUIRE(*std::get<0>(original.pointerTuple()) ==
+            *std::get<0>(other.pointerTuple()));
+    // nullptr
+    REQUIRE(std::get<1>(original.pointerTuple()) ==
+            std::get<1>(other.pointerTuple()));
 
     auto originalFirstIt = std::get<0>(original.containerTuple()).begin();
     auto otherFirstIt = std::get<0>(other.containerTuple()).begin();

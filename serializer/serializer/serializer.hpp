@@ -340,7 +340,6 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @brief Serialize function for tuples (std::tuple and std::pair).
     /// @param elt Element that is serialized.
     template <serializer::concepts::TupleLike T>
-        requires(!concepts::Trivial<T>)
     inline constexpr void serialize_(T &&tuple) {
         serializeTuple(
             tuple,
@@ -359,7 +358,6 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @brief Deserialize function tuples (std::tuple and std::pair).
     /// @param elt Element that is deserialized.
     template <serializer::concepts::TupleLike T>
-        requires(!concepts::Trivial<T>)
     inline constexpr void deserialize_(T &&elt) {
         elt = deserializeTuple<mtf::remove_const_tuple_t<mtf::clean_t<T>>>(
             std::make_index_sequence<std::tuple_size_v<mtf::clean_t<T>>>());
