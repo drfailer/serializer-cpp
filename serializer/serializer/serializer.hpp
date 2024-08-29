@@ -78,11 +78,11 @@ struct Serializer : Serialize<AdditionalTypes>... {
         }
     }
 
-    /// @brief Helper function for appending a char to the memory buffer (used
-    ///        when serializing pointer types).
-    /// @param chr Character to append.
-    inline constexpr void append(char chr) {
-        append(std::bit_cast<const byte_type *>(&chr), 1);
+    /// @brief Helper function for appending a simple elements to the memory
+    ///        buffer.
+    /// @param elt element to append.
+    inline constexpr void append(auto &&elt) {
+        append(std::bit_cast<const byte_type *>(&elt), sizeof(elt));
     }
 
     /// @brief Serialize an identifier using the getId method (if the method is
@@ -90,11 +90,9 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param elt Element for which the type id is required.
     inline constexpr void serializeId(auto &&elt) {
         if constexpr (requires { elt.typeId(); }) {
-            auto id = elt.typeId();
-            append(std::bit_cast<const byte_type *>(&id), sizeof(id));
+            append(elt.typeId);
         } else if constexpr (requires { elt->typeId(); }) {
-            auto id = elt->typeId();
-            append(std::bit_cast<const byte_type *>(&id), sizeof(id));
+            append(elt->typeId);
         }
     }
 
@@ -112,7 +110,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
         return id;
     }
 
-    /* generic types **********************************************************/
+    /* types with ids *********************************************************/
 
     /// @brief Serialize a generic type registed in the type table
     /// @param elt Element serialized.
@@ -133,7 +131,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
         requires(tools::has_type_v<T, TypeTable>)
     inline constexpr void deserialize_(T &&elt) {
         auto id = deserializeId(elt);
-        tools::createGeneric(id, TypeTable(), elt);
+        tools::createWithId(id, TypeTable(), elt);
         if constexpr (requires { elt.deserialize(mem, pos); }) {
             pos = elt.deserialize(mem, pos);
         } else if constexpr (requires { elt->deserialize(mem, pos); }) {

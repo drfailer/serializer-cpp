@@ -67,39 +67,36 @@ template <typename T> inline constexpr T getId(auto &mem, size_t pos = 0) {
     return *std::bit_cast<const T *>(mem.data() + pos);
 }
 
-/* create generic *************************************************************/
+/* create *********************************************************************/
 
-/// @brief Helper function for deserializing a generic type.
-/// @tparam SuperType Type of the super class.
+/// @brief Helper function for deserializing types with id.
+/// @tparam Type Type of the element.
 /// @tparam T Firt type in the table.
 /// @tparam Ts Rest of the types in the table.
 /// @param id Identifier of the target type.
 /// @parma _ Type table.
 /// @parma elt Deserialize element, it will contains the result object.
-template <typename SuperType, typename IdType, typename T, typename... Ts>
-constexpr inline void createGeneric(IdType id, TypeTable<T, Ts...>,
-                                    SuperType &elt) {
+template <typename Type, typename IdType, typename T, typename... Ts>
+constexpr inline void createWithId(IdType id, TypeTable<T, Ts...>,
+                                   Type &elt) {
     if (id == 0) {
         if constexpr (!std::is_abstract_v<T>) {
-            if constexpr (concepts::Pointer<SuperType>) {
+            if constexpr (concepts::Pointer<Type>) {
                 if (elt != nullptr) {
                     delete elt;
                 }
                 elt = new T();
-            } else if constexpr (mtf::is_shared_v<SuperType>) {
+            } else if constexpr (mtf::is_shared_v<Type>) {
                 elt = std::make_shared<T>();
-            } else if constexpr (mtf::is_unique_v<SuperType>) {
+            } else if constexpr (mtf::is_unique_v<Type>) {
                 elt = std::make_unique<T>();
-            } else {
-                static_assert(std::is_copy_assignable_v<SuperType>);
-                elt = T();
             }
         } else {
-            throw std::string("error");
+            throw std::logic_error("error: id of abstract type found");
         }
     } else {
         if constexpr (sizeof...(Ts)) {
-            createGeneric(IdType(id - 1), TypeTable<Ts...>(), elt);
+            createWithId(IdType(id - 1), TypeTable<Ts...>(), elt);
         } else {
             throw std::logic_error("error: id not found");
         }

@@ -19,6 +19,8 @@ template <typename T, BlockId Id> class MatrixBlock;
 template <typename T>
 using TypeTable = serializer::tools::TypeTable<Matrix<T>, PartialSum<T>,
                                                MatrixBlock<T, Input>>;
+template <typename T>
+using HHSerializer = serializer::Serializer<serializer::Bytes, TypeTable<T>>;
 
 /******************************************************************************/
 /*                          matrix and matrix blocks                          */
@@ -62,9 +64,11 @@ template <typename T, BlockId Id> class MatrixBlock {
         : x_(x), y_(y), matrixWidth_(matrixWidth), matrixHeight_(matrixHeight),
           blockSize_(blockSize), dataSize_(dataSize), data_(data) {}
 
-    SERIALIZE(serializer::tools::getId<MatrixBlock<T, Id>>(TypeTable<T>()), x_,
-              y_, matrixWidth_, matrixHeight_, blockSize_, dataSize_,
-              SER_DARR(data_, dataSize_));
+    /* SERIALIZE(serializer::tools::getId<MatrixBlock<T, Id>>(TypeTable<T>()), x_, */
+    /*           y_, matrixWidth_, matrixHeight_, blockSize_, dataSize_, */
+    /*           SER_DARR(data_, dataSize_)); */
+    SERIALIZE_CONV(HHSerializer<T>, x_, y_, matrixWidth_, matrixHeight_,
+                   blockSize_, dataSize_, SER_DARR(data_, dataSize_));
 
     size_t x() const { return x_; }
     size_t y() const { return y_; }
