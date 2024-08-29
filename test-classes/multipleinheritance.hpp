@@ -104,7 +104,7 @@ class Daughter2 : public Daughter1 {
 
 class Collection {
   public:
-    SERIALIZE_CONV(MISerializer, elements_);
+    SERIALIZE_CUSTOM(MISerializer, elements_);
 
     /* accessors **************************************************************/
     [[nodiscard]] const std::vector<Mother *> &elements() const {

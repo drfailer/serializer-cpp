@@ -64,7 +64,7 @@ constexpr inline size_t deserializeWithId(auto &mem, size_t pos,
 ///        serializer.
 /// @param Ser Serializer.
 /// @param ... Members to serialize.
-#define SERIALIZE_CONV(Ser, ...)                                               \
+#define SERIALIZE_CUSTOM(Ser, ...)                                               \
     __SERIALIZE__(Ser, typename Ser::mem_type, /* virt */, /* over */,         \
                   __VA_ARGS__)
 

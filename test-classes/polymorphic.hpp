@@ -112,7 +112,7 @@ class SuperCollection {
         }
     }
 
-    SERIALIZE_CONV(SuperSerializer, elements);
+    SERIALIZE_CUSTOM(SuperSerializer, elements);
 
     void push_back(SuperClass *element) { elements.push_back(element); }
     const std::vector<SuperClass *> &getElements() { return elements; }

@@ -138,7 +138,7 @@ class AbstractCollection {
         }
     }
 
-    SERIALIZE_CONV(AbstractSerializer, elements_, elementsShared_,
+    SERIALIZE_CUSTOM(AbstractSerializer, elements_, elementsShared_,
                    elementsUnique_);
 
     /* accessors **************************************************************/

@@ -67,7 +67,7 @@ template <typename T, BlockId Id> class MatrixBlock {
     /* SERIALIZE(serializer::tools::getId<MatrixBlock<T, Id>>(TypeTable<T>()), x_, */
     /*           y_, matrixWidth_, matrixHeight_, blockSize_, dataSize_, */
     /*           SER_DARR(data_, dataSize_)); */
-    SERIALIZE_CONV(HHSerializer<T>, x_, y_, matrixWidth_, matrixHeight_,
+    SERIALIZE_CUSTOM(HHSerializer<T>, x_, y_, matrixWidth_, matrixHeight_,
                    blockSize_, dataSize_, SER_DARR(data_, dataSize_));
 
     size_t x() const { return x_; }

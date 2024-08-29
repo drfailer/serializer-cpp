@@ -58,7 +58,7 @@ struct UnknownSerializer
 
 class WithSerializer {
   public:
-    SERIALIZE_CONV(UnknownSerializer<serializer::Bytes>, ints, unknowns);
+    SERIALIZE_CUSTOM(UnknownSerializer<serializer::Bytes>, ints, unknowns);
 
     /* accessors **************************************************************/
     [[nodiscard]] const std::vector<Unknown> &getUnknowns() const {
