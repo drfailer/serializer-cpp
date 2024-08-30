@@ -75,6 +75,9 @@
         return serializer::deserializeStruct(mem, pos, this);                  \
     }
 
+/// @brief Helper macro for SERIALIZE_CUSTOM (get the type of the bytes buffer)
+#define SER_MemT decltype(mem)
+
 /******************************************************************************/
 /*                            serializer functions                            */
 /******************************************************************************/
