@@ -571,6 +571,20 @@ struct Serializer : Serialize<AdditionalTypes>... {
             }
         }
     }
+
+    /* helper function for custom serializers *********************************/
+
+    /// @brief Variadic serialize helper function for custom serializer.
+    /// @param elts Elements to serialize.
+    inline constexpr void serialize_(auto &&...elts) {
+        ([&] { serialize_(elts); }(), ...);
+    }
+
+    /// @brief Variadic deserialize helper function for custom serializer.
+    /// @param elts Elements to deserialize.
+    inline constexpr void deserialize_(auto &&...elts) {
+        ([&] { deserialize_(elts); }(), ...);
+    }
 };
 
 } // namespace serializer
