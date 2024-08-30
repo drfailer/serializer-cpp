@@ -36,14 +36,4 @@ template <concepts::Pointer T, typename... DTs> struct DynamicArray {
 
 } // end namespace serializer::tools
 
-/******************************************************************************/
-/*                                   macros                                   */
-/******************************************************************************/
-
-/// @brief Helper macro that can be used to avoid writing all the namespaces.
-/// @param ArrType Type of the pointer to serialize (int* for a basic array).
-/// @param ... Types of the dimensions (ex: size_t if we want to pass it by
-///            value or size_t& by reference)
-#define SER_DARR(...) serializer::tools::DynamicArray(__VA_ARGS__)
-
 #endif

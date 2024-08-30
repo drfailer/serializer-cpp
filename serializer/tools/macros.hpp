@@ -75,8 +75,18 @@
         return serializer::deserializeStruct(mem, pos, this);                  \
     }
 
+/******************************************************************************/
+/*                               helper macros                                */
+/******************************************************************************/
+
+/// @brief Helper macro that can be used to avoid writing all the namespaces.
+/// @param ArrType Type of the pointer to serialize (int* for a basic array).
+/// @param ... Types of the dimensions (ex: size_t if we want to pass it by
+///            value or size_t& by reference)
+#define SER_DARR(...) serializer::tools::DynamicArray(__VA_ARGS__)
+
 /// @brief Helper macro for SERIALIZE_CUSTOM (get the type of the bytes buffer)
-#define SER_MemT decltype(mem)
+#define SER_MEMT decltype(mem)
 
 /******************************************************************************/
 /*                            serializer functions                            */
