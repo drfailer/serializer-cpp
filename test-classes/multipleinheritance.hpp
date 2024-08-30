@@ -13,6 +13,12 @@ class Daughter2;
 using MITable = serializer::tools::TypeTable<Mother, Daughter1, Daughter2>;
 using MISerializer = serializer::Serializer<serializer::Bytes, MITable>;
 
+static_assert(serializer::tools::has_type_v<Mother, MITable>);
+static_assert(serializer::tools::has_type_v<const Mother, MITable>);
+static_assert(serializer::tools::has_type_v<const Mother*, MITable>);
+static_assert(serializer::tools::has_type_v<const std::shared_ptr<Daughter2>, MITable>);
+static_assert(serializer::tools::has_type_v<std::unique_ptr<Daughter2>, MITable>);
+
 /******************************************************************************/
 /*                                mother class                                */
 /******************************************************************************/
