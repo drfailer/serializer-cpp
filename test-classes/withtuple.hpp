@@ -22,7 +22,10 @@ class WithTuple {
         : numberTuple_(i1, i2, d1), stringTuple_(str1, str2, str3),
           objTuple_(simple, composed), containerTuple_(v, s, m),
           pointerTuple_(ptr1, ptr2) {}
-    ~WithTuple() = default;
+    ~WithTuple() {
+      delete std::get<0>(pointerTuple_);
+      delete std::get<1>(pointerTuple_);
+    }
 
     SERIALIZE(numberTuple_, stringTuple_, objTuple_, containerTuple_,
               pointerTuple_);

@@ -240,7 +240,7 @@ TEST_CASE("serialization/deserialization with POINTERS ATTRIBUTE") {
 #endif
 
 /******************************************************************************/
-/*                  serialization with a members_ attribute                  */
+/*                  serialization with an iterable attribute                  */
 /******************************************************************************/
 
 /*
