@@ -31,6 +31,10 @@ class Bytes {
     constexpr Bytes(size_t capacity)
         : mem_(new T[capacity]), capacity_(capacity) {}
 
+    /// @brief constructor with a pointer and a size
+    constexpr Bytes(T *ptr, size_t capacity, size_t size = 0)
+        : mem_(ptr),capacity_(capacity), size_(size) {}
+
     /// @brief Copy constructor.
     constexpr Bytes(Bytes<T> const &other)
         : mem_(new T[other.capacity_]), capacity_(other.capacity_),
