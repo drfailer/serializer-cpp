@@ -46,15 +46,6 @@ struct Serializer : Serialize<AdditionalTypes>... {
 
     /* helper functions *******************************************************/
 
-    /// @brief Helper function for deserializing the size of containers.
-    /// @tparam Type of the size
-    /// @return Deserialized size.
-    template <typename T> inline constexpr T deserializeSize() {
-        auto size = *std::bit_cast<const T *>(mem.data() + pos);
-        pos += sizeof(T);
-        return size;
-    }
-
     /// @brief Append a buffer of byptes to the memory (mem and pos are changed)
     /// @param bytes Buffer of bytes.
     /// @param nbBytes Size of the buffer.
@@ -83,6 +74,15 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param elt element to append.
     inline constexpr void append(auto &&elt) {
         append(std::bit_cast<const byte_type *>(&elt), sizeof(elt));
+    }
+
+    /// @brief Helper function for deserializing the size of containers.
+    /// @tparam Type of the size
+    /// @return Deserialized size.
+    template <typename T> inline constexpr T deserializeSize() {
+        auto size = *std::bit_cast<const T *>(mem.data() + pos);
+        pos += sizeof(T);
+        return size;
     }
 
     /// @brief Deserialize an identifier.

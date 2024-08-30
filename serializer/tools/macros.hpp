@@ -53,17 +53,21 @@
 /// @brief Generate empty serialize and deserialize virtual methods (useful
 ///        whithin a concrete super class).
 /// @param MemT Type of the buffer (virtual methods cannot be template).
-#define SERIALIZE_EMPTY(MemT)                                                  \
-    constexpr virtual size_t serialize(MemT &, size_t = 0) const { return 0; } \
-    constexpr virtual size_t deserialize(MemT &, size_t = 0) { return 0; }
+#define SERIALIZE_EMPTY(Ser)                                                   \
+    constexpr virtual size_t serialize(typename Ser::mem_type &, size_t = 0)   \
+        const {                                                                \
+        return 0;                                                              \
+    }                                                                          \
+    constexpr virtual size_t deserialize(typename Ser::mem_type &,             \
+                                         size_t = 0) {                         \
+        return 0;                                                              \
+    }
 
 /// @brief Generate abstract serialize and deserialize virtual methods.
 /// @param MemT Type of the buffer (virtual methods cannot be template).
 #define SERIALIZE_ABSTRACT(Ser)                                                \
-    constexpr virtual size_t serialize(typename Ser::mem_type &, size_t = 0)   \
-        const = 0;                                                             \
-    constexpr virtual size_t deserialize(typename Ser::mem_type &,             \
-                                         size_t = 0) = 0;
+    virtual size_t serialize(typename Ser::mem_type &, size_t = 0) const = 0;  \
+    virtual size_t deserialize(typename Ser::mem_type &, size_t = 0) = 0;
 
 /// @brief Generate the serialize and deserialize methods that use the
 ///        (de)serialize functions.
