@@ -59,20 +59,22 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param bytes Buffer of bytes.
     /// @param nbBytes Size of the buffer.
     inline constexpr void append(const byte_type *bytes, size_t nbBytes) {
-        if constexpr (mtf::is_serializer_bytes_v<mtf::clean_t<mem_type>>) {
-            mem.append(pos, bytes, nbBytes);
-            pos += nbBytes;
-        } else {
-            if (mem.size() < pos + nbBytes) [[unlikely]] {
-                if constexpr (concepts::Resizeable<mem_type>) {
-                    mem.resize((mem.size() + nbBytes) * 2);
-                } else {
-                    throw std::out_of_range(
-                        "error: the serialization array is too small.");
+        if constexpr (!std::is_const_v<MemT>) {
+            if constexpr (mtf::is_serializer_bytes_v<mtf::clean_t<mem_type>>) {
+                mem.append(pos, bytes, nbBytes);
+                pos += nbBytes;
+            } else {
+                if (mem.size() < pos + nbBytes) [[unlikely]] {
+                    if constexpr (concepts::Resizeable<mem_type>) {
+                        mem.resize((mem.size() + nbBytes) * 2);
+                    } else {
+                        throw std::out_of_range(
+                            "error: the serialization array is too small.");
+                    }
                 }
+                std::memcpy(mem.data() + pos, bytes, nbBytes);
+                pos += nbBytes;
             }
-            std::memcpy(mem.data() + pos, bytes, nbBytes);
-            pos += nbBytes;
         }
     }
 
