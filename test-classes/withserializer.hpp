@@ -41,8 +41,7 @@ struct UnknownSerializer
                                Unknown>::byte_type;
 
     constexpr void serialize(const Unknown &u) override {
-        int i = u.x();
-        this->append(std::bit_cast<const byte_type *>(&i), sizeof(i));
+        this->serialize_(u.x());
     }
 
     constexpr void deserialize(Unknown &elt) override {
