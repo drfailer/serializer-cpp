@@ -52,7 +52,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <typename T> inline constexpr T deserializeSize() {
         auto size = *std::bit_cast<const T *>(mem.data() + pos);
         pos += sizeof(T);
-        return size - 1;
+        return size;
     }
 
     /// @brief Append a buffer of byptes to the memory (mem and pos are changed)
@@ -88,14 +88,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @brief Deserialize an identifier.
     /// @param elt Element that is deserialized.
     /// @return id
-    inline constexpr id_type deserializeId(auto &&elt) {
+    inline constexpr id_type deserializeId() {
         auto id = *std::bit_cast<const id_type *>(mem.data() + pos);
-        // if the id is managed automatically, we have to update the pos,
-        // otherwise, it will be deserialized with the attributes.
-        if constexpr (
-            requires { elt.typeId(); } || requires { elt->typeId(); }) {
-            pos += sizeof(id_type);
-        }
         return id;
     }
 
@@ -118,7 +112,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <typename T>
         requires(tools::has_type_v<T, TypeTable>)
     inline constexpr void deserialize_(T &&elt) {
-        auto id = deserializeId(elt);
+        auto id = deserializeId();
         tools::createId<TypeTable>(id, elt);
         if constexpr (requires { elt.deserialize(mem, pos); }) {
             pos = elt.deserialize(mem, pos);
@@ -356,8 +350,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <serializer::concepts::Enum T>
         requires(!concepts::Trivial<T>)
     inline constexpr void serialize_(T &&elt) {
-        auto value = (std::underlying_type_t<mtf::clean_t<T>>)elt;
-        append(std::bit_cast<const byte_type *>(&value), sizeof(value));
+        append(std::bit_cast<const byte_type *>(&elt), sizeof(elt));
     }
 
     /// @brief Deserialize function for enum types. The data is stored using the
@@ -378,7 +371,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <serializer::concepts::String T>
     inline constexpr void serialize_(T &&elt) {
         using size_type = typename mtf::clean_t<T>::size_type;
-        size_type size = elt.size() + 1;
+        size_type size = elt.size();
         append(std::bit_cast<const byte_type *>(&size), sizeof(size));
         append(std::bit_cast<const byte_type *>(elt.data()), elt.size());
     }
@@ -389,7 +382,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     inline constexpr void deserialize_(T &&str) {
         using size_type = typename mtf::clean_t<T>::size_type;
         size_type size = deserializeSize<size_type>();
-        str.assign(std::bit_cast<const char *>(mem.data() + pos), size);
+        str.resize(size);
+        std::memcpy(str.data(), mem.data() + pos, size);
         pos += size;
     }
 
@@ -404,7 +398,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
             mtf::remove_const_t<mtf::iter_value_t<mtf::clean_t<T>>>;
 
         // append the size
-        auto size = std::size(elts) + 1;
+        auto size = elts.size();
         append(std::bit_cast<const byte_type *>(&size), sizeof(size));
 
         // if the type is trivial, the memory is serialized directly
