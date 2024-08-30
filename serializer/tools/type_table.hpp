@@ -63,8 +63,10 @@ constexpr inline TypeTable<T, Ts...>::id_type getId(TypeTable<T, Ts...>) {
 /// @tparam T Type of the id.
 /// @param mem Buffer containing the serialized data.
 /// @param pos Start position in the buffer where the id is serialized.
-template <typename T> inline constexpr T getId(auto &mem, size_t pos = 0) {
-    return *std::bit_cast<const T *>(mem.data() + pos);
+template <typename TypeTable>
+inline constexpr typename TypeTable::id_type getId(auto &mem, size_t pos = 0) {
+    return *std::bit_cast<const typename TypeTable::id_type *>(mem.data() +
+                                                               pos);
 }
 
 /* create *********************************************************************/
@@ -77,8 +79,7 @@ template <typename T> inline constexpr T getId(auto &mem, size_t pos = 0) {
 /// @parma _ Type table.
 /// @parma elt Deserialize element, it will contains the result object.
 template <typename Type, typename IdType, typename T, typename... Ts>
-constexpr inline void createWithId(IdType id, TypeTable<T, Ts...>,
-                                   Type &elt) {
+constexpr inline void createWithId(IdType id, TypeTable<T, Ts...>, Type &elt) {
     if (id == 0) {
         if constexpr (!std::is_abstract_v<T>) {
             if constexpr (concepts::Pointer<Type>) {

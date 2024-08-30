@@ -178,8 +178,7 @@ struct TaskManager : RunExecute<Tasks...> {
         size_t pos = 0;
 
         while (pos < buff.size()) {
-            auto id = serializer::tools::getId<typename TypeTable::id_type>(
-                buff, pos);
+            auto id = serializer::tools::getId<TypeTable>(buff, pos);
             serializer::tools::applyId(id, TypeTable(), [&]<typename T>() {
                 auto v = std::make_shared<T>();
                 pos = v->deserialize(buff, pos);
