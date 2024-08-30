@@ -16,8 +16,6 @@
 #include <type_traits>
 #include <utility>
 
-// TODO: handle identifier automatically
-
 /// @brief namespace serializer
 namespace serializer {
 
@@ -85,17 +83,6 @@ struct Serializer : Serialize<AdditionalTypes>... {
         append(std::bit_cast<const byte_type *>(&elt), sizeof(elt));
     }
 
-    /// @brief Serialize an identifier using the getId method (if the method is
-    ///        not present, the id is managed manually or in the macros).
-    /// @param elt Element for which the type id is required.
-    inline constexpr void serializeId(auto &&elt) {
-        if constexpr (requires { elt.typeId(); }) {
-            append(elt.typeId);
-        } else if constexpr (requires { elt->typeId(); }) {
-            append(elt->typeId);
-        }
-    }
-
     /// @brief Deserialize an identifier.
     /// @param elt Element that is deserialized.
     /// @return id
@@ -117,11 +104,10 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <typename T>
         requires(tools::has_type_v<T, TypeTable>)
     inline constexpr void serialize_(T &&elt) {
-        serializeId(elt);
-        if constexpr (requires { elt.serialize(mem, pos); }) {
-            pos = elt.serialize(mem, pos);
-        } else if constexpr (requires { elt->serialize(mem, pos); }) {
+        if constexpr (requires { elt->serialize(mem, pos); }) {
             pos = elt->serialize(mem, pos);
+        } else if constexpr (requires { elt.serialize(mem, pos); }) {
+            pos = elt.serialize(mem, pos);
         }
     }
 
@@ -329,35 +315,34 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @brief Helper function used to serialize tuples.
     /// @param tuple Tuple to serialize.
     /// @param index_sequence Indicies of the tuple elements.
-    template <class T, size_t... Idx>
-    inline constexpr void serializeTuple(T &&tuple,
+    template <size_t... Idx>
+    inline constexpr void serializeTuple(auto &&elt,
                                          std::index_sequence<Idx...>) {
-        ([&] { serialize_(std::get<Idx>(tuple)); }(), ...);
+        ([&] { serialize_(std::get<Idx>(elt)); }(), ...);
     }
 
     /// @brief Serialize function for tuples (std::tuple and std::pair).
     /// @param elt Element that is serialized.
     template <serializer::concepts::TupleLike T>
-    inline constexpr void serialize_(T &&tuple) {
+    inline constexpr void serialize_(T &&elt) {
         serializeTuple(
-            tuple,
+            elt,
             std::make_index_sequence<std::tuple_size_v<mtf::clean_t<T>>>());
     }
 
     /// @brief Helper function for deserializing tuples.
     /// @param index_sequence Indicies of the tuple elements.
-    template <class T, size_t... Idx>
-    constexpr T deserializeTuple(std::index_sequence<Idx...>) {
-        T tuple;
-        ([&] { deserialize_(std::get<Idx>(tuple)); }(), ...);
-        return tuple;
+    template <size_t... Idx>
+    constexpr void deserializeTuple(auto &&elt, std::index_sequence<Idx...>) {
+        ([&] { deserialize_(std::get<Idx>(elt)); }(), ...);
     }
 
     /// @brief Deserialize function tuples (std::tuple and std::pair).
     /// @param elt Element that is deserialized.
     template <serializer::concepts::TupleLike T>
     inline constexpr void deserialize_(T &&elt) {
-        elt = deserializeTuple<mtf::remove_const_tuple_t<mtf::clean_t<T>>>(
+        deserializeTuple(
+            elt,
             std::make_index_sequence<std::tuple_size_v<mtf::clean_t<T>>>());
     }
 
