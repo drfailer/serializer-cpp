@@ -117,7 +117,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
         requires(tools::has_type_v<T, TypeTable>)
     inline constexpr void deserialize_(T &&elt) {
         auto id = deserializeId(elt);
-        tools::createWithId(id, TypeTable(), elt);
+        tools::createId<TypeTable>(id, elt);
         if constexpr (requires { elt.deserialize(mem, pos); }) {
             pos = elt.deserialize(mem, pos);
         } else if constexpr (requires { elt->deserialize(mem, pos); }) {

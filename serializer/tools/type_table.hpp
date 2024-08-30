@@ -3,6 +3,8 @@
 #include "../meta/concepts.hpp"
 #include "../meta/type_check.hpp"
 #include "../meta/type_transform.hpp"
+#include "../exceptions/id_not_found.hpp"
+#include "../exceptions/abstract_type.hpp"
 #include <stdexcept>
 #include <type_traits>
 
@@ -71,36 +73,63 @@ inline constexpr typename TypeTable::id_type getId(auto &mem, size_t pos = 0) {
 
 /* create *********************************************************************/
 
-/// @brief Helper function for deserializing types with id.
-/// @tparam Type Type of the element.
+/// @brief Create a pointer of type T and put the result in elt. The pointer can
+///        be shared, unique or a standard pointer.
+///        Note: if the element is not a pointer the function does nothing.
+/// @tparam T Type of the pointer
+/// @param elt Element that will contain the result
+/// @throw Error when T is an abstract class.
+template <typename T> inline constexpr void create(auto &elt) {
+    using Type = decltype(elt);
+    if constexpr (!std::is_abstract_v<T>) {
+        if constexpr (concepts::Pointer<Type>) {
+            if (elt != nullptr) {
+                delete elt;
+            }
+            elt = new T();
+        } else if constexpr (mtf::is_shared_v<Type>) {
+            elt = std::make_shared<T>();
+        } else if constexpr (mtf::is_unique_v<Type>) {
+            elt = std::make_unique<T>();
+        }
+    } else {
+        throw exceptions::AbstractTypeError<T>();
+    }
+}
+
+/// @brief Create a polymorphic type. The real type is found using the given id.
+/// @tparam SuperType Type of the element.
 /// @tparam T Firt type in the table.
 /// @tparam Ts Rest of the types in the table.
 /// @param id Identifier of the target type.
 /// @parma _ Type table.
 /// @parma elt Deserialize element, it will contains the result object.
-template <typename Type, typename IdType, typename T, typename... Ts>
-constexpr inline void createWithId(IdType id, TypeTable<T, Ts...>, Type &elt) {
+template <typename SuperType, typename IdType, typename T, typename... Ts>
+constexpr inline void createPolymorphic(IdType id, TypeTable<T, Ts...>,
+                                        SuperType &elt) {
     if (id == 0) {
-        if constexpr (!std::is_abstract_v<T>) {
-            if constexpr (concepts::Pointer<Type>) {
-                if (elt != nullptr) {
-                    delete elt;
-                }
-                elt = new T();
-            } else if constexpr (mtf::is_shared_v<Type>) {
-                elt = std::make_shared<T>();
-            } else if constexpr (mtf::is_unique_v<Type>) {
-                elt = std::make_unique<T>();
-            }
-        } else {
-            throw std::logic_error("error: id of abstract type found");
-        }
+        create<T>(elt);
     } else {
         if constexpr (sizeof...(Ts)) {
-            createWithId(IdType(id - 1), TypeTable<Ts...>(), elt);
-        } else {
-            throw std::logic_error("error: id not found");
+            createPolymorphic(IdType(id - 1), TypeTable<Ts...>(), elt);
         }
+    }
+}
+
+/// @brief Creates a element using the identifier.
+/// @tparam TypeTable The type table.
+/// @param id Identifier of the type to create.
+/// @param elt Element that will contain the created type.
+/// @throw Error when the id is not in the given type table.
+template <typename TypeTable>
+constexpr inline void createId(auto id, auto &elt) {
+    if (!hasId(id, TypeTable())) [[unlikely]] {
+        throw exceptions::IdNotFoundError(id);
+    }
+    if (id == getId<decltype(elt)>(TypeTable())) {
+        create<mtf::base_t<decltype(elt)>>(elt);
+    } else {
+        createPolymorphic(id, TypeTable(), elt);
     }
 }
 
