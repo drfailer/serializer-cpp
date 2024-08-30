@@ -7,6 +7,10 @@
 /// @brief serializer namespace
 namespace serializer {
 
+/******************************************************************************/
+/*                          serialize / deserialize                           */
+/******************************************************************************/
+
 /// @brief Serialize the arguments into the memory buffer at the given position.
 /// @tparam Ser Serializer type.
 /// @param mem  Buffer in which the serialized data will be stored.
@@ -61,6 +65,49 @@ inline constexpr size_t deserialize(auto &mem, size_t pos, auto &&...args) {
     return serializer.pos;
 }
 
+/******************************************************************************/
+/*                      serialize / deserialize with id                       */
+/******************************************************************************/
+
+/// @brief Serialize the members and the id if required (if the type is not
+///        present in the type table, the id is not serialized).
+/// @tparam Ser Serializer type.
+/// @tparam T Type serialize (used for the id).
+/// @param mem Buffer of bytes that will contain the serialized data.
+/// @param pos Position in mem.
+/// @param args Elements that are serialized.
+template <typename Ser, typename T>
+constexpr inline size_t serializeWithId(auto &mem, size_t pos, auto &&...args) {
+    if constexpr (tools::has_type_v<T, typename Ser::type_table>) {
+        return serialize<Ser>(
+            mem, pos, tools::getId<T>(typename Ser::type_table()), args...);
+    } else {
+        return serialize<Ser>(mem, pos, args...);
+    }
+}
+
+/// @brief Deserialize the members and the id if required (if the type is not
+///        present in the type table, the id is not serialized).
+/// @tparam Ser Serializer type.
+/// @tparam T Type serialize (used for the id).
+/// @param mem Buffer of bytes that contains the serialized data.
+/// @param pos Position in mem.
+/// @param args Elements that are deserialized.
+template <typename Ser, typename T>
+constexpr inline size_t deserializeWithId(auto &mem, size_t pos,
+                                          auto &&...args) {
+    if constexpr (tools::has_type_v<T, typename Ser::type_table>) {
+        return deserialize<Ser>(
+            mem, pos, tools::getId<T>(typename Ser::type_table()), args...);
+    } else {
+        return deserialize<Ser>(mem, pos, args...);
+    }
+}
+
+/******************************************************************************/
+/*                       serialize / deserialize struct                       */
+/******************************************************************************/
+
 /// @brief Serialize obj into mem at pos using a bit_cast.
 /// @tparam T Object type (this).
 /// @param mem Buffer in which the serialized data is be stored.
@@ -89,6 +136,10 @@ inline constexpr size_t deserializeStruct(auto &mem, size_t pos, T *obj) {
     *obj = *std::bit_cast<const decltype(obj)>(mem.data() + pos);
     return pos + sizeof(*obj);
 }
+
+/******************************************************************************/
+/*                        bind serialize / deserialize                        */
+/******************************************************************************/
 
 /// @brief Create a function for serializing the given object using the
 ///        accessors.

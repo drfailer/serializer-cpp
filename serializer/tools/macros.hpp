@@ -1,44 +1,5 @@
 #ifndef SERIALIZER_MACROS_H
 #define SERIALIZER_MACROS_H
-#include "cstddef"
-#include "type_table.hpp"
-
-/// @brief namespace serializer macros
-namespace serializer::macros {
-
-/// @brief Serialize the members and the id if required.
-/// @tparam Ser Serializer type.
-/// @tparam T Type serialize (used for the id).
-/// @param mem Buffer of bytes that will contain the serialized data.
-/// @param pos Position in mem.
-/// @param args Elements that are serialized.
-template <typename Ser, typename T>
-constexpr inline size_t serializeWithId(auto &mem, size_t pos, auto &&...args) {
-    if constexpr (tools::has_type_v<T, typename Ser::type_table>) {
-        return serialize<Ser>(
-            mem, pos, tools::getId<T>(typename Ser::type_table()), args...);
-    } else {
-        return serialize<Ser>(mem, pos, args...);
-    }
-}
-
-/// @brief Deserialize the members and the id if required.
-/// @tparam Ser Serializer type.
-/// @tparam T Type serialize (used for the id).
-/// @param mem Buffer of bytes that contains the serialized data.
-/// @param pos Position in mem.
-/// @param args Elements that are deserialized.
-template <typename Ser, typename T>
-constexpr inline size_t deserializeWithId(auto &mem, size_t pos,
-                                          auto &&...args) {
-    if constexpr (tools::has_type_v<T, typename Ser::type_table>) {
-        return deserialize<Ser>(
-            mem, pos, tools::getId<T>(typename Ser::type_table()), args...);
-    } else {
-        return deserialize<Ser>(mem, pos, args...);
-    }
-}
-} // end namespace serializer::macros
 
 /******************************************************************************/
 /*                                 serialize                                  */
@@ -52,11 +13,11 @@ constexpr inline size_t deserializeWithId(auto &mem, size_t pos,
 /// @param ... Members to serialize.
 #define __SERIALIZE__(Ser, MemT, virt, over, ...)                              \
     constexpr virt size_t serialize(MemT &mem, size_t pos = 0) const over {    \
-        return serializer::macros::serializeWithId<Ser, decltype(this)>(       \
-            mem, pos, __VA_ARGS__);                                            \
+        return serializer::serializeWithId<Ser, decltype(this)>(mem, pos,      \
+                                                                __VA_ARGS__);  \
     }                                                                          \
     constexpr virt size_t deserialize(MemT &mem, size_t pos = 0) over {        \
-        return serializer::macros::deserializeWithId<Ser, decltype(this)>(     \
+        return serializer::deserializeWithId<Ser, decltype(this)>(             \
             mem, pos, __VA_ARGS__);                                            \
     }
 
@@ -64,9 +25,8 @@ constexpr inline size_t deserializeWithId(auto &mem, size_t pos,
 ///        serializer.
 /// @param Ser Serializer.
 /// @param ... Members to serialize.
-#define SERIALIZE_CUSTOM(Ser, ...)                                               \
-    __SERIALIZE__(Ser, typename Ser::mem_type, /* virt */, /* over */,         \
-                  __VA_ARGS__)
+#define SERIALIZE_CUSTOM(Ser, ...)                                             \
+    __SERIALIZE__(Ser, auto, /* virt */, /* over */, __VA_ARGS__)
 
 /// @brief Generate the serialize and deserialize methods with the default
 ///        serializer.
