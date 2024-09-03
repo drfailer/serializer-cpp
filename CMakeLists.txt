@@ -51,4 +51,9 @@ add_executable(serializer-tests ${serializer_test_files} ${serializer_files})
 ################################################################################
 
 include(CTest)
+include(Dart)
+
+find_program(CTEST_MEMORYCHECK_COMMAND valgrind)
+set(CTEST_MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full")
+
 add_test(NAME serializer COMMAND serializer-tests)
