@@ -229,9 +229,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
     }
 
     /// @brief Deserialize function for the pointer types. If the pointer is not
-    ///        null, a dynamic allocation is perfsset 56973 has been removed
-    ///        Waiver Form PIV LONG TERM Eormed before deserializing the result.
-    ///        This memory should be handled by the user.
+    ///        null, a dynamic allocation is done. This memory should be handled
+    ///        by the user.
     /// @param elt Element that is deserialized.
     template <serializer::concepts::ConcretePtr T>
         requires(!mtf::contains_v<T, AdditionalTypes...> &&
