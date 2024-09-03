@@ -1,24 +1,35 @@
 #ifndef MULTIPLE_INHERITANCE_HPP
 #define MULTIPLE_INHERITANCE_HPP
-#include "serializer/convertor/convertor.hpp"
-#include "serializer/serializable.hpp"
-#include "serializer/serializer.hpp"
+#include <serializer/serializer.hpp>
+#include <serializer/tools/macros.hpp>
 #include <string>
 #include <vector>
 
 namespace mi {
+
+class Mother;
+class Daughter1;
+class Daughter2;
+using MITable = serializer::tools::TypeTable<Mother, Daughter1, Daughter2>;
+using MISerializer = serializer::Serializer<serializer::Bytes, MITable>;
+
+static_assert(serializer::tools::has_type_v<Mother, MITable>);
+static_assert(serializer::tools::has_type_v<const Mother, MITable>);
+static_assert(serializer::tools::has_type_v<const Mother*, MITable>);
+static_assert(serializer::tools::has_type_v<const std::shared_ptr<Daughter2>, MITable>);
+static_assert(serializer::tools::has_type_v<std::unique_ptr<Daughter2>, MITable>);
 
 /******************************************************************************/
 /*                                mother class                                */
 /******************************************************************************/
 
 class Mother {
-    SERIALIZABLE_POLYMORPHIC(int, std::string);
-
   public:
     explicit Mother(int _age = 0, std::string name = "")
-        : SERIALIZER(age_, name_), age_(_age), name_(std::move(name)) {}
+        : age_(_age), name_(std::move(name)) {}
     virtual ~Mother() = default;
+
+    VIRTUAL_SERIALIZE(MISerializer, age_, name_)
 
     /* accessors **************************************************************/
     void name(std::string name) { this->name_ = std::move(name); }
@@ -41,11 +52,12 @@ class Mother {
 /******************************************************************************/
 
 class Daughter1 : public Mother {
-    SERIALIZABLE_SUPER(Mother, double);
-
   public:
     explicit Daughter1(int age = 0, std::string name = "", double money = 0)
-        : Mother(age, std::move(name)), SERIALIZER(money_), money_(money) {}
+        : Mother(age, std::move(name)), money_(money) {}
+
+    SERIALIZE_OVERRIDE(MISerializer, serializer::tools::super<Mother>(this),
+                       money_)
 
     /* accessors **************************************************************/
     void money(double money) { this->money_ = money; }
@@ -68,13 +80,17 @@ class Daughter1 : public Mother {
 /******************************************************************************/
 
 class Daughter2 : public Daughter1 {
-    SERIALIZABLE_SUPER(Daughter1, std::string);
-
   public:
     explicit Daughter2(int age = 0, const std::string &name = "",
                        double money = 0, std::string jobName = "")
-        : Daughter1(age, name, money), SERIALIZER(jobName_),
-          jobName_(std::move(jobName)) {}
+        : Daughter1(age, name, money), jobName_(std::move(jobName)) {}
+
+    SERIALIZE_OVERRIDE(MISerializer, serializer::tools::super<Daughter1>(this),
+                       jobName_)
+
+    /* accessors **************************************************************/
+    void jobName(std::string jobName) { this->jobName_ = std::move(jobName); }
+    [[nodiscard]] std::string const &jobName() const { return jobName_; }
 
     /* operator== *************************************************************/
     bool operator==(const Mother *other) const override {
@@ -89,26 +105,17 @@ class Daughter2 : public Daughter1 {
 };
 
 /******************************************************************************/
-/*                                 convertor                                  */
-/******************************************************************************/
-
-struct MIConvertor : public serializer::Convertor<POLYMORPHIC_TYPE(Mother)> {
-    HANDLE_POLYMORPHIC(Mother, Daughter1, Daughter2)
-};
-
-/******************************************************************************/
-/*                                 members_                                  */
+/*                                 Collection                                 */
 /******************************************************************************/
 
 class Collection {
-    SERIALIZABLE_WITH_CONVERTOR(MIConvertor, std::vector<Mother *>);
-
   public:
-    Collection() : SERIALIZER(elements_) {}
-    ~Collection() = default;
+    SERIALIZE_CUSTOM(MISerializer, elements_);
 
     /* accessors **************************************************************/
-    [[nodiscard]] const std::vector<Mother *> &elements() const { return elements_; }
+    [[nodiscard]] const std::vector<Mother *> &elements() const {
+        return elements_;
+    }
     void push_back(Mother *elt) { elements_.push_back(elt); }
 
   private:

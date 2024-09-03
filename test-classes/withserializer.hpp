@@ -1,9 +1,7 @@
 #ifndef WITHCONVERTOR_HPP
 #define WITHCONVERTOR_HPP
-#include "serializer/convertor/convertor.hpp"
-#include "serializer/serializable.hpp"
-#include "serializer/serializer.hpp"
-#include <sstream>
+#include <serializer/serializer.hpp>
+#include <serializer/tools/macros.hpp>
 #include <string>
 #include <vector>
 
@@ -33,16 +31,23 @@ inline bool operator==(const Unknown &lhs, const Unknown &rhs) {
 /*                                 convertor                                  */
 /******************************************************************************/
 
-struct UnknownConvertor : public serializer::Convertor<Unknown> {
-    void serialize(const Unknown &u, std::string &str) const override {
-        int i = u.x();
-        str = str.append(reinterpret_cast<char *>(&i), sizeof(i));
+template <typename MemT>
+struct UnknownSerializer
+    : serializer::Serializer<MemT, serializer::tools::TypeTable<>, Unknown> {
+    using serializer::Serializer<MemT, serializer::tools::TypeTable<>,
+                                 Unknown>::Serializer;
+    using byte_type =
+        serializer::Serializer<MemT, serializer::tools::TypeTable<>,
+                               Unknown>::byte_type;
+
+    constexpr void serialize(const Unknown &u) override {
+        this->serialize_(u.x());
     }
 
-    Unknown deserialize(std::string_view &str, Unknown &elt) override {
-        int x = Convertor::deserialize_(str, x);
-        elt = Unknown(x);
-        return elt;
+    constexpr void deserialize(Unknown &elt) override {
+        int x;
+        this->deserialize_(x);
+        elt.x(x);
     }
 };
 
@@ -50,13 +55,9 @@ struct UnknownConvertor : public serializer::Convertor<Unknown> {
 /*                               with convertor                               */
 /******************************************************************************/
 
-class WithConvertor {
-    SERIALIZABLE_WITH_CONVERTOR(UnknownConvertor, std::vector<int>,
-                                std::vector<Unknown>);
-
+class WithSerializer {
   public:
-    WithConvertor() : SERIALIZER(ints, unknowns) {}
-    ~WithConvertor() = default;
+    SERIALIZE_CUSTOM(UnknownSerializer<SER_MEMT>, ints, unknowns);
 
     /* accessors **************************************************************/
     [[nodiscard]] const std::vector<Unknown> &getUnknowns() const {

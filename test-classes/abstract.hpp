@@ -1,20 +1,29 @@
 #ifndef ABSTRACT_HPP
 #define ABSTRACT_HPP
-#include "serializer/convertor/convertor.hpp"
-#include "serializer/serializable.hpp"
 #include <iostream>
+#include <serializer/serializer.hpp>
+#include <serializer/tools/macros.hpp>
 #include <vector>
+
+class Concrete1;
+class Concrete2;
+class SuperAbstract;
+using AbstractTable =
+    serializer::tools::TypeTable<SuperAbstract, Concrete1, Concrete2>;
+using AbstractSerializer =
+    serializer::Serializer<serializer::Bytes, AbstractTable>;
 
 /******************************************************************************/
 /*                               super abstract                               */
 /******************************************************************************/
 
 class SuperAbstract {
-    SERIALIZABLE_EMPTY();
-
   public:
     SuperAbstract() = default;
     virtual ~SuperAbstract() = default;
+    using MemT = serializer::Bytes;
+
+    SERIALIZE_ABSTRACT(AbstractSerializer);
 
     virtual void method() = 0;
     virtual bool operator==(const SuperAbstract *) const = 0;
@@ -27,11 +36,11 @@ class SuperAbstract {
 /******************************************************************************/
 
 class Concrete1 : public SuperAbstract {
-    SERIALIZABLE_SUPER(SuperAbstract, int, double);
 
   public:
-    explicit Concrete1(int x = 0, double y = 0)
-        : SERIALIZER(x_, y_), x_(x), y_(y) {}
+    explicit Concrete1(int x = 0, double y = 0) : x_(x), y_(y) {}
+
+    SERIALIZE_OVERRIDE(AbstractSerializer, x_, y_);
 
     /* accessors **************************************************************/
     void x(int x) { this->x_ = x; }
@@ -76,11 +85,10 @@ class Concrete1 : public SuperAbstract {
 /******************************************************************************/
 
 class Concrete2 : public SuperAbstract {
-    SERIALIZABLE_SUPER(SuperAbstract, std::string);
-
   public:
-    explicit Concrete2(std::string str = "")
-        : SERIALIZER(str_), str_(std::move(str)) {}
+    explicit Concrete2(std::string str = "") : str_(std::move(str)) {}
+
+    SERIALIZE_OVERRIDE(AbstractSerializer, str_);
 
     /* accessors **************************************************************/
     void str(std::string str) { this->str_ = std::move(str); }
@@ -118,31 +126,20 @@ class Concrete2 : public SuperAbstract {
 };
 
 /******************************************************************************/
-/*                                 convertor                                  */
-/******************************************************************************/
-
-/* we use a custom convertor for handling generics */
-struct Test : public serializer::Convertor<POLYMORPHIC_TYPE(SuperAbstract)> {
-    HANDLE_POLYMORPHIC(SuperAbstract, Concrete1, Concrete2)
-};
-
-/******************************************************************************/
 /*                            abstract collection                             */
 /******************************************************************************/
 
 class AbstractCollection {
-    SERIALIZABLE_WITH_CONVERTOR(Test, std::vector<SuperAbstract *>,
-                                std::vector<std::shared_ptr<SuperAbstract>>,
-                                std::vector<std::unique_ptr<SuperAbstract>>);
-
   public:
-    AbstractCollection()
-        : SERIALIZER(elements_, elementsShared_, elementsUnique_) {}
+    AbstractCollection() = default;
     ~AbstractCollection() {
         for (auto elt : elements_) {
             delete elt;
         }
     }
+
+    SERIALIZE_CUSTOM(AbstractSerializer, elements_, elementsShared_,
+                   elementsUnique_);
 
     /* accessors **************************************************************/
     void push_back(SuperAbstract *element) { elements_.push_back(element); }

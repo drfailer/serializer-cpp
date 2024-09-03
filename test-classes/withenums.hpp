@@ -1,7 +1,7 @@
 #ifndef WITH_ENUMS_HPP
 #define WITH_ENUMS_HPP
-#include "serializer/serializable.hpp"
-#include "serializer/serializer.hpp"
+#include <serializer/serializer.hpp>
+#include <serializer/tools/macros.hpp>
 #include <string>
 
 /* basic enum */
@@ -14,16 +14,15 @@ enum VimModes : char { NORMAL = 'n', VISUAL = 'v', REPLACE = 'r' };
 enum class DndClasses { BARBARIAN, CLERK, ROGUE, WIZARD, SORCERER, WARRIOR };
 
 class WithEnums {
-    SERIALIZABLE(std::string, Days, VimModes, DndClasses);
-
   public:
     explicit WithEnums(std::string str = "", Days _day = MONDAY,
                        VimModes _mode = NORMAL,
                        DndClasses _class = DndClasses::CLERK)
-        : SERIALIZER(normalType, day, mode, dndClass),
-          normalType(std::move(str)), day(_day), mode(_mode), dndClass(_class) {
+        : normalType(std::move(str)), day(_day), mode(_mode), dndClass(_class) {
     }
     ~WithEnums() = default;
+
+    SERIALIZE(normalType, day, mode, dndClass);
 
     /* accessors **************************************************************/
     [[nodiscard]] std::string const &getNormalType() const {

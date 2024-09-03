@@ -1,6 +1,7 @@
 #ifndef WITH_PAIR_HPP
 #define WITH_PAIR_HPP
-#include "serializer/serializer.hpp"
+#include <serializer/serializer.hpp>
+#include <serializer/tools/macros.hpp>
 #include "test-classes/composed.hpp"
 #include "test-classes/simple.hpp"
 #include <set>
@@ -9,21 +10,18 @@
 #include <vector>
 
 class WithPair {
-    SERIALIZABLE(std::pair<int, int>, std::pair<std::string, std::string>,
-                 std::pair<Simple, Composed>,
-                 std::pair<std::vector<int>, std::set<std::string>>);
-
   public:
     explicit WithPair(int i1 = 0, int i2 = 0, std::string str1 = "",
                       std::string str2 = "", const Simple &simple = Simple(),
                       const Composed &composed = Composed(),
                       const std::vector<int> &v = {},
                       const std::set<std::string> &s = {})
-        : SERIALIZER(intPair_, stringPair_, objPair_, containerPair_),
-          intPair_(std::make_pair(i1, i2)),
+        : intPair_(std::make_pair(i1, i2)),
           stringPair_(std::make_pair(std::move(str1), std::move(str2))),
           objPair_(std::make_pair(simple, composed)), containerPair_(v, s) {}
     ~WithPair() = default;
+
+    SERIALIZE(intPair_, stringPair_, objPair_, containerPair_);
 
     /* accessors **************************************************************/
     [[nodiscard]] const std::pair<std::string, std::string> &

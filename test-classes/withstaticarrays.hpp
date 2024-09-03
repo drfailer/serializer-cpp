@@ -1,18 +1,14 @@
 #ifndef WITH_STATIC_ARRAYS_HPP
 #define WITH_STATIC_ARRAYS_HPP
 #include "test-classes/simple.hpp"
-#include <serializer/serializable.hpp>
+#include <serializer/serializer.hpp>
+#include <serializer/tools/macros.hpp>
 
 class WithStaticArrays {
-    SERIALIZABLE(int[10], int[10][10], int[10][10][2], Simple[2],
-                 Simple[2][2]);
-
   public:
-    WithStaticArrays():
-      SERIALIZER(arr_, grid_, tensor_, arrSimple_, gridSimple_) {}
+    SERIALIZE(arr_, grid_, tensor_, arrSimple_, gridSimple_);
 
-    /* accessors
-     * ****************************************************************/
+    /* accessors **************************************************************/
     int &arr(size_t i) { return arr_[i]; }
     int &grid(size_t i, size_t j) { return grid_[i][j]; }
     int &tensor(size_t i, size_t j, size_t k) { return tensor_[i][j][k]; }

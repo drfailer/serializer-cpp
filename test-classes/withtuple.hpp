@@ -1,32 +1,34 @@
 #ifndef WITH_TUPLE_HPP
 #define WITH_TUPLE_HPP
-#include "serializer/serializer.hpp"
 #include "test-classes/composed.hpp"
 #include "test-classes/simple.hpp"
 #include <map>
+#include <serializer/serializer.hpp>
+#include <serializer/tools/macros.hpp>
 #include <set>
 #include <string>
 #include <tuple>
 #include <vector>
 
 class WithTuple {
-    SERIALIZABLE(std::tuple<int, int, double>,
-                 std::tuple<std::string, std::string, std::string>,
-                 std::tuple<Simple, Composed>,
-                 std::tuple<std::vector<int>, std::set<std::string>,
-                            std::map<std::string, std::string>>);
-
   public:
     explicit WithTuple(
         int i1 = 0, int i2 = 0, double d1 = 0, const std::string &str1 = "",
         const std::string &str2 = "", const std::string &str3 = "",
         const Simple &simple = Simple(), const Composed &composed = Composed(),
         const std::vector<int> &v = {}, const std::set<std::string> &s = {},
-        std::map<std::string, std::string> m = {})
-        : SERIALIZER(numberTuple_, stringTuple_, objTuple_, containerTuple_),
-          numberTuple_(i1, i2, d1), stringTuple_(str1, str2, str3),
-          objTuple_(simple, composed), containerTuple_(v, s, m) {}
-    ~WithTuple() = default;
+        std::map<std::string, std::string> m = {}, int *ptr1 = nullptr,
+        double *ptr2 = nullptr)
+        : numberTuple_(i1, i2, d1), stringTuple_(str1, str2, str3),
+          objTuple_(simple, composed), containerTuple_(v, s, m),
+          pointerTuple_(ptr1, ptr2) {}
+    ~WithTuple() {
+      delete std::get<0>(pointerTuple_);
+      delete std::get<1>(pointerTuple_);
+    }
+
+    SERIALIZE(numberTuple_, stringTuple_, objTuple_, containerTuple_,
+              pointerTuple_);
 
     /* accessors **************************************************************/
     [[nodiscard]] const std::tuple<std::string, std::string, std::string> &
@@ -44,6 +46,9 @@ class WithTuple {
     containerTuple() const {
         return containerTuple_;
     }
+    [[nodiscard]] const std::tuple<int *, double *> pointerTuple() const {
+        return pointerTuple_;
+    }
 
   private:
     std::tuple<int, int, double> numberTuple_;
@@ -52,6 +57,7 @@ class WithTuple {
     std::tuple<std::vector<int>, std::set<std::string>,
                std::map<std::string, std::string>>
         containerTuple_;
+    std::tuple<int *, double *> pointerTuple_ = {nullptr, nullptr};
 };
 
 #endif

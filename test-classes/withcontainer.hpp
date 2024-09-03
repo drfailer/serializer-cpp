@@ -1,19 +1,15 @@
 #ifndef WITHCONTAINER_HPP
 #define WITHCONTAINER_HPP
-#include "serializer/serializer.hpp"
+#include <serializer/serializer.hpp>
+#include <serializer/tools/macros.hpp>
 #include "test-classes/simple.hpp"
 #include <array>
 #include <list>
 #include <vector>
 
 class WithContainer {
-    SERIALIZABLE(std::vector<int>, std::vector<int>, std::list<double>,
-                 std::vector<Simple>, std::vector<std::vector<int>>,
-                 std::array<int, 10>);
-
   public:
-    WithContainer() : SERIALIZER(emptyVec, vec, lst, classVec, vec2D, arr) {}
-    ~WithContainer() = default;
+     SERIALIZE(emptyVec, vec, lst, classVec, vec2D, arr, arrPtr, arrSimple);
 
     /* accessors **************************************************************/
     void addSimple(const Simple &simple) { classVec.push_back(simple); }
@@ -21,6 +17,8 @@ class WithContainer {
     void addInt(int i) { vec.push_back(i); }
     void addVec(std::vector<int> &&vecInt) { vec2D.push_back(vecInt); }
     void addArr(int i, int n) { arr[i] = n; }
+    void addArrPtr(int i, int* n) { arrPtr[i] = n; }
+    void addArrSimple(int i, Simple n) { arrSimple[i] = n; }
 
     [[nodiscard]] const std::vector<int> &getEmptyVec() const {
         return emptyVec;
@@ -34,6 +32,11 @@ class WithContainer {
         return vec2D;
     }
     [[nodiscard]] const std::array<int, 10> &getArr() const { return arr; }
+    [[nodiscard]] const std::array<int*, 10> &getArrPtr() const { return arrPtr; }
+    [[nodiscard]] const std::array<Simple, 10> &getArrSimple() const {
+      static_assert(!serializer::concepts::Trivial<Simple>);
+      return arrSimple;
+    }
 
   private:
     std::vector<int> emptyVec = {};
@@ -42,6 +45,8 @@ class WithContainer {
     std::vector<Simple> classVec = {};
     std::vector<std::vector<int>> vec2D = {};
     std::array<int, 10> arr = {};
+    std::array<int*, 10> arrPtr = {};
+    std::array<Simple, 10> arrSimple;
 };
 
 #endif

@@ -1,30 +1,32 @@
-# C++ serializer generation
+# Serializer-cpp
 
-The purpose of this project is to use templates and concepts (C++20) to
-automate the generation of serialization and deserialization methods for C++
-classes.
+`serializer-cpp` is a C++20 binary serialization library. The library povides
+very generic functions that can handle most of the types of the standard library
+and more. It also provides some convenient macros that generate some code
+automatically.
 
 The best way to learn how to use the lib is to check the [wiki](https://github.com/drfailer/serializer-cpp/wiki).
 
+## Features
+
+- Easy serialization by writting minimal code.
+- Automatic serialization for most of the types of the standard library and
+  more.
+- Support for polymorphic types.
+- Identifiers for deserializing and managing objects with a type not known at
+  compile time.
+- Lite binary output format.
+
 ## Example
 
-To generate the code, the target class must use the `SERIALIZABLE` macro. This is a
-variadic macro function that takes the types of the members that will be
-serialized. Then we use the `SERIALIZER` macro function that takes references to the
-members to serialize as argument. Then, we can use, `serialize` and `deserialize`
-methods on the objects.
-
 ```cpp
-#include <serializer/serializable.hpp>
+#include <serializer/serializer.hpp>
+#include <serializer/tools/macros.hpp>
 
-class Simple {
-    SERIALIZABLE(int, int, std::string); // making the class serializable
-
+class MyClass {
   public:
-    explicit Simple(int x, int y, std::string str):
-        SERIALIZER(x_, y_, str_), // initializing the serializer
-        x_(x), y_(y), str_(std::move(str)) {}
     /* ... */
+    SERIALIZE(x_, y_, str_)
 
   private:
     int x_;
@@ -33,29 +35,18 @@ class Simple {
 };
 
 void main(int argc, char** argv) {
-    Simple s1(1, 2, "three");
-    Simple s2;
-    std::string result;
+    MyClass s1(1, 2, "three");
+    MyClass s2;
+    serializer::Bytes result;
 
-    result = s1.serialize();
+    s1.serialize(result);
     s2.deserialize(result);
     /* s1 == s2 */
-
-    // works with file too
-    s1.serializeFile("./simple.txt");
 }
 ```
 
-## Warnings
+## Alternatives
 
-### Genericity
-
-This method relies a lot on concepts, which means that a lot of conversion
-functions have been written. However, even if this simple library tries to be
-very generic, some types may not be handled properly. The library allow to
-create custom functions manually if required.
-
-### Pointers
-
-The pointers are supported by the library, but they have to be initialized
-properly before the deserialization (either `nullptr` or a valid memory address).
+- [zpp_bits](https://github.com/eyalz800/zpp_bits)
+- [cereal](https://uscilab.github.io/cereal/)
+- [cista](https://github.com/felixguendling/cista)
