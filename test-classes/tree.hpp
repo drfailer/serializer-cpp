@@ -1,8 +1,8 @@
 #ifndef TREE_HPP
 #define TREE_HPP
+#include <iostream>
 #include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
-#include <iostream>
 
 template <typename T> struct Node {
   public:
@@ -13,13 +13,10 @@ template <typename T> struct Node {
     }
 
     SERIALIZE(value, left, right, SER_DFUN({
-                  if constexpr (!std::is_const_v<
-                                    std::remove_pointer_t<decltype(this)>>) {
-                      if (this->left)
-                          this->left->father = this;
-                      if (this->right)
-                          this->right->father = this;
-                  }
+                  if (this->left)
+                      this->left->father = this;
+                  if (this->right)
+                      this->right->father = this;
               }));
 
     void print(size_t rank = 0) {
