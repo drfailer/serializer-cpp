@@ -132,7 +132,7 @@ class Bytes {
     constexpr Bytes<T> &operator=(Bytes<T> &&other) noexcept {
         capacity_ = other.capacity_;
         size_ = other.size_;
-        std::swap(this->mem, other.mem_);
+        std::swap(this->mem_, other.mem_);
         return *this;
     }
 
