@@ -5,6 +5,7 @@
 #include "../meta/type_transform.hpp"
 #include "../exceptions/id_not_found.hpp"
 #include "../exceptions/abstract_type.hpp"
+#include "serializer/exceptions/create_type.hpp"
 #include <stdexcept>
 #include <type_traits>
 
@@ -82,15 +83,19 @@ inline constexpr typename TypeTable::id_type getId(auto &mem, size_t pos = 0) {
 template <typename T> inline constexpr void create(auto &elt) {
     using Type = decltype(elt);
     if constexpr (!std::is_abstract_v<T>) {
-        if constexpr (concepts::Pointer<Type>) {
+        if constexpr (concepts::Pointer<Type> && requires(Type t) { t = new T(); }) {
             if (elt != nullptr) {
                 delete elt;
             }
             elt = new T();
-        } else if constexpr (mtf::is_shared_v<Type>) {
+        } else if constexpr (mtf::is_shared_v<Type> && requires(Type t) { t = std::make_shared<T>(); }) {
             elt = std::make_shared<T>();
-        } else if constexpr (mtf::is_unique_v<Type>) {
+        } else if constexpr (mtf::is_unique_v<Type> && requires(Type t) { t = std::make_unique<T>(); }) {
             elt = std::make_unique<T>();
+        } else if constexpr (requires(Type t) { t = T(); }) {
+            elt = T();
+        } else {
+            throw exceptions::CreateTypeError<T>();
         }
     } else {
         throw exceptions::AbstractTypeError<T>();

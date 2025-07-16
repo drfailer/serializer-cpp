@@ -29,7 +29,7 @@ inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
                 args(tools::Context<tools::Phases::Serialization,
                                     decltype(serializer)>(serializer));
             } else {
-                serializer.serialize_(args);
+                serializer.serialize_types(args);
             }
         }(),
         ...);
@@ -58,7 +58,7 @@ inline constexpr size_t deserialize(auto &mem, size_t pos, auto &&...args) {
                 args(tools::Context<tools::Phases::Deserialization,
                                     decltype(serializer)>(serializer));
             } else {
-                serializer.deserialize_(args);
+                serializer.deserialize_types(args);
             }
         }(),
         ...);

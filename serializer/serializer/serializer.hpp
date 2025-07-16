@@ -93,34 +93,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
         return id;
     }
 
-    /* types with ids *********************************************************/
-
-    /// @brief Serialize a generic type registed in the type table
-    /// @param elt Element serialized.
-    template <typename T>
-        requires(tools::has_type_v<T, TypeTable>)
-    inline constexpr void serialize_(T &&elt) {
-        if constexpr (requires { elt->serialize(mem, pos); }) {
-            pos = elt->serialize(mem, pos);
-        } else if constexpr (requires { elt.serialize(mem, pos); }) {
-            pos = elt.serialize(mem, pos);
-        }
-    }
-
-    /// @brief Serialize a generic type registed in the type table
-    /// @param elt Element serialized.
-    template <typename T>
-        requires(tools::has_type_v<T, TypeTable>)
-    inline constexpr void deserialize_(T &&elt) {
-        auto id = deserializeId();
-        tools::createId<TypeTable>(id, elt);
-        if constexpr (requires { elt.deserialize(mem, pos); }) {
-            pos = elt.deserialize(mem, pos);
-        } else if constexpr (requires { elt->deserialize(mem, pos); }) {
-            pos = elt->deserialize(mem, pos);
-        }
-    }
-
+  private:
     /* no automatic serialization types (custom convertor) ********************/
 
     /// @brief Fallback functions for non serializable types. Here either we use
@@ -131,8 +104,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        lost in the hole compiler error output.
     /// @param elt Element that is serialized.
     template <typename T>
-        requires(concepts::NonAutomaticSerialize<T, MemT, AdditionalTypes...> &&
-                 !tools::has_type_v<T, TypeTable>)
+        requires(concepts::NonAutomaticSerialize<T, MemT, AdditionalTypes...>)
     inline constexpr void serialize_(T &&elt) {
         if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
@@ -152,9 +124,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        lost in the hole compiler error output.
     /// @param elt Element that is deserialized.
     template <typename T>
-        requires(
-            concepts::NonAutomaticDeserialize<T, MemT, AdditionalTypes...> &&
-            !tools::has_type_v<T, TypeTable>)
+        requires(concepts::NonAutomaticDeserialize<T, MemT, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
         if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
             // we need a static cast because of implicit constructors (ex:
@@ -172,8 +142,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        serialize method).
     /// @param elt Element that is serialized.
     template <typename T>
-        requires(concepts::UseSerialize<T, MemT, AdditionalTypes...> &&
-                 !tools::has_type_v<T, TypeTable>)
+        requires(concepts::UseSerialize<T, MemT, AdditionalTypes...>)
     inline constexpr void serialize_(T &&elt) {
         pos = elt.serialize(mem, pos);
     }
@@ -182,8 +151,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        deserialize method).
     /// @param elt Element that is deserialized.
     template <typename T>
-        requires(concepts::UseDeserialize<T, MemT, AdditionalTypes...> &&
-                 !tools::has_type_v<T, TypeTable>)
+        requires(concepts::UseDeserialize<T, MemT, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
         pos = elt.deserialize(mem, pos);
     }
@@ -213,8 +181,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        The pointer should be valid (nullptr or value).
     /// @param elt Element that is serialized.
     template <serializer::concepts::Pointer T>
-        requires(!mtf::contains_v<T, AdditionalTypes...> &&
-                 !tools::has_type_v<T, TypeTable>)
+        requires(!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void serialize_(T &&elt) {
         if (elt == nullptr) {
             append('n');
@@ -224,7 +191,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
         if constexpr (requires { elt->serialize(mem, pos); }) {
             pos = elt->serialize(mem, pos);
         } else {
-            serialize_(*elt);
+            select_serialize(*elt);
         }
     }
 
@@ -233,8 +200,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        by the user.
     /// @param elt Element that is deserialized.
     template <serializer::concepts::ConcretePtr T>
-        requires(!mtf::contains_v<T, AdditionalTypes...> &&
-                 !tools::has_type_v<T, TypeTable>)
+        requires(!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
         bool ptrValid = char(mem[pos++]) == 'v';
 
@@ -252,7 +218,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
         if constexpr (requires { elt->deserialize(mem, pos); }) {
             pos = elt->deserialize(mem, pos);
         } else {
-            deserialize_(*elt);
+            select_deserialize(*elt);
         }
     }
 
@@ -262,8 +228,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        The pointer should be valid (nullptr or value).
     /// @param elt Element that is serialized.
     template <serializer::concepts::SmartPtr T>
-        requires(!mtf::contains_v<T, AdditionalTypes...> &&
-                 !tools::has_type_v<T, TypeTable>)
+        requires(!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void serialize_(T &&elt) {
         using ST = mtf::element_type_t<T>;
         if (elt != nullptr) {
@@ -271,7 +236,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
             if constexpr (concepts::Serializable<ST, MemT>) {
                 elt->serialize(mem, pos);
             } else {
-                serialize_(*elt);
+                select_serialize(*elt);
             }
         } else {
             append('n');
@@ -282,8 +247,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        pointer is allocated if required.
     /// @param elt Element that is deserialized.
     template <serializer::concepts::ConcreteSmartPtr T>
-        requires(!mtf::contains_v<T, AdditionalTypes...> &&
-                 !tools::has_type_v<T, TypeTable>)
+        requires(!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
         bool ptrValid = char(mem[pos++]) == 'v';
 
@@ -293,15 +257,17 @@ struct Serializer : Serialize<AdditionalTypes>... {
         }
         static_assert(mtf::is_default_constructible_v<T>,
                       "The pointer types should be default constructible.");
-        if constexpr (serializer::mtf::is_shared_v<T>) {
-            elt = std::make_shared<mtf::element_type_t<T>>();
-        } else if constexpr (serializer::mtf::is_unique_v<T>) {
-            elt = std::make_unique<mtf::element_type_t<T>>();
+        if (elt == nullptr) {
+            if constexpr (serializer::mtf::is_shared_v<T>) {
+                elt = std::make_shared<mtf::element_type_t<T>>();
+            } else if constexpr (serializer::mtf::is_unique_v<T>) {
+                elt = std::make_unique<mtf::element_type_t<T>>();
+            }
         }
         if constexpr (concepts::Deserializable<T, MemT>) {
             elt->deserialize(mem, pos);
         } else {
-            deserialize_(*elt);
+            select_deserialize(*elt);
         }
     }
 
@@ -313,7 +279,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     template <size_t... Idx>
     inline constexpr void serializeTuple(auto &&elt,
                                          std::index_sequence<Idx...>) {
-        ([&] { serialize_(std::get<Idx>(elt)); }(), ...);
+        ([&] { select_serialize(std::get<Idx>(elt)); }(), ...);
     }
 
     /// @brief Serialize function for tuples (std::tuple and std::pair).
@@ -329,7 +295,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @param index_sequence Indicies of the tuple elements.
     template <size_t... Idx>
     constexpr void deserializeTuple(auto &&elt, std::index_sequence<Idx...>) {
-        ([&] { deserialize_(std::get<Idx>(elt)); }(), ...);
+        ([&] { select_deserialize(std::get<Idx>(elt)); }(), ...);
     }
 
     /// @brief Deserialize function tuples (std::tuple and std::pair).
@@ -407,7 +373,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
                 sizeof(ValueType) * std::size(elts));
         } else {
             for (auto &elt : elts) {
-                serialize_(elt);
+                select_serialize(elt);
             }
         }
     }
@@ -436,12 +402,12 @@ struct Serializer : Serialize<AdditionalTypes>... {
             pos += sizeof(ValueType) * size;
         } else if constexpr (std::contiguous_iterator<IterType>) {
             for (auto &elt : elts) {
-                deserialize_(elt);
+                select_deserialize(elt);
             }
         } else {
             for (size_t i = 0; i < size; ++i) {
                 ValueType value{};
-                deserialize_(value);
+                select_deserialize(value);
                 if constexpr (serializer::concepts::Insertable<T, ValueType> ||
                               serializer::concepts::PushBackable<T,
                                                                  ValueType>) {
@@ -466,7 +432,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
                    sizeof(elt[0]) * size);
         } else {
             for (size_t i = 0; i < size; ++i) {
-                serialize_(elt[i]);
+                select_serialize(elt[i]);
             }
         }
     }
@@ -484,7 +450,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
             pos += sizeof(ST) * size;
         } else {
             for (size_t i = 0; i < size; ++i) {
-                deserialize_(elt[i]);
+                select_deserialize(elt[i]);
             }
         }
     }
@@ -506,7 +472,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
         if constexpr (std::is_pointer_v<ST>) {
             size_t size = (size_t)std::get<0>(elt.dimensions);
             for (size_t i = 0; i < size; ++i) {
-                serialize_(tools::DynamicArray(
+                select_serialize(tools::DynamicArray(
                     elt.mem[i], tools::tuplePopFront(elt.dimensions)));
             }
         } else {
@@ -517,7 +483,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
                        size * sizeof(ST));
             } else {
                 for (size_t i = 0; i < size; ++i) {
-                    serialize_(elt.mem[i]);
+                    select_serialize(elt.mem[i]);
                 }
             }
         }
@@ -545,7 +511,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
                 elt.mem = new ST[size]();
             }
             for (size_t i = 0; i < size; ++i) {
-                deserialize_(tools::DynamicArray(
+                select_deserialize(tools::DynamicArray(
                     elt.mem[i], tools::tuplePopFront(elt.dimensions)));
             }
         } else {
@@ -559,9 +525,45 @@ struct Serializer : Serialize<AdditionalTypes>... {
                 pos += size * sizeof(ST);
             } else {
                 for (size_t i = 0; i < size; ++i) {
-                    deserialize_(elt.mem[i]);
+                    select_deserialize(elt.mem[i]);
                 }
             }
+        }
+    }
+
+    /* serializer selector ****************************************************/
+
+  public:
+    template <typename T> inline constexpr void select_serialize(T &&elt) {
+        // TODO: we should be able to use the default serialize_ functions any
+        // way, not sure why the dedicated function for the pointers does not
+        // call the right underlying functions.
+        if constexpr (tools::has_type_v<T, TypeTable>) {
+            if constexpr (requires { elt.deserialize(mem, pos); }) {
+                pos = elt.serialize(mem, pos);
+            } else if constexpr (requires { elt->deserialize(mem, pos); }) {
+                pos = elt->serialize(mem, pos);
+            } else {
+                serialize_(elt);
+            }
+        } else {
+            serialize_(elt);
+        }
+    }
+
+    template <typename T> inline constexpr void select_deserialize(T &&elt) {
+        if constexpr (tools::has_type_v<T, TypeTable>) {
+            auto id = deserializeId();
+            tools::createId<TypeTable>(id, elt);
+            if constexpr (requires { elt.deserialize(mem, pos); }) {
+                pos = elt.deserialize(mem, pos);
+            } else if constexpr (requires { elt->deserialize(mem, pos); }) {
+                pos = elt->deserialize(mem, pos);
+            } else {
+                deserialize_(elt);
+            }
+        } else {
+            deserialize_(elt);
         }
     }
 
@@ -569,14 +571,14 @@ struct Serializer : Serialize<AdditionalTypes>... {
 
     /// @brief Variadic serialize helper function for custom serializer.
     /// @param elts Elements to serialize.
-    inline constexpr void serialize_(auto &&...elts) {
-        ([&] { serialize_(elts); }(), ...);
+    inline constexpr void serialize_types(auto &&...elts) {
+        ([&] { select_serialize(elts); }(), ...);
     }
 
     /// @brief Variadic deserialize helper function for custom serializer.
     /// @param elts Elements to deserialize.
-    inline constexpr void deserialize_(auto &&...elts) {
-        ([&] { deserialize_(elts); }(), ...);
+    inline constexpr void deserialize_types(auto &&...elts) {
+        ([&] { select_deserialize(elts); }(), ...);
     }
 };
 

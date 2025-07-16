@@ -28,8 +28,8 @@ class Bytes {
     constexpr Bytes() = default;
 
     /// @brief Constructor with capacity.
-    constexpr Bytes(size_t capacity)
-        : mem_(new T[capacity]), capacity_(capacity) {}
+    constexpr Bytes(size_t capacity, size_t size = 0)
+        : mem_(new T[capacity]), capacity_(capacity), size_(size) {}
 
     /// @brief constructor with a pointer and a size
     constexpr Bytes(T *ptr, size_t capacity, size_t size = 0)

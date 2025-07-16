@@ -110,10 +110,10 @@ constexpr inline void deserializerAccessor(Ser &serializer, auto &obj,
                                            T accessor) {
     if constexpr (mtf::is_setter<T>::value) {
         mtf::setter_arg_type_t<T> elt{};
-        serializer.deserialize_(elt);
+        serializer.deserialize_types(elt);
         std::invoke(accessor, obj, elt);
     } else {
-        serializer.deserialize_(std::invoke(accessor, obj));
+        serializer.deserialize_types(std::invoke(accessor, obj));
     }
 }
 
