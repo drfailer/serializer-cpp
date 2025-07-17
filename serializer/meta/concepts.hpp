@@ -26,11 +26,19 @@ concept ConcreteSmartPtr =
 
 /// @brief Concreate pointer.
 template <typename T>
-concept ConcretePtr = mtf::is_concrete_ptr_v<T>;
+concept ConcreteStdPtr = mtf::is_concrete_ptr_v<T>;
+
+/// @brief All concreate pointers.
+template <typename T>
+concept ConcretePtr = ConcreteStdPtr<T> || ConcreteSmartPtr<T>;
 
 /// @brief Pointers
 template <typename T>
-concept Pointer = std::is_pointer_v<mtf::clean_t<T>>;
+concept StdPointer = std::is_pointer_v<mtf::clean_t<T>>;
+
+/// @brief All pointers
+template <typename T>
+concept Pointer = StdPointer<T> || SmartPtr<T>;
 
 /// @brief Static arrays
 template <typename T>

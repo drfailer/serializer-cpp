@@ -8,6 +8,7 @@
 #include "../tools/tools.hpp"
 #include "../tools/type_table.hpp"
 #include "serialize.hpp"
+#include "serializer/meta/concepts.hpp"
 #include <algorithm>
 #include <bit>
 #include <cstring>
@@ -88,7 +89,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     /// @brief Deserialize an identifier.
     /// @param elt Element that is deserialized.
     /// @return id
-    inline constexpr id_type deserializeId() {
+    inline constexpr id_type readId() {
         auto id = *std::bit_cast<const id_type *>(mem.data() + pos);
         return id;
     }
@@ -104,16 +105,12 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        lost in the hole compiler error output.
     /// @param elt Element that is serialized.
     template <typename T>
-        requires(concepts::NonAutomaticSerialize<T, MemT, AdditionalTypes...>)
+        requires(concepts::NonAutomaticSerialize<T, MemT, AdditionalTypes...> &&
+                 mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void serialize_(T &&elt) {
-        if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
-            // we need a static cast because of implicit constructors (ex:
-            // pointer to shared_ptr)
-            static_cast<Serialize<mtf::clean_t<T>> *>(this)->serialize(elt);
-        } else {
-            throw serializer::exceptions::UnsupportedTypeError<
-                mtf::clean_t<T>>();
-        }
+        // we need a static cast because of implicit constructors (ex:
+        // pointer to shared_ptr)
+        static_cast<Serialize<mtf::clean_t<T>> *>(this)->serialize(elt);
     }
 
     /// @brief Fallback functions for non deserializable types. Here either we
@@ -124,16 +121,13 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        lost in the hole compiler error output.
     /// @param elt Element that is deserialized.
     template <typename T>
-        requires(concepts::NonAutomaticDeserialize<T, MemT, AdditionalTypes...>)
+        requires(
+            concepts::NonAutomaticDeserialize<T, MemT, AdditionalTypes...> &&
+            mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
-        if constexpr (mtf::contains_v<T, AdditionalTypes...>) {
-            // we need a static cast because of implicit constructors (ex:
-            // pointer to shared_ptr)
-            static_cast<Serialize<mtf::clean_t<T>> *>(this)->deserialize(elt);
-        } else {
-            throw serializer::exceptions::UnsupportedTypeError<
-                mtf::clean_t<T>>();
-        }
+        // we need a static cast because of implicit constructors (ex:
+        // pointer to shared_ptr)
+        static_cast<Serialize<mtf::clean_t<T>> *>(this)->deserialize(elt);
     }
 
     /* serializable ***********************************************************/
@@ -199,7 +193,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
     ///        null, a dynamic allocation is done. This memory should be handled
     ///        by the user.
     /// @param elt Element that is deserialized.
-    template <serializer::concepts::ConcretePtr T>
+    template <serializer::concepts::Pointer T>
         requires(!mtf::contains_v<T, AdditionalTypes...>)
     inline constexpr void deserialize_(T &&elt) {
         bool ptrValid = char(mem[pos++]) == 'v';
@@ -208,64 +202,32 @@ struct Serializer : Serialize<AdditionalTypes>... {
             elt = nullptr;
             return;
         }
-        static_assert(std::is_default_constructible_v<
-                          std::remove_pointer_t<std::remove_cvref_t<T>>>,
-                      "The pointer types should be default constructible.");
-        using Type = typename std::remove_pointer_t<std::remove_reference_t<T>>;
-        if (elt == nullptr) {
-            elt = new Type();
+        if constexpr (concepts::ConcretePtr<T>) {
+            static_assert(std::is_default_constructible_v<
+                              std::remove_pointer_t<std::remove_cvref_t<T>>>,
+                          "The pointer types should be default constructible.");
+            using Type =
+                typename std::remove_pointer_t<std::remove_reference_t<T>>;
+
+            if (elt == nullptr) {
+                if constexpr (serializer::mtf::is_shared_v<T>) {
+                    elt = std::make_shared<mtf::element_type_t<T>>();
+                } else if constexpr (serializer::mtf::is_unique_v<T>) {
+                    elt = std::make_unique<mtf::element_type_t<T>>();
+                } else if constexpr (concepts::Pointer<T>) {
+                    elt = new Type();
+                }
+            }
+        } else if constexpr (tools::has_type_v<T, TypeTable>) {
+            if (elt == nullptr) {
+                auto id = readId();
+                tools::createId<TypeTable>(id, elt);
+            }
+        } else {
+            throw exceptions::UnsupportedTypeError<T>();
         }
         if constexpr (requires { elt->deserialize(mem, pos); }) {
             pos = elt->deserialize(mem, pos);
-        } else {
-            select_deserialize(*elt);
-        }
-    }
-
-    /* smart pointers *********************************************************/
-
-    /// @brief Serialize function for smart pointers (unique and shared).
-    ///        The pointer should be valid (nullptr or value).
-    /// @param elt Element that is serialized.
-    template <serializer::concepts::SmartPtr T>
-        requires(!mtf::contains_v<T, AdditionalTypes...>)
-    inline constexpr void serialize_(T &&elt) {
-        using ST = mtf::element_type_t<T>;
-        if (elt != nullptr) {
-            append('v');
-            if constexpr (concepts::Serializable<ST, MemT>) {
-                elt->serialize(mem, pos);
-            } else {
-                select_serialize(*elt);
-            }
-        } else {
-            append('n');
-        }
-    }
-
-    /// @brief Deserialize function for smart pointers (unique and shared). A
-    ///        pointer is allocated if required.
-    /// @param elt Element that is deserialized.
-    template <serializer::concepts::ConcreteSmartPtr T>
-        requires(!mtf::contains_v<T, AdditionalTypes...>)
-    inline constexpr void deserialize_(T &&elt) {
-        bool ptrValid = char(mem[pos++]) == 'v';
-
-        if (!ptrValid) {
-            elt = nullptr;
-            return;
-        }
-        static_assert(mtf::is_default_constructible_v<T>,
-                      "The pointer types should be default constructible.");
-        if (elt == nullptr) {
-            if constexpr (serializer::mtf::is_shared_v<T>) {
-                elt = std::make_shared<mtf::element_type_t<T>>();
-            } else if constexpr (serializer::mtf::is_unique_v<T>) {
-                elt = std::make_unique<mtf::element_type_t<T>>();
-            }
-        }
-        if constexpr (concepts::Deserializable<T, MemT>) {
-            elt->deserialize(mem, pos);
         } else {
             select_deserialize(*elt);
         }
@@ -535,36 +497,20 @@ struct Serializer : Serialize<AdditionalTypes>... {
 
   public:
     template <typename T> inline constexpr void select_serialize(T &&elt) {
+        if constexpr (!requires { serialize_(elt); }) {
+            throw exceptions::UnsupportedTypeError<T>();
+        }
         // TODO: we should be able to use the default serialize_ functions any
         // way, not sure why the dedicated function for the pointers does not
         // call the right underlying functions.
-        if constexpr (tools::has_type_v<T, TypeTable>) {
-            if constexpr (requires { elt.deserialize(mem, pos); }) {
-                pos = elt.serialize(mem, pos);
-            } else if constexpr (requires { elt->deserialize(mem, pos); }) {
-                pos = elt->serialize(mem, pos);
-            } else {
-                serialize_(elt);
-            }
-        } else {
-            serialize_(elt);
-        }
+        serialize_(elt);
     }
 
     template <typename T> inline constexpr void select_deserialize(T &&elt) {
-        if constexpr (tools::has_type_v<T, TypeTable>) {
-            auto id = deserializeId();
-            tools::createId<TypeTable>(id, elt);
-            if constexpr (requires { elt.deserialize(mem, pos); }) {
-                pos = elt.deserialize(mem, pos);
-            } else if constexpr (requires { elt->deserialize(mem, pos); }) {
-                pos = elt->deserialize(mem, pos);
-            } else {
-                deserialize_(elt);
-            }
-        } else {
-            deserialize_(elt);
+        if constexpr (!requires { serialize_(elt); }) {
+            throw exceptions::UnsupportedTypeError<T>();
         }
+        deserialize_(elt);
     }
 
     /* helper function for custom serializers *********************************/
