@@ -65,6 +65,9 @@ class Bytes {
     /// @brief Returns the number of bytes stored in the buffer.
     constexpr size_t size() const { return size_; }
 
+    /// @brief Allow to manually resize.
+    constexpr void resize(size_t size) { size_ = size; }
+
     /// @breif Clear the buffer (set the size to 0 but do not reallocate).
     constexpr void clear() { size_ = 0; }
 
