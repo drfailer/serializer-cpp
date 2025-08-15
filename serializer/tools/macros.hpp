@@ -11,7 +11,7 @@
 /// @param virt Virtual keyworkd.
 /// @param over Override keyworkd.
 /// @param ... Members to serialize.
-#define __SERIALIZE__(Ser, MemT, virt, over, ...)                              \
+#define INTERNAL_SERIALIZE_MACRO_IMPL(Ser, MemT, virt, over, ...)              \
     constexpr virt size_t serialize(MemT &mem, size_t pos = 0) const over {    \
         return serializer::serializeWithId<Ser, decltype(this)>(mem, pos,      \
                                                                 __VA_ARGS__);  \
@@ -26,29 +26,31 @@
 /// @param Ser Serializer.
 /// @param ... Members to serialize.
 #define SERIALIZE_CUSTOM(Ser, ...)                                             \
-    __SERIALIZE__(Ser, auto, /* virt */, /* over */, __VA_ARGS__)
+    INTERNAL_SERIALIZE_MACRO_IMPL(Ser, auto, /* virt */, /* over */,           \
+                                  __VA_ARGS__)
 
 /// @brief Generate the serialize and deserialize methods with the default
 ///        serializer.
 /// @param ... Members to serialize.
 #define SERIALIZE(...)                                                         \
-    __SERIALIZE__(serializer::Serializer<decltype(mem)>, auto, /* virt */,     \
-                  /* over */, __VA_ARGS__)
+    INTERNAL_SERIALIZE_MACRO_IMPL(serializer::Serializer<decltype(mem)>, auto, \
+                                  /* virt */, /* over */, __VA_ARGS__)
 
 /// @brief Generate the serialze and deserialize virtual methods using the
 ///        specified serializer.
 /// @param Ser Serializer
 /// @param ... Members to serialize
 #define VIRTUAL_SERIALIZE(Ser, ...)                                            \
-    __SERIALIZE__(Ser, typename Ser::mem_type, virtual, /* over */, __VA_ARGS__)
+    INTERNAL_SERIALIZE_MACRO_IMPL(Ser, typename Ser::mem_type, virtual,        \
+                                  /* over */, __VA_ARGS__)
 
 /// @brief Generate the serialze and deserialize override methods using the
 ///        specified serializer.
 /// @param Ser Serializer
 /// @param ... Members to serialize
 #define SERIALIZE_OVERRIDE(Ser, ...)                                           \
-    __SERIALIZE__(Ser, typename Ser::mem_type, /* virt */, override,           \
-                  __VA_ARGS__)
+    INTERNAL_SERIALIZE_MACRO_IMPL(Ser, typename Ser::mem_type, /* virt */,     \
+                                  override, __VA_ARGS__)
 
 /// @brief Generate empty serialize and deserialize virtual methods (useful
 ///        whithin a concrete super class).
