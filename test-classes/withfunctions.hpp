@@ -9,9 +9,9 @@ class WithFunctions {
 
     SERIALIZE(SER_FUN({
         if constexpr (Phase == serializer::tools::Phases::Serialization) {
-            context.serializer.serialize_types(i_);
+            context.serializer.serializeAll(i_);
         } else {
-            context.serializer.deserialize_types(i_);
+            context.serializer.deserializeAll(i_);
         }
     }));
 

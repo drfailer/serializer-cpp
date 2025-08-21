@@ -41,12 +41,12 @@ struct UnknownSerializer
                                Unknown>::byte_type;
 
     constexpr void serialize(const Unknown &u) override {
-        this->serialize_types(u.x());
+        this->serializeAll(u.x());
     }
 
     constexpr void deserialize(Unknown &elt) override {
         int x;
-        this->deserialize_types(x);
+        this->deserializeAll(x);
         elt.x(x);
     }
 };

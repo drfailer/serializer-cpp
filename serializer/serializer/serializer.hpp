@@ -1,6 +1,7 @@
 #ifndef SERIALIZER_SERIALIZER_SERIALIZER_HPP
 #define SERIALIZER_SERIALIZER_SERIALIZER_HPP
 #include "../exceptions/unsupported_type.hpp"
+#include "../meta/concepts.hpp"
 #include "../meta/serializer_meta.hpp"
 #include "../meta/type_check.hpp"
 #include "../meta/type_transform.hpp"
@@ -8,7 +9,6 @@
 #include "../tools/tools.hpp"
 #include "../tools/type_table.hpp"
 #include "serialize.hpp"
-#include "serializer/meta/concepts.hpp"
 #include <algorithm>
 #include <bit>
 #include <cstring>
@@ -480,13 +480,13 @@ struct Serializer : Serialize<AdditionalTypes>... {
 
     /// @brief Variadic serialize helper function for custom serializer.
     /// @param elts Elements to serialize.
-    inline constexpr void serialize_types(auto &&...elts) {
+    inline constexpr void serializeAll(auto &&...elts) {
         ([&] { select_serialize(elts); }(), ...);
     }
 
     /// @brief Variadic deserialize helper function for custom serializer.
     /// @param elts Elements to deserialize.
-    inline constexpr void deserialize_types(auto &&...elts) {
+    inline constexpr void deserializeAll(auto &&...elts) {
         ([&] { select_deserialize(elts); }(), ...);
     }
 };

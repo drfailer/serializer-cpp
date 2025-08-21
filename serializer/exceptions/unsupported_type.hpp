@@ -1,6 +1,6 @@
 #ifndef SERIALIZER_UNSUPPORTED_TYPE_ERROR_HPP
 #define SERIALIZER_UNSUPPORTED_TYPE_ERROR_HPP
-#include "serializer/meta/type_check.hpp"
+#include "../meta/type_check.hpp"
 #include <exception>
 #include <sstream>
 #include <string>
