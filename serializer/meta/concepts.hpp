@@ -48,16 +48,16 @@ concept StaticArray = std::is_array_v<mtf::clean_t<T>>;
 template <typename T>
 concept Array = mtf::is_std_array_v<T>;
 
+/// @brief Enum types.
+template <typename T>
+concept Enum = std::is_enum_v<mtf::clean_t<T>>;
+
 /// @brief Trivial types that can be cast directly
 template <typename T>
 concept Trivial =
     !std::is_pointer_v<mtf::clean_t<T>> && !Array<T> && !StaticArray<T> &&
-    std::is_copy_assignable_v<mtf::clean_t<T>> &&
+    !Enum<T> && std::is_copy_assignable_v<mtf::clean_t<T>> &&
     std::is_trivially_copyable_v<mtf::clean_t<T>>;
-
-/// @brief Enum types.
-template <typename T>
-concept Enum = std::is_enum_v<mtf::clean_t<T>>;
 
 /// @brief String types.
 template <typename T>
@@ -94,54 +94,7 @@ concept TupleLike = requires(mtf::clean_t<T> obj) {
     std::tuple_size_v<mtf::clean_t<T>>;
 } && !Array<T>;
 
-/// @brief Match types on which we can use std::forward
-template <typename T>
-concept Forwardable = requires(T &&obj) { std::forward<T>(obj); };
 
-/// Match the identifier types for the type table
-template <typename T>
-concept IdType = requires(T id) {
-    id + 1;
-    id - 1;
-    id = 0;
-};
-
-/* unsupported types */
-
-/// @brief Used to detect the types for which we do not have an automatic
-///        serialization function.
-template <typename T>
-concept AutoSerializationSupported =
-    SmartPtr<T> || Pointer<T> || Trivial<T> || Enum<T> || String<T> ||
-    Iterable<T> || TupleLike<T> || StaticArray<T>;
-
-/// @brief Used to detect the types for which we do not have an automatic
-///        deserialization function.
-template <typename T>
-concept AutoDeserializationSupported =
-    ConcreteSmartPtr<T> || ConcretePtr<T> || Trivial<T> || Enum<T> ||
-    String<T> || Iterable<T> || TupleLike<T> || StaticArray<T>;
-
-/// @brief Detect if a type is serializable.
-template <typename T, typename MemT>
-concept NonSerializable =
-    !Serializable<T, MemT> && !AutoSerializationSupported<T>;
-
-/// @brief Detect if a type is deserializable.
-template <typename T, typename MemT>
-concept NonDeserializable =
-    !Deserializable<T, MemT> && !AutoDeserializationSupported<T>;
-
-/* for insert helper function */
-
-/// @brief Used to detect whether a members_ uses insert or not.
-template <typename Container, typename T>
-concept Insertable = requires(Container obj) { obj.insert(std::declval<T>()); };
-
-/// @brief Used to detect whether a members_ uses add or not.
-template <typename Container, typename T>
-concept PushBackable =
-    requires(Container obj) { obj.push_back(std::declval<T>()); };
 
 }; // namespace serializer::concepts
 

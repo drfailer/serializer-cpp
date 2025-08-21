@@ -1,5 +1,6 @@
 #ifndef SERIALIZER_UNSUPPORTED_TYPE_ERROR_HPP
 #define SERIALIZER_UNSUPPORTED_TYPE_ERROR_HPP
+#include "serializer/meta/type_check.hpp"
 #include <exception>
 #include <sstream>
 #include <string>
@@ -14,7 +15,7 @@ class UnsupportedTypeError : public std::exception {
   public:
     /// @brief Constructor
     UnsupportedTypeError() {
-        T *obj;
+        mtf::clean_t<T> *obj;
         std::ostringstream oss;
         oss << "error: the default convertor doesn't support the type '"
             << typeid(obj).name() << "'." << std::endl;
