@@ -99,12 +99,12 @@ template <typename T> struct PartialSum {
 
 struct Network {
     static inline serializer::Bytes data;
-    static void send(serializer::Bytes mem) {
+    static void send(serializer::Bytes const &mem) {
         data.append(data.size(), mem.data(), mem.size());
     }
     static serializer::Bytes rcv() {
-        serializer::Bytes result = data;
-        data.clear();
+        serializer::Bytes result = std::move(data);
+        data = {};
         return result;
     }
 };

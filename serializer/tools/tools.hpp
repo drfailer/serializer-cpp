@@ -1,7 +1,7 @@
 #ifndef SERIALIZER_TOOLS_HPP
 #define SERIALIZER_TOOLS_HPP
-#include "../meta/concepts.hpp"
 #include "../meta/type_check.hpp"
+#include "../exceptions/unsupported_type.hpp"
 
 namespace serializer::tools {
 
@@ -9,27 +9,20 @@ namespace serializer::tools {
 /*                                   insert                                   */
 /******************************************************************************/
 
-/// @brief Insert an element into an iterable using the insert member function.
+/// @brief Insert an element into a container.
 /// @tparam Container Container type.
 /// @tparam T Type of the lement to insert.
 /// @param container
 /// @param element element to insert in the container.
 template <typename Container, typename T>
-    requires serializer::concepts::Insertable<Container, T>
 inline constexpr void insert(Container &&container, T &&element) {
-    container.insert(element);
-}
-
-/// @brief Insert an element into an iterable using the add member
-///        function.
-/// @tparam Container Container type.
-/// @tparam T Type of the lement to insert.
-/// @param container
-/// @param element element to insert in the container.
-template <typename Container, typename T>
-    requires serializer::concepts::PushBackable<Container, T>
-inline constexpr void insert(Container &&container, T &&element) {
-    container.push_back(element);
+    if constexpr (requires {container.insert(element);} ) {
+        container.insert(element);
+    } else if constexpr (requires {container.push_back(element);}) {
+        container.push_back(element);
+    } else {
+        throw exceptions::UnsupportedTypeError<Container>();
+    }
 }
 
 /// @brief Insert an element into an iterable using the operator[].

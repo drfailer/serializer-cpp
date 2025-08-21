@@ -1,6 +1,7 @@
 #ifndef SERIALIZER_BYTES_H
 #define SERIALIZER_BYTES_H
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstring>
 
@@ -15,7 +16,7 @@ namespace serializer::tools {
 ///        used for the serialization).
 /// @tparam T Byte type (std::byte, uint8_t, char, ...).
 template <typename T>
-  requires (sizeof(T) == sizeof(char))
+    requires(sizeof(T) == sizeof(char))
 class Bytes {
   public:
     /* type alias *************************************************************/
@@ -28,28 +29,26 @@ class Bytes {
     constexpr Bytes() = default;
 
     /// @brief Constructor with capacity.
-    constexpr Bytes(size_t capacity, size_t size = 0)
-        : mem_(new T[capacity]), capacity_(capacity), size_(size) {}
+    constexpr Bytes(size_t capacity, size_t size = 0) : size_(size) {
+        assert(capacity > size);
+        alloc(capacity);
+    }
 
     /// @brief constructor with a pointer and a size
     constexpr Bytes(T *ptr, size_t capacity, size_t size = 0)
-        : mem_(ptr),capacity_(capacity), size_(size) {}
+        : mem_(ptr), capacity_(capacity), size_(size) {}
 
-    /// @brief Copy constructor.
-    constexpr Bytes(Bytes<T> const &other)
-        : mem_(new T[other.capacity_]), capacity_(other.capacity_),
-          size_(other.size_) {
-        std::memcpy(mem_, other.mem_, size_);
-    }
+    /// @brief deleted copy constructor
+    constexpr Bytes(Bytes<T> const &other) = delete;
 
-    /// @brief Move constructor.
-    constexpr Bytes(Bytes<T> &&other) noexcept
-        : mem_(other.mem_), capacity_(other.capacity_), size_(other.size_) {
-        other.mem_ = nullptr;
+    constexpr Bytes(Bytes<T> &&other) noexcept {
+        std::swap(this->mem_, other.mem_);
+        std::swap(this->capacity_, other.capacity_);
+        std::swap(this->size_, other.size_);
     }
 
     /// @brief Destructor.
-    constexpr ~Bytes() { delete[] mem_; }
+    constexpr ~Bytes() { free(mem_); }
 
     /* accessors **************************************************************/
 
@@ -80,9 +79,16 @@ class Bytes {
     /// @param bytes   Buffer of bytes to append.
     /// @param nbBytes Number of bytes to append.
     constexpr void append(size_t pos, T const *bytes, size_t nbBytes) {
-        upsize(pos + nbBytes);
+        growMemIfRequired(pos + nbBytes);
         size_ = pos + nbBytes;
         std::memcpy(mem_ + pos, bytes, nbBytes);
+    }
+
+    /// @brief Appends some bytes.
+    /// @param bytes   Buffer of bytes to append.
+    /// @param nbBytes Number of bytes to append.
+    constexpr void append(T const *bytes, size_t nbBytes) {
+        append(this->size_, bytes, nbBytes);
     }
 
     /* change size and capacity ***********************************************/
@@ -90,7 +96,7 @@ class Bytes {
     /// @brief Increase the capacity of the memory buffer if size bytes cannot
     ///        be stored.
     /// @param size New size.
-    constexpr void upsize(size_t size) {
+    constexpr void growMemIfRequired(size_t size) {
         if (size > capacity_) [[unlikely]] {
             if (size > (capacity_ * 2)) [[unlikely]] {
                 alloc(size);
@@ -104,10 +110,7 @@ class Bytes {
     /// @param newCapacity New capacity of the the buffer.
     constexpr void alloc(size_t newCapacity) {
         capacity_ = newCapacity;
-        T *tmp = mem_;
-        mem_ = new T[capacity_];
-        std::memcpy(mem_, tmp, size_);
-        delete[] tmp;
+        mem_ = (T *)std::realloc(mem_, capacity_);
     }
 
     /* operators **************************************************************/
@@ -118,18 +121,8 @@ class Bytes {
     /// @brief Give read access to the byte `idx`
     constexpr T const &operator[](size_t idx) const { return mem_[idx]; }
 
-    /// @brief Copy assignment
-    constexpr Bytes<T> &operator=(Bytes<T> const &other) {
-        if (&other == this) {
-            return *this;
-        }
-        capacity_ = other.capacity_;
-        delete[] mem_;
-        mem_ = new T[capacity_];
-        size_ = other.size_;
-        std::memcpy(mem_, other.mem_, size_);
-        return *this;
-    }
+    /// @brief Deleted copy assignment operator
+    Bytes<T> &operator=(Bytes<T> const &other) = delete;
 
     /// @brief Move assignment
     constexpr Bytes<T> &operator=(Bytes<T> &&other) noexcept {
@@ -137,6 +130,14 @@ class Bytes {
         size_ = other.size_;
         std::swap(this->mem_, other.mem_);
         return *this;
+    }
+
+    /// @brief Clone method (this should be used instead of copy
+    ///        operator/contructor since it's more explicit).
+    constexpr Bytes<T> clone() const {
+        Bytes<T> newBytes(this->capacity_, this->size_);
+        std::memcpy(newBytes.mem_, this->mem_, this->size_);
+        return newBytes;
     }
 
     /* convertion *************************************************************/
