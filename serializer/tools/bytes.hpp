@@ -15,7 +15,7 @@ namespace serializer::tools {
 ///        used for the serialization).
 /// @tparam T Byte type (std::byte, uint8_t, char, ...).
 template <typename T>
-  requires (sizeof(T) == sizeof(char))
+    requires(sizeof(T) == sizeof(char))
 class Bytes {
   public:
     /* type alias *************************************************************/
@@ -33,7 +33,7 @@ class Bytes {
 
     /// @brief constructor with a pointer and a size
     constexpr Bytes(T *ptr, size_t capacity, size_t size = 0)
-        : mem_(ptr),capacity_(capacity), size_(size) {}
+        : mem_(ptr), capacity_(capacity), size_(size) {}
 
     /// @brief Copy constructor.
     constexpr Bytes(Bytes<T> const &other)
@@ -70,6 +70,25 @@ class Bytes {
 
     /// @breif Clear the buffer (set the size to 0 but do not reallocate).
     constexpr void clear() { size_ = 0; }
+
+    /* memory ownership *******************************************************/
+
+    // @brief Drop memory buffer (transfer ownership).
+    constexpr T *dropMem() {
+        T *mem = this->mem_;
+        this->mem_ = nullptr;
+        this->capacity_ = 0;
+        this->size_ = 0;
+        return mem;
+    }
+
+    // @brief Transfer ownership of the memory buffer, and take ownership of a
+    //        pointer.
+    constexpr void swapMem(T *&ptr, size_t capacity, size_t size = 0) {
+        std::swap(ptr, mem_);
+        this->capacity_ = capacity;
+        this->size_ = size;
+    }
 
     /* append *****************************************************************/
 
