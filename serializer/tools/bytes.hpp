@@ -1,6 +1,7 @@
 #ifndef SERIALIZER_BYTES_H
 #define SERIALIZER_BYTES_H
 #include <algorithm>
+#include <bit>
 #include <cstddef>
 #include <cstring>
 
@@ -74,8 +75,10 @@ class Bytes {
     /* memory ownership *******************************************************/
 
     // @brief Drop memory buffer (transfer ownership).
-    constexpr T *dropMem() {
-        T *mem = this->mem_;
+    template <typename RT = T*>
+    constexpr RT dropMem() {
+        static_assert(sizeof(std::remove_pointer_t<RT>) == sizeof(T));
+        RT mem = std::bit_cast<RT>(this->mem_);
         this->mem_ = nullptr;
         this->capacity_ = 0;
         this->size_ = 0;
@@ -84,8 +87,12 @@ class Bytes {
 
     // @brief Transfer ownership of the memory buffer, and take ownership of a
     //        pointer.
-    constexpr void swapMem(T *&ptr, size_t capacity, size_t size = 0) {
-        std::swap(ptr, mem_);
+    template <typename PtrType = T>
+    constexpr void swapMem(PtrType *&ptr, size_t capacity, size_t size = 0) {
+        static_assert(sizeof(PtrType) == sizeof(T));
+        T *mem = this->mem_;
+        this->mem_ = std::bit_cast<T*>(ptr);
+        ptr = std::bit_cast<PtrType*>(mem);
         this->capacity_ = capacity;
         this->size_ = size;
     }
