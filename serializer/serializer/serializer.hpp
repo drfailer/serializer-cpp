@@ -296,12 +296,16 @@ struct Serializer : Serialize<AdditionalTypes>... {
             for (size_t i = 0; i < size; ++i) {
                 ValueType value{};
                 select_deserialize(value);
-                if constexpr (
-                    requires { elts.insert(value); } ||
-                    requires { elts.push_back(value); }) {
-                    serializer::tools::insert(elts, std::move(value));
+                if constexpr (requires { elts.insert(std::move(value)); }) {
+                    elts.insert(std::move(value));
+                } else if constexpr (requires {
+                                         elts.push_back(std::move(value));
+                                     }) {
+                    elts.push_back(std::move(value));
+                } else if constexpr (requires { elts[i] = std::move(value); }) {
+                    elts[i] = std::move(value);
                 } else {
-                    serializer::tools::insert(elts, std::move(value), i);
+                    throw exceptions::UnsupportedTypeError<T>();
                 }
             }
         }

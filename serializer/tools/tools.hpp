@@ -1,40 +1,8 @@
 #ifndef SERIALIZER_TOOLS_HPP
 #define SERIALIZER_TOOLS_HPP
 #include "../meta/type_check.hpp"
-#include "../exceptions/unsupported_type.hpp"
 
 namespace serializer::tools {
-
-/******************************************************************************/
-/*                                   insert                                   */
-/******************************************************************************/
-
-/// @brief Insert an element into a container.
-/// @tparam Container Container type.
-/// @tparam T Type of the lement to insert.
-/// @param container
-/// @param element element to insert in the container.
-template <typename Container, typename T>
-inline constexpr void insert(Container &&container, T &&element) {
-    if constexpr (requires {container.insert(element);} ) {
-        container.insert(element);
-    } else if constexpr (requires {container.push_back(element);}) {
-        container.push_back(element);
-    } else {
-        throw exceptions::UnsupportedTypeError<Container>();
-    }
-}
-
-/// @brief Insert an element into an iterable using the operator[].
-/// @tparam Container Container type.
-/// @tparam T Type of the lement to insert.
-/// @param container
-/// @param element element to insert in the container.
-/// @param idx Index where the element should be inserted in the container.
-template <typename Container, typename T>
-inline constexpr void insert(Container &&container, T &&element, size_t idx) {
-    container[idx] = element;
-}
 
 /******************************************************************************/
 /*                             tuple manipulation                             */
