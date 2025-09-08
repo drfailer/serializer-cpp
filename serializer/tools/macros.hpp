@@ -89,7 +89,7 @@
 /// @param ArrType Type of the pointer to serialize (int* for a basic array).
 /// @param ... Types of the dimensions (ex: size_t if we want to pass it by
 ///            value or size_t& by reference)
-#define SER_DARR(...) serializer::tools::DynamicArray(__VA_ARGS__)
+#define SER_PARR(...) serializer::tools::PointerArray(__VA_ARGS__)
 
 /// @brief Helper macro for SERIALIZE_CUSTOM (get the type of the bytes buffer)
 #define SER_MEMT decltype(mem)

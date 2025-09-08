@@ -5,7 +5,7 @@
 #include "tools/super.hpp"
 #include "tools/bytes.hpp"
 #include "tools/context.hpp"
-#include "tools/dynamic_array.hpp"
+#include "tools/pointer_array.hpp"
 #include "serializer/serialize.hpp"
 #include "serializer/serializer.hpp"
 #include "serialize.hpp"

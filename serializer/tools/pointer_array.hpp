@@ -1,9 +1,9 @@
-#ifndef SERIALIZER_DYNAMIC_ARRAY_HPP
-#define SERIALIZER_DYNAMIC_ARRAY_HPP
+#ifndef SERIALIZER_POINTER_ARRAY_HPP
+#define SERIALIZER_POINTER_ARRAY_HPP
 #include "../meta/concepts.hpp"
 
 /******************************************************************************/
-/*                               Dynamic Array                                */
+/*                               Pointer Array                                */
 /******************************************************************************/
 
 /// @brief namespace serializer tools
@@ -11,14 +11,14 @@ namespace serializer::tools {
 
 /// @brief Wrapper object for dynamic arrays (can store references to the
 ///        variables that contains the array size).
-template <concepts::Pointer T, typename... DTs> struct DynamicArray {
+template <concepts::Pointer T, typename... DTs> struct PointerArray {
     /// @brief Constructor that should be used by the user.
     /// @param mem Reference to the pointer of the array that should be
     ///            serialized.
     /// @params dim Reference or value of the first dimension of the array (the
     ///         array must have at least one dimension)
     /// @params dims Other dimensions of the array.
-    constexpr explicit DynamicArray(T &mem, DTs const &...dims)
+    constexpr explicit PointerArray(T &mem, DTs const &...dims)
         : mem(mem), dimensions(dims...) {}
 
     /// @brief Constructor that is used to create sub-arrays in the default
@@ -26,7 +26,7 @@ template <concepts::Pointer T, typename... DTs> struct DynamicArray {
     /// @param mem Reference to the pointer of the array that should be
     ///            serialized.
     /// @param dimensions Tuple that holds the dimensions of the sub-array.
-    constexpr explicit DynamicArray(T &mem,
+    constexpr explicit PointerArray(T &mem,
                                     std::tuple<const DTs &...> &&dimensions)
         : mem(mem), dimensions(dimensions) {}
 

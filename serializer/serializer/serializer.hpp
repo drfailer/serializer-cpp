@@ -5,7 +5,7 @@
 #include "../meta/serializer_meta.hpp"
 #include "../meta/type_check.hpp"
 #include "../meta/type_transform.hpp"
-#include "../tools/dynamic_array.hpp"
+#include "../tools/pointer_array.hpp"
 #include "../tools/tools.hpp"
 #include "../tools/type_table.hpp"
 #include "serialize.hpp"
@@ -349,12 +349,12 @@ struct Serializer : Serialize<AdditionalTypes>... {
 
     /* dynamic array **********************************************************/
 
-    /// @brief Serialize function for dynamic arrays (dynamic arrays should be
-    ///        wrap in the DynamicArray type).
+    /// @brief Serialize function for pointer arrays (pointer arrays should be
+    ///        wrap in the PointerArray type).
     /// @param elt Element that is serialized.
     template <concepts::Pointer T, typename DT, typename... DTs>
     inline constexpr void
-    serializeDynamicArray(tools::DynamicArray<T, DT, DTs...> elt) {
+    serializePointerArray(tools::PointerArray<T, DT, DTs...> elt) {
         using ST = std::remove_pointer_t<mtf::clean_t<T>>;
         if (elt.mem == nullptr) {
             append('n');
@@ -365,7 +365,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
         if constexpr (std::is_pointer_v<ST>) {
             size_t size = (size_t)std::get<0>(elt.dimensions);
             for (size_t i = 0; i < size; ++i) {
-                select_serialize(tools::DynamicArray(
+                select_serialize(tools::PointerArray(
                     elt.mem[i], tools::tuplePopFront(elt.dimensions)));
             }
         } else {
@@ -382,15 +382,15 @@ struct Serializer : Serialize<AdditionalTypes>... {
         }
     }
 
-    /// @brief Deserialize function for dynamic arrays (dynamic arrays should be
-    ///        wrap in the DynamicArray type).
+    /// @brief Deserialize function for pointer arrays (pointer arrays should be
+    ///        wrap in the PointerArray type).
     ///        Note: memory is allocated if required. If the pointer is not set
     ///        correctly, this function may segfault. To avoid pointer
     ///        management, use the containers of the standard library instead.
     /// @param elt Element that is deserialized.
     template <concepts::Pointer T, typename DT, typename... DTs>
     inline constexpr void
-    deserializeDynamicArray(tools::DynamicArray<T, DT, DTs...> elt) {
+    deserializePointerArray(tools::PointerArray<T, DT, DTs...> elt) {
         using ST = std::remove_pointer_t<mtf::clean_t<T>>;
         bool ptrValid = char(mem[pos++]) == 'v';
 
@@ -405,7 +405,7 @@ struct Serializer : Serialize<AdditionalTypes>... {
                 elt.mem = new ST[size]();
             }
             for (size_t i = 0; i < size; ++i) {
-                select_deserialize(tools::DynamicArray(
+                select_deserialize(tools::PointerArray(
                     elt.mem[i], tools::tuplePopFront(elt.dimensions)));
             }
         } else {
@@ -447,8 +447,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
             serializeContainer(elt);
         } else if constexpr (concepts::StaticArray<T>) {
             serializeStaticArray(elt);
-        } else if constexpr (requires { serializeDynamicArray(elt); }) {
-            serializeDynamicArray(elt);
+        } else if constexpr (requires { serializePointerArray(elt); }) {
+            serializePointerArray(elt);
         } else {
             throw exceptions::UnsupportedTypeError<T>();
         }
@@ -473,8 +473,8 @@ struct Serializer : Serialize<AdditionalTypes>... {
             deserializeContainer(elt);
         } else if constexpr (concepts::StaticArray<T>) {
             deserializeStaticArray(elt);
-        } else if constexpr (requires { deserializeDynamicArray(elt); }) {
-            deserializeDynamicArray(elt);
+        } else if constexpr (requires { deserializePointerArray(elt); }) {
+            deserializePointerArray(elt);
         } else {
             throw exceptions::UnsupportedTypeError<T>();
         }

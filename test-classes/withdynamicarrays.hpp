@@ -3,7 +3,7 @@
 #include "simple.hpp"
 #include <serializer/serializer.hpp>
 #include <serializer/tools/macros.hpp>
-#include <serializer/tools/dynamic_array.hpp>
+#include <serializer/tools/pointer_array.hpp>
 
 class WithDynamicArray {
   public:
@@ -38,14 +38,13 @@ class WithDynamicArray {
         delete[] multipleDim_;
     }
 
-    SERIALIZE(borrowedSize_, multipleDimSize1_,
-        SER_DARR(own_, 5), // own_
-              SER_DARR(null_, 5),                                  // null_
-              SER_DARR(null2_, 5, 5),                              // null2_
-              SER_DARR(borrowed_, borrowedSize_),                  // borrowed_
-              SER_DARR(ownSimple_, 5),                             // ownSimple_
-              SER_DARR(multipleDim_, multipleDimSize1_, 2), // multipleDim_
-              SER_DARR(twoDOneD_, 4, 4)                     // twoDOneD_
+    SERIALIZE(borrowedSize_, multipleDimSize1_, SER_PARR(own_, 5), // own_
+              SER_PARR(null_, 5),                                  // null_
+              SER_PARR(null2_, 5, 5),                              // null2_
+              SER_PARR(borrowed_, borrowedSize_),                  // borrowed_
+              SER_PARR(ownSimple_, 5),                             // ownSimple_
+              SER_PARR(multipleDim_, multipleDimSize1_, 2), // multipleDim_
+              SER_PARR(twoDOneD_, 4, 4)                     // twoDOneD_
     );
 
     /* accessors **************************************************************/
