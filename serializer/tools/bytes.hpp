@@ -66,7 +66,7 @@ class Bytes {
     constexpr size_t size() const { return size_; }
 
     /// @brief Allow to manually resize.
-    constexpr void resize(size_t size) { size_ = size; }
+    constexpr void size(size_t size) { size_ = size; }
 
     /// @breif Clear the buffer (set the size to 0 but do not reallocate).
     constexpr void clear() { size_ = 0; }
@@ -130,6 +130,13 @@ class Bytes {
                 alloc(capacity_ * 2);
             }
         }
+    }
+
+    /// @brief Set capacity and size and realloc if required
+    /// @param newSize New buffer size.
+    constexpr void resize(size_t newSize) {
+        size_ = newSize;
+        growMemIfRequired(newSize);
     }
 
     /// @brief Reallocate memory and change the capacity.
