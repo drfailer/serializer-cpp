@@ -31,7 +31,7 @@ class Bytes {
 
     /// @brief Constructor with capacity.
     constexpr Bytes(size_t capacity, size_t size = 0) : size_(size) {
-        assert(capacity > size);
+        assert(capacity >= size);
         alloc(capacity);
     }
 
