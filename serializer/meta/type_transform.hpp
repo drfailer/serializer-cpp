@@ -22,7 +22,7 @@ template <typename T, size_t N> struct iter_value<std::array<T, N>> {
 };
 
 /// @brief iter_value shorthand.
-template <typename T> using iter_value_t = iter_value<T>::type;
+template <typename T> using iter_value_t = typename iter_value<T>::type;
 
 /// @brief Put the type H at the beginning of the tuple T
 template <typename H, typename T> struct tuple_push_front;
