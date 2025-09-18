@@ -24,7 +24,7 @@ set(serializer_files
   serializer/tools/type_table.hpp
   serializer/tools/context.hpp
   serializer/tools/macros.hpp
-  serializer/tools/dynamic_array.hpp
+  serializer/tools/pointer_array.hpp
   serializer/meta/concepts.hpp
   serializer/meta/serializer_meta.hpp
   serializer/meta/type_check.hpp
