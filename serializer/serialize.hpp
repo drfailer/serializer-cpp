@@ -17,7 +17,7 @@ namespace serializer {
 /// @param pos  Start position in the buffer for serializing the data.
 /// @param args Values to serialize
 /// @return Position of the next element in the buffer.
-template <typename Ser>
+template <typename Ser = Serializer<tools::Bytes<std::byte>>>
 inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
     using mem_t = decltype(mem);
     [[maybe_unused]] bool first_level = pos == 0;
@@ -49,7 +49,7 @@ inline constexpr size_t serialize(auto &mem, size_t pos, auto &&...args) {
 /// @param pos  Start position in the buffer for deserializing the data.
 /// @param args references to the variables that are deserialized.
 /// @return Position of the next element in the buffer.
-template <typename Ser>
+template <typename Ser = Serializer<tools::Bytes<std::byte>>>
 inline constexpr size_t deserialize(auto &mem, size_t pos, auto &&...args) {
     Ser serializer(mem, pos);
     (
@@ -76,7 +76,7 @@ inline constexpr size_t deserialize(auto &mem, size_t pos, auto &&...args) {
 /// @param mem Buffer of bytes that will contain the serialized data.
 /// @param pos Position in mem.
 /// @param args Elements that are serialized.
-template <typename Ser, typename T>
+template <typename T, typename Ser = Serializer<tools::Bytes<std::byte>>>
 constexpr inline size_t serializeWithId(auto &mem, size_t pos, auto &&...args) {
     if constexpr (tools::has_type_v<T, typename Ser::type_table>) {
         return serialize<Ser>(
@@ -93,7 +93,7 @@ constexpr inline size_t serializeWithId(auto &mem, size_t pos, auto &&...args) {
 /// @param mem Buffer of bytes that contains the serialized data.
 /// @param pos Position in mem.
 /// @param args Elements that are deserialized.
-template <typename Ser, typename T>
+template <typename T, typename Ser = Serializer<tools::Bytes<std::byte>>>
 constexpr inline size_t deserializeWithId(auto &mem, size_t pos,
                                           auto &&...args) {
     if constexpr (tools::has_type_v<T, typename Ser::type_table>) {
@@ -147,7 +147,7 @@ inline constexpr size_t deserializeStruct(auto &mem, size_t pos, T *obj) {
 /// @param accessors Accessors to the attributes (or the attributes themselves).
 /// @return Function (void(auto bytes, size_t pos = 0)) that serialize the
 ///         attributes accessible via `accessors`
-template <typename Ser>
+template <typename Ser = Serializer<tools::Bytes<std::byte>>>
 constexpr inline auto bindSerialize(auto &obj, auto &&...accessors) {
     return [=, &obj](auto &mem, size_t pos = 0) {
         return serialize<Ser>(mem, pos, std::invoke(accessors, obj)...);
@@ -160,7 +160,7 @@ constexpr inline auto bindSerialize(auto &obj, auto &&...accessors) {
 /// @param accessors Accessors to the attributes (or the attributes themselves).
 /// @return Function (void(auto bytes, size_t pos = 0)) that deserialize the
 ///         attributes accessible via `accessors`
-template <typename Ser>
+template <typename Ser = Serializer<tools::Bytes<std::byte>>>
 constexpr inline auto bindDeserialize(auto &obj, auto &&...accessors) {
     return [=, &obj](auto &mem, size_t pos = 0) {
         return tools::deserializerAccessors<Ser>(mem, pos, obj, accessors...);

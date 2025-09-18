@@ -13,11 +13,11 @@
 /// @param ... Members to serialize.
 #define INTERNAL_SERIALIZE_MACRO_IMPL(Ser, MemT, virt, over, ...)              \
     constexpr virt size_t serialize(MemT &mem, size_t pos = 0) const over {    \
-        return serializer::serializeWithId<Ser, decltype(this)>(mem, pos,      \
+        return serializer::serializeWithId<decltype(this), Ser>(mem, pos,      \
                                                                 __VA_ARGS__);  \
     }                                                                          \
     constexpr virt size_t deserialize(MemT &mem, size_t pos = 0) over {        \
-        return serializer::deserializeWithId<Ser, decltype(this)>(             \
+        return serializer::deserializeWithId<decltype(this), Ser>(             \
             mem, pos, __VA_ARGS__);                                            \
     }
 
